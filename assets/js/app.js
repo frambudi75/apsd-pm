@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function getActiveSiteInfo() {
     const siteInp = document.getElementById('site_name');
-    const locInp = document.getElementById('location_detail');
+    const locInp = document.getElementById('location_detail') || document.getElementById('address') || document.getElementById('city');
     const name = siteInp && siteInp.value ? siteInp.value.trim() : 'Site APSD';
     const loc = locInp && locInp.value ? locInp.value.trim() : '';
     return loc ? (name + ' (' + loc + ')') : name;
@@ -211,51 +211,114 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function compressAndWatermarkImage(file, slotCode, callback) {
-    if (!file || !file.type.match(/image.*/)) {
-      callback(file, null);
+  async function compressAndWatermarkImage(file, slotCode, callback) {
+    if (!file) {
+      if (callback) callback(file, null);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = function () {
-        const maxDim = 1600;
-        let width = img.width;
-        let height = img.height;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height / width) * maxDim);
-            width = maxDim;
-          } else {
-            width = Math.round((width / height) * maxDim);
-            height = maxDim;
-          }
+
+    // Flexible image detection (Android camera files often have empty file.type or generic octet-stream)
+    const fileName = file.name || '';
+    const isImage = (file.type && file.type.startsWith('image/')) ||
+                    (/\.(jpe?g|png|webp|bmp|heic|heif|gif)$/i.test(fileName)) ||
+                    (!file.type && file.size > 0);
+
+    if (!isImage) {
+      if (callback) callback(file, null);
+      return;
+    }
+
+    try {
+      let sourceWidth = 0;
+      let sourceHeight = 0;
+      let drawSource = null;
+
+      // Primary engine: modern createImageBitmap with hardware EXIF orientation handling
+      if (window.createImageBitmap) {
+        try {
+          drawSource = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          sourceWidth = drawSource.width;
+          sourceHeight = drawSource.height;
+        } catch (bErr) {
+          console.warn('createImageBitmap fallback:', bErr);
+          drawSource = null;
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+      }
 
-        // Apply watermark
-        stampWatermark(canvas, slotCode);
+      // Secondary engine: HTMLImageElement via lightweight ObjectURL
+      if (!drawSource) {
+        const objUrl = URL.createObjectURL(file);
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = (e) => reject(e);
+          img.src = objUrl;
+        });
+        URL.revokeObjectURL(objUrl);
+        drawSource = img;
+        sourceWidth = img.naturalWidth || img.width;
+        sourceHeight = img.naturalHeight || img.height;
+      }
 
-        canvas.toBlob(function (blob) {
-          if (blob) {
-            const stampedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            callback(stampedFile, canvas.toDataURL('image/jpeg', 0.85));
-          } else {
-            callback(file, e.target.result);
-          }
-        }, 'image/jpeg', 0.85);
+      if (!sourceWidth || !sourceHeight) {
+        throw new Error('Dimensi gambar tidak valid');
+      }
+
+      // Scale down proportionally to max 1600px
+      const maxDim = 1600;
+      let targetW = sourceWidth;
+      let targetH = sourceHeight;
+      if (targetW > maxDim || targetH > maxDim) {
+        if (targetW > targetH) {
+          targetH = Math.round((targetH / targetW) * maxDim);
+          targetW = maxDim;
+        } else {
+          targetW = Math.round((targetW / targetH) * maxDim);
+          targetH = maxDim;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(drawSource, 0, 0, targetW, targetH);
+
+      // Clean up bitmap memory if available
+      if (drawSource && typeof drawSource.close === 'function') {
+        drawSource.close();
+      }
+
+      // Stamp official inspection watermark
+      stampWatermark(canvas, slotCode);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+      canvas.toBlob(function (blob) {
+        if (blob) {
+          const outName = (fileName ? fileName.replace(/\.[^/.]+$/, "") : ('photo_' + slotCode)) + '.jpg';
+          const stampedFile = new File([blob], outName, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          callback(stampedFile, dataUrl);
+        } else {
+          callback(file, dataUrl);
+        }
+      }, 'image/jpeg', 0.85);
+
+    } catch (err) {
+      console.error('Gagal kompresi watermark client:', err);
+      // Fallback via FileReader
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        callback(file, e.target.result);
       };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = function () {
+        callback(file, null);
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   // 4. Live In-App Camera Controller
@@ -454,6 +517,13 @@ document.addEventListener('DOMContentLoaded', function () {
       const slotCode = this.getAttribute('data-slot');
       if (this.files && this.files[0]) {
         const rawFile = this.files[0];
+        const placeholder = document.getElementById('placeholder_' + slotCode);
+        const naOverlay = document.getElementById('na_overlay_' + slotCode);
+        if (naOverlay) naOverlay.style.display = 'none';
+        if (placeholder) {
+          placeholder.innerHTML = '<span style="font-size: 0.8rem; font-weight: 700; color: var(--primary, #008080); padding: 8px;">⏳ Memproses Watermark...</span>';
+          placeholder.style.display = 'flex';
+        }
         compressAndWatermarkImage(rawFile, slotCode, function (stampedFile, dataUrl) {
           assignFileToSlot(slotCode, stampedFile, dataUrl);
         });

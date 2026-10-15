@@ -12,9 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure & install PHP extensions (GD with FreeType & JPEG, PDO SQLite, PDO MySQL)
+# Configure & install PHP extensions (GD with FreeType & JPEG, PDO SQLite, PDO MySQL, EXIF)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite exif
 
 # Install Redis extension via PECL
 RUN pecl install redis \

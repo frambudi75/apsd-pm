@@ -19,6 +19,7 @@ try {
     $site_id = !empty($_POST['site_id']) ? intval($_POST['site_id']) : null;
     $site_id_str = trim($_POST['site_id_str'] ?? '0');
     $site_name = trim($_POST['site_name'] ?? '');
+    $location_detail = trim($_POST['location_detail'] ?? $_POST['address'] ?? $_POST['city'] ?? '');
     $report_date = $_POST['report_date'] ?? date('Y-m-d');
     $inspection_time = trim($_POST['inspection_time'] ?? '10.25');
     $timezone = trim($_POST['timezone'] ?? 'WIB');
@@ -182,7 +183,8 @@ try {
             $fileSource = $hasPhoto ? $_FILES['photo_files'] : $_FILES['camera_files'];
             $tmpName = $fileSource['tmp_name'][$slotCode];
             $ext = strtolower(pathinfo($fileSource['name'][$slotCode], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+            $isImg = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']) || (@getimagesize($tmpName) !== false);
+            if ($isImg) {
                 if (compress_and_save_image($tmpName, $targetFile, 1600, 85, $watermarkInfo)) {
                     $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
                 } elseif (move_uploaded_file($tmpName, $targetFile)) {

@@ -52,7 +52,7 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
 <head>
   <meta charset="UTF-8">
   <title>PM_Outdoor_<?= preg_replace('/[^A-Za-z0-9_\-]/', '_', $site['site_name'] ?? 'Site') ?>_<?= date('Ymd', strtotime($report['report_date'])) ?></title>
-  <link rel="stylesheet" href="assets/css/print.css">
+  <link rel="stylesheet" href="assets/css/print.css?v=<?= filemtime(__DIR__ . '/assets/css/print.css') ?>">
   <style>
     .pole-meta-table td {
       padding: 3px 5px;

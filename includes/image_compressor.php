@@ -125,10 +125,11 @@ function compress_and_save_image(string $sourcePath, string $destPath, int $maxD
  * Apply official APSD inspection timestamp & GPS watermark directly to image
  */
 function apply_server_watermark(&$img, int $width, int $height, array $meta): void {
-    $dim = max($width, $height);
-    $scale = max(1.0, $dim / 1100);
-    $boxH = (int) max(116, round(116 * $scale));
-    $pad = (int) max(14, round(14 * $scale));
+    $isPortrait = ($height > $width);
+    $baseWidth = $isPortrait ? 760 : 1050;
+    $scale = max(0.65, $width / $baseWidth);
+    $boxH = (int) max(116, round(($isPortrait ? 134 : 116) * $scale));
+    $pad = (int) max(12, round(14 * $scale));
     $yStart = $height - $boxH;
 
     // Dark semi-transparent banner
@@ -140,6 +141,7 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
     imagefilledrectangle($img, $pad, $yStart + (int)(6 * $scale), $pad + (int)(4 * $scale), $height - (int)(10 * $scale), $teal);
 
     $startX = $pad + (int)(12 * $scale);
+    $maxTextW = $width - $startX - $pad;
     $fontFile = __DIR__ . '/../assets/fonts/arial.ttf';
     $hasTtf = function_exists('imagettftext') && file_exists($fontFile);
 
@@ -149,8 +151,9 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
     $gpsStr = 'GPS   : ' . ($meta['gps'] ?? 'GPS: -');
     $slotStr = 'FOTO  : Slot ' . ($meta['slot'] ?? '') . (!empty($meta['title']) ? ' (' . $meta['title'] . ')' : '');
 
-    if (strlen($siteStr) > 55) $siteStr = substr($siteStr, 0, 52) . '...';
-    if (strlen($slotStr) > 55) $slotStr = substr($slotStr, 0, 52) . '...';
+    $maxChars = $isPortrait ? 38 : 55;
+    if (strlen($siteStr) > $maxChars) $siteStr = substr($siteStr, 0, $maxChars - 3) . '...';
+    if (strlen($slotStr) > $maxChars) $slotStr = substr($slotStr, 0, $maxChars - 3) . '...';
 
     if ($hasTtf) {
         $colorCyan = imagecolorallocate($img, 56, 189, 248);
@@ -159,8 +162,18 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
         $colorGray = imagecolorallocate($img, 226, 232, 240);
         $colorShadow = imagecolorallocatealpha($img, 0, 0, 0, 40);
 
-        $draw = function(int $size, int $yOffset, string $text, int $color) use (&$img, $fontFile, $startX, $yStart, $scale, $colorShadow) {
-            $fontSize = (int) max(9, round($size * $scale));
+        $draw = function(int $size, int $yOffset, string $text, int $color) use (&$img, $fontFile, $startX, $yStart, $scale, $colorShadow, $maxTextW) {
+            $fontSize = (int) max(8, round($size * $scale));
+            // Ensure text fits within maxTextW
+            $bbox = @imagettfbbox($fontSize, 0, $fontFile, $text);
+            if ($bbox) {
+                $textWidth = abs($bbox[4] - $bbox[0]);
+                while ($textWidth > $maxTextW && $fontSize > 7) {
+                    $fontSize--;
+                    $bbox = @imagettfbbox($fontSize, 0, $fontFile, $text);
+                    $textWidth = abs($bbox[4] - $bbox[0]);
+                }
+            }
             $y = $yStart + (int) round($yOffset * $scale);
             imagettftext($img, $fontSize, 0, $startX + 1, $y + 1, $colorShadow, $fontFile, $text);
             imagettftext($img, $fontSize, 0, $startX, $y, $color, $fontFile, $text);
@@ -177,10 +190,10 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
         $colorYellow = imagecolorallocate($img, 253, 224, 71);
         $colorGray = imagecolorallocate($img, 226, 232, 240);
 
-        imagestring($img, 4, $startX, $yStart + 6, $headerStr, $colorCyan);
-        imagestring($img, 5, $startX, $yStart + 26, $timeStr, $colorWhite);
-        imagestring($img, 4, $startX, $yStart + 46, $siteStr, $colorGray);
-        imagestring($img, 4, $startX, $yStart + 66, $gpsStr, $colorYellow);
-        imagestring($img, 4, $startX, $yStart + 86, $slotStr, $colorGray);
+        imagestring($img, 3, $startX, $yStart + 6, $headerStr, $colorCyan);
+        imagestring($img, 4, $startX, $yStart + 26, $timeStr, $colorWhite);
+        imagestring($img, 3, $startX, $yStart + 46, $siteStr, $colorGray);
+        imagestring($img, 3, $startX, $yStart + 66, $gpsStr, $colorYellow);
+        imagestring($img, 3, $startX, $yStart + 86, $slotStr, $colorGray);
     }
 }

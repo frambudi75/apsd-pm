@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return `${d}/${m}/${y} ${h}:${min}:${s} WIB`;
   }
 
-  // Stamp official inspection watermark on canvas
+  // Stamp official inspection watermark on canvas (adaptive for both Landscape & Portrait)
   function stampWatermark(canvas, slotCode) {
     const autoWatermarkToggle = document.getElementById('auto_watermark_toggle');
     if (autoWatermarkToggle && !autoWatermarkToggle.checked) {
@@ -117,9 +117,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
-    const maxDim = Math.max(w, h);
-    const scale = Math.max(1, maxDim / 1050);
-    const boxH = Math.round(118 * scale);
+    const isPortrait = (h > w);
+
+    // Scale dynamically by canvas width to prevent horizontal text overflow on portrait photos
+    const baseWidth = isPortrait ? 760 : 1050;
+    const scale = Math.max(0.65, w / baseWidth);
+    const boxH = Math.round((isPortrait ? 134 : 118) * scale);
     const pad = Math.round(14 * scale);
 
     ctx.save();
@@ -127,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // High-contrast gradient bar at bottom
     const grad = ctx.createLinearGradient(0, h - boxH - (18 * scale), 0, h);
     grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    grad.addColorStop(0.25, 'rgba(15, 23, 42, 0.88)');
+    grad.addColorStop(0.25, 'rgba(15, 23, 42, 0.90)');
     grad.addColorStop(1, 'rgba(15, 23, 42, 0.98)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, h - boxH - (18 * scale), w, boxH + (18 * scale));
@@ -137,6 +140,18 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.fillRect(pad, h - boxH + (4 * scale), 4 * scale, boxH - (12 * scale));
 
     const startX = pad + (12 * scale);
+    const maxTextW = w - startX - pad;
+
+    // Helper to guarantee text never runs off canvas edge
+    function fitText(text, font) {
+      ctx.font = font;
+      if (ctx.measureText(text).width <= maxTextW) return text;
+      let trimmed = text;
+      while (trimmed.length > 5 && ctx.measureText(trimmed + '...').width > maxTextW) {
+        trimmed = trimmed.substring(0, trimmed.length - 1);
+      }
+      return trimmed + '...';
+    }
 
     // Text shadow for high contrast on bright/dark backgrounds
     ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
@@ -145,35 +160,33 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.shadowOffsetY = 1;
 
     // Header Tag
-    ctx.font = 'bold ' + Math.round(11 * scale) + 'px sans-serif';
+    const headerFont = 'bold ' + Math.round((isPortrait ? 11.5 : 11) * scale) + 'px sans-serif';
     ctx.fillStyle = '#38bdf8';
-    ctx.fillText('PT ANGKASA PURA SARANA DIGITAL | PM INSPECTION', startX, h - boxH + (18 * scale));
+    ctx.fillText(fitText('PT ANGKASA PURA SARANA DIGITAL | PM INSPECTION', headerFont), startX, h - boxH + (18 * scale));
 
     // Line 1: Timestamp
-    ctx.font = 'bold ' + Math.round(13 * scale) + 'px sans-serif';
+    const timeFont = 'bold ' + Math.round((isPortrait ? 13.5 : 13) * scale) + 'px sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('WAKTU : ' + getFormattedTimestamp(), startX, h - boxH + (38 * scale));
+    ctx.fillText(fitText('WAKTU : ' + getFormattedTimestamp(), timeFont), startX, h - boxH + (38 * scale));
 
     // Line 2: Site & Location
-    ctx.font = Math.round(12 * scale) + 'px sans-serif';
+    const siteFont = Math.round((isPortrait ? 12 : 12) * scale) + 'px sans-serif';
     ctx.fillStyle = '#f1f5f9';
     let siteText = 'SITE  : ' + getActiveSiteInfo();
-    if (siteText.length > 55) siteText = siteText.substring(0, 52) + '...';
-    ctx.fillText(siteText, startX, h - boxH + (56 * scale));
+    ctx.fillText(fitText(siteText, siteFont), startX, h - boxH + (57 * scale));
 
     // Line 3: GPS
-    ctx.font = Math.round(12 * scale) + 'px sans-serif';
+    const gpsFont = Math.round((isPortrait ? 12 : 12) * scale) + 'px sans-serif';
     ctx.fillStyle = '#fde047';
-    ctx.fillText('GPS   : ' + getActiveCoords(), startX, h - boxH + (74 * scale));
+    ctx.fillText(fitText('GPS   : ' + getActiveCoords(), gpsFont), startX, h - boxH + (76 * scale));
 
     // Line 4: Slot Code & Title
     const titleInp = document.getElementById('title_' + slotCode);
     let titleText = titleInp && titleInp.value ? titleInp.value.trim() : '';
     let itemText = 'FOTO  : Slot ' + slotCode + (titleText ? (' (' + titleText + ')') : '');
-    if (itemText.length > 55) itemText = itemText.substring(0, 52) + '...';
-    ctx.font = Math.round(12 * scale) + 'px sans-serif';
+    const slotFont = Math.round((isPortrait ? 12 : 12) * scale) + 'px sans-serif';
     ctx.fillStyle = '#e2e8f0';
-    ctx.fillText(itemText, startX, h - boxH + (92 * scale));
+    ctx.fillText(fitText(itemText, slotFont), startX, h - boxH + (95 * scale));
 
     ctx.restore();
   }

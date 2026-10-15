@@ -760,7 +760,7 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
             <div class="photo-cell">
               <div class="photo-cell-image-wrapper">
                 <?php if ($hasImage): ?>
-                  <img src="<?= htmlspecialchars($p['image_path']) ?>" alt="<?= htmlspecialchars($slotDef['title']) ?>">
+                  <img src="<?= htmlspecialchars($p['image_path']) ?>" alt="<?= htmlspecialchars($slotDef['title']) ?>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; margin: auto;">
                 <?php else: ?>
                   <div class="photo-cell-na">N/A</div>
                 <?php endif; ?>

@@ -13,3 +13,9 @@ uploads/temp/
 scratch/
 *.tmp
 *.log
+
+# SQLite Database Binaries
+database/*.sqlite
+database/*.sqlite-wal
+database/*.sqlite-shm
+database/*.sqlite-journal

@@ -102,7 +102,7 @@ function compress_and_save_image(string $sourcePath, string $destPath, int $maxD
 
     imagecopyresampled($destImg, $srcImg, 0, 0, 0, 0, $targetWidth, $targetHeight, $srcWidth, $srcHeight);
 
-    // Apply official APSD inspection watermark if metadata is supplied
+    // Apply official IASS SBU ICT KNO inspection watermark if metadata is supplied
     if ($watermark && !empty($watermark['slot'])) {
         apply_server_watermark($destImg, $targetWidth, $targetHeight, $watermark);
     }
@@ -123,7 +123,7 @@ function compress_and_save_image(string $sourcePath, string $destPath, int $maxD
 }
 
 /**
- * Apply official APSD inspection timestamp & GPS watermark directly to image
+ * Apply official IASS SBU ICT KNO inspection timestamp & GPS watermark directly to image
  */
 function apply_server_watermark(&$img, int $width, int $height, array $meta): void {
     $isPortrait = ($height > $width);

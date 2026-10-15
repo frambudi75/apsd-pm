@@ -118,10 +118,12 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 <script src="assets/js/qr_scanner.js?v=<?= filemtime(__DIR__ . '/../assets/js/qr_scanner.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v9"></script>
 <script>
+
+
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js?v=11')
+      navigator.serviceWorker.register('sw.js?v=12')
         .then(function (reg) {
           console.log('PWA ServiceWorker registered with scope:', reg.scope);
         })

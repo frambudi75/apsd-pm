@@ -1689,5 +1689,269 @@ body {
   border-color: #fca5a5;
 }
 
+/* ==========================================================================
+   Dark Theme Design System & Tokens
+   ========================================================================== */
+[data-theme="dark"] {
+  --primary: #14b8a6;
+  --primary-hover: #0d9488;
+  --primary-subtle: rgba(20, 184, 166, 0.16);
+  --primary-border: rgba(20, 184, 166, 0.4);
+
+  --secondary: #38bdf8;
+  --secondary-hover: #0284c7;
+
+  --telkomsel: #f87171;
+  --telkomsel-subtle: rgba(239, 68, 68, 0.15);
+
+  --bg-main: #0b1120;
+  --bg-card: #151e32;
+  --bg-alt: #1e293b;
+
+  --border: #243049;
+  --border-strong: #334155;
+
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-subtle: #94a3b8;
+
+  --status-ok: #34d399;
+  --status-ok-bg: rgba(52, 211, 153, 0.12);
+  --status-ok-border: rgba(52, 211, 153, 0.28);
+
+  --status-nok: #f87171;
+  --status-nok-bg: rgba(248, 113, 113, 0.15);
+  --status-nok-border: rgba(248, 113, 113, 0.3);
+
+  --status-na: #94a3b8;
+  --status-na-bg: #1e293b;
+  --status-na-border: #334155;
+
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 10px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.15rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+  transform: rotate(15deg);
+}
+
+[data-theme="light"] .theme-icon-light,
+:root:not([data-theme="dark"]) .theme-icon-light {
+  display: none;
+}
+
+[data-theme="light"] .theme-icon-dark,
+:root:not([data-theme="dark"]) .theme-icon-dark {
+  display: inline-block;
+}
+
+[data-theme="dark"] .theme-icon-light {
+  display: inline-block;
+}
+
+[data-theme="dark"] .theme-icon-dark {
+  display: none;
+}
+
+/* Dark Theme Specific Overrides */
+[data-theme="dark"] .app-navbar {
+  background: #111827;
+  border-bottom-color: #1f2937;
+}
+
+[data-theme="dark"] .mobile-bottom-nav {
+  background: #111827;
+  border-top-color: #1f2937;
+}
+
+[data-theme="dark"] .card {
+  background: #151e32;
+  border-color: #243049;
+}
+
+[data-theme="dark"] .card-header {
+  border-bottom-color: #243049;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .table-search-input,
+[data-theme="dark"] .filter-select {
+  background: #0b1120;
+  color: #f8fafc;
+  border-color: #243049;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .filter-select:focus {
+  background: #0b1120;
+  color: #f8fafc;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+}
+
+[data-theme="dark"] .desktop-footer {
+  background: #0b1120;
+  border-top-color: #1f2937;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] table.checklist-table thead tr {
+  background: #1e293b;
+  border-bottom-color: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] table.checklist-table th,
+[data-theme="dark"] table.checklist-table td {
+  border-color: #243049;
+}
+
+[data-theme="dark"] table.checklist-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .mobile-report-card {
+  background: #151e32;
+  border-color: #243049;
+}
+
+[data-theme="dark"] .btn-action-view {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .btn-action-del {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .quick-start-card {
+  background: #151e32;
+  border-color: #243049;
+}
+
+[data-theme="dark"] .quick-start-indoor:hover {
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .quick-start-outdoor:hover {
+  border-color: var(--secondary);
+}
+
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .camera-modal-content {
+  background: #151e32;
+  border-color: #243049;
+  color: #f8fafc;
+}
+
+/* Status Badges: Normal (OK) vs Temuan / Anomali (NOK) */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  line-height: 1;
+}
+
+.status-badge-ok {
+  background: var(--status-ok-bg);
+  color: var(--status-ok);
+  border: 1px solid var(--status-ok-border);
+}
+
+.status-badge-warning {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+[data-theme="dark"] .status-badge-warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot-ok {
+  background: var(--status-ok);
+}
+
+.status-dot-warning {
+  background: #f59e0b;
+}
+
+.status-finding-sub {
+  font-size: 0.7rem;
+  color: #d97706;
+  margin-top: 3px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .status-finding-sub {
+  color: #fbbf24;
+}
+
+/* Enhanced Filter Toolbar & Dropdowns */
+.filter-dropdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.15s ease;
+  min-height: 38px;
+}
+
+
 
 

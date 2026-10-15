@@ -5,34 +5,65 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/redis.php';
+require_once __DIR__ . '/includes/checklist_data.php';
 $pdo = get_db_connection();
 
 $page_title = 'Riwayat & Arsip Laporan PM';
 include __DIR__ . '/includes/header.php';
 
-// Fetch reports with Redis cache support
-$cachedReports = AppRedis::get('reports:all');
+// Fetch reports with details to analyze checklist findings
+$cachedReports = AppRedis::get('reports:all_v2');
 if ($cachedReports !== null && is_array($cachedReports)) {
     $reports = $cachedReports;
 } else {
     $stmt = $pdo->query("
-        SELECT r.*, s.site_name, s.location_detail, s.region, s.city
+        SELECT r.*, s.site_name, s.location_detail, s.region, s.city,
+               ind.checklist_json as indoor_checklist,
+               outd.grounding_json, outd.tower_json, outd.lighting_fence_other_json, outd.structural_json,
+               outd.tenant_ac_json, outd.tenant_electrical_json, outd.pln_function_json
         FROM pm_reports r
         LEFT JOIN sites s ON r.site_id = s.id
+        LEFT JOIN pm_indoor_details ind ON ind.report_id = r.id
+        LEFT JOIN pm_outdoor_details outd ON outd.report_id = r.id
         ORDER BY r.id DESC
     ");
     $reports = $stmt->fetchAll();
-    AppRedis::set('reports:all', $reports, 60);
+    AppRedis::set('reports:all_v2', $reports, 60);
 }
 
-// Compute statistics
+// Compute statistics and prepare filter option sets
 $totalReports = count($reports);
 $indoorCount = 0;
 $outdoorCount = 0;
-foreach ($reports as $r) {
+$anomalyCount = 0;
+$uniqueSites = [];
+$uniqueMonths = [];
+
+$indoMonths = [
+    '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+    '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+    '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+];
+
+foreach ($reports as &$r) {
     if ($r['report_type'] === 'indoor') $indoorCount++;
     if ($r['report_type'] === 'outdoor') $outdoorCount++;
+
+    $r['findings'] = get_report_findings_summary($r);
+    if ($r['findings']['has_nok']) {
+        $anomalyCount++;
+    }
+
+    $siteName = $r['site_name'] ?: (($r['report_type'] === 'indoor') ? 'IBC Bandara International Kualanamu' : 'Bandara Kualanamu Pole ' . ($r['site_id'] ?: '1'));
+    $uniqueSites[$siteName] = $siteName;
+
+    $mKey = date('Y-m', strtotime($r['report_date']));
+    $mNum = date('m', strtotime($r['report_date']));
+    $yNum = date('Y', strtotime($r['report_date']));
+    $uniqueMonths[$mKey] = ($indoMonths[$mNum] ?? date('F', strtotime($r['report_date']))) . ' ' . $yNum;
 }
+unset($r);
+ksort($uniqueMonths);
 ?>
 
 <main class="container">
@@ -109,6 +140,18 @@ foreach ($reports as $r) {
             <div id="stat_outdoor" style="font-size: 1.4rem; font-weight: 800; color: var(--secondary); line-height: 1.2;"><?= $outdoorCount ?></div>
           </div>
         </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 44px; height: 44px; background: <?= $anomalyCount > 0 ? '#fffbeb' : 'var(--status-ok-bg)' ?>; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: <?= $anomalyCount > 0 ? '#b45309' : 'var(--status-ok)' ?>; font-weight: bold;">
+            <?= $anomalyCount > 0 ? '⚠️' : '✓' ?>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 600;">Kondisi Temuan</div>
+            <div id="stat_anomaly" style="font-size: 1.35rem; font-weight: 800; color: <?= $anomalyCount > 0 ? '#b45309' : 'var(--status-ok)' ?>; line-height: 1.2;">
+              <?= $anomalyCount > 0 ? $anomalyCount . ' Ada Temuan' : 'Semua Normal' ?>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Live Search & Category Filter Controls -->
@@ -141,6 +184,39 @@ foreach ($reports as $r) {
           </button>
         </div>
 
+      </div>
+
+      <!-- Advanced Filter Dropdowns: Site, Periode / Bulan, dan Kondisi Temuan -->
+      <div class="filter-dropdown-grid">
+        <div>
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; display: block; margin-bottom: 4px;">Pilihan Site Bandara</label>
+          <select id="filter_site_select" class="filter-select">
+            <option value="all">Semua Lokasi Site (<?= count($uniqueSites) ?>)</option>
+            <?php foreach ($uniqueSites as $sName): ?>
+              <option value="<?= htmlspecialchars($sName) ?>"><?= htmlspecialchars($sName) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; display: block; margin-bottom: 4px;">Periode Inspeksi</label>
+          <select id="filter_month_select" class="filter-select">
+            <option value="all">Semua Periode</option>
+            <option value="current_month">Bulan Ini (<?= ($indoMonths[date('m')] ?? '') . ' ' . date('Y') ?>)</option>
+            <?php foreach (array_reverse($uniqueMonths, true) as $mKey => $mLabel): ?>
+              <option value="<?= $mKey ?>"><?= htmlspecialchars($mLabel) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; display: block; margin-bottom: 4px;">Status Kondisi</label>
+          <select id="filter_status_select" class="filter-select">
+            <option value="all">Semua Status</option>
+            <option value="ok">✓ Normal (OK)</option>
+            <option value="nok">⚠️ Ada Temuan (NOK)</option>
+          </select>
+        </div>
       </div>
 
     </div>
@@ -197,12 +273,19 @@ foreach ($reports as $r) {
             <tbody>
               <?php foreach ($reports as $index => $rep): ?>
                 <?php 
+                  $siteDisplayName = $rep['site_name'];
+                  if (empty($siteDisplayName)) {
+                      $siteDisplayName = ($rep['report_type'] === 'indoor') 
+                          ? 'IBC Bandara International Kualanamu' 
+                          : 'Bandara Kualanamu Pole ' . ($rep['site_id'] ?: '1');
+                  }
+                  $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: '-';
                   $printUrl = ($rep['report_type'] === 'indoor') 
                     ? 'print_indoor?id=' . $rep['id'] 
                     : 'print_outdoor?id=' . $rep['id'];
                   $searchMeta = strtolower(
-                    ($rep['site_name'] ?? '') . ' ' . 
-                    ($rep['location_detail'] ?? '') . ' ' . 
+                    $siteDisplayName . ' ' . 
+                    $locDisplayName . ' ' . 
                     ($rep['region'] ?? '') . ' ' . 
                     ($rep['city'] ?? '') . ' ' . 
                     ($rep['inspector_name'] ?? '') . ' ' . 
@@ -210,8 +293,15 @@ foreach ($reports as $r) {
                     ($rep['report_type'] ?? '') . ' ' .
                     ($rep['report_date'] ?? '')
                   );
+                  $monthVal = date('Y-m', strtotime($rep['report_date']));
+                  $anomalyVal = ($rep['findings']['has_nok'] ?? false) ? 'nok' : 'ok';
                 ?>
-                <tr class="report-row" data-type="<?= htmlspecialchars($rep['report_type']) ?>" data-search="<?= htmlspecialchars($searchMeta) ?>">
+                <tr class="report-row" 
+                    data-type="<?= htmlspecialchars($rep['report_type']) ?>" 
+                    data-search="<?= htmlspecialchars($searchMeta) ?>"
+                    data-site="<?= htmlspecialchars($siteDisplayName) ?>"
+                    data-month="<?= htmlspecialchars($monthVal) ?>"
+                    data-anomaly="<?= htmlspecialchars($anomalyVal) ?>">
                   <td style="font-weight: 700; color: var(--text-subtle);"><?= $index + 1 ?></td>
                   <td>
                     <?php if ($rep['report_type'] === 'indoor'): ?>
@@ -226,10 +316,10 @@ foreach ($reports as $r) {
                   </td>
                   <td>
                     <strong style="display: block; color: var(--text-main); font-size: 0.95rem;">
-                      <?= htmlspecialchars($rep['site_name'] ?: 'Site #' . $rep['site_id']) ?>
+                      <?= htmlspecialchars($siteDisplayName) ?>
                     </strong>
                     <span style="font-size: 0.8rem; color: var(--text-subtle);">
-                      <?= htmlspecialchars($rep['location_detail'] ?: $rep['region'] ?: '-') ?>
+                      <?= htmlspecialchars($locDisplayName) ?>
                     </span>
                   </td>
                   <td>
@@ -249,9 +339,20 @@ foreach ($reports as $r) {
                     <?php endif; ?>
                   </td>
                   <td>
-                    <span style="background: var(--status-ok-bg); color: var(--status-ok); font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: var(--radius-sm); display: inline-block;">
-                      Selesai
-                    </span>
+                    <?php if (!empty($rep['findings']['has_nok'])): ?>
+                      <span class="status-badge status-badge-warning" title="<?= htmlspecialchars($rep['findings']['summary']) ?>">
+                        <span class="status-dot status-dot-warning"></span>
+                        Ada <?= $rep['findings']['count'] ?> Temuan
+                      </span>
+                      <?php if (!empty($rep['findings']['summary'])): ?>
+                        <div class="status-finding-sub"><?= htmlspecialchars($rep['findings']['summary']) ?></div>
+                      <?php endif; ?>
+                    <?php else: ?>
+                      <span class="status-badge status-badge-ok">
+                        <span class="status-dot status-dot-ok"></span>
+                        Normal (OK)
+                      </span>
+                    <?php endif; ?>
                   </td>
                   <td style="text-align: right;">
                     <div class="table-action-group">
@@ -278,12 +379,19 @@ foreach ($reports as $r) {
         <div class="mobile-cards-container" id="reports_mobile_cards">
           <?php foreach ($reports as $index => $rep): ?>
             <?php 
+              $siteDisplayName = $rep['site_name'];
+              if (empty($siteDisplayName)) {
+                  $siteDisplayName = ($rep['report_type'] === 'indoor') 
+                      ? 'IBC Bandara International Kualanamu' 
+                      : 'Bandara Kualanamu Pole ' . ($rep['site_id'] ?: '1');
+              }
+              $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: '-';
               $printUrl = ($rep['report_type'] === 'indoor') 
                 ? 'print_indoor?id=' . $rep['id'] 
                 : 'print_outdoor?id=' . $rep['id'];
               $searchMeta = strtolower(
-                ($rep['site_name'] ?? '') . ' ' . 
-                ($rep['location_detail'] ?? '') . ' ' . 
+                $siteDisplayName . ' ' . 
+                $locDisplayName . ' ' . 
                 ($rep['region'] ?? '') . ' ' . 
                 ($rep['city'] ?? '') . ' ' . 
                 ($rep['inspector_name'] ?? '') . ' ' . 
@@ -291,8 +399,15 @@ foreach ($reports as $r) {
                 ($rep['report_type'] ?? '') . ' ' .
                 ($rep['report_date'] ?? '')
               );
+              $monthVal = date('Y-m', strtotime($rep['report_date']));
+              $anomalyVal = ($rep['findings']['has_nok'] ?? false) ? 'nok' : 'ok';
             ?>
-            <div class="mobile-report-card report-card-item" data-type="<?= htmlspecialchars($rep['report_type']) ?>" data-search="<?= htmlspecialchars($searchMeta) ?>">
+            <div class="mobile-report-card report-card-item" 
+                 data-type="<?= htmlspecialchars($rep['report_type']) ?>" 
+                 data-search="<?= htmlspecialchars($searchMeta) ?>"
+                 data-site="<?= htmlspecialchars($siteDisplayName) ?>"
+                 data-month="<?= htmlspecialchars($monthVal) ?>"
+                 data-anomaly="<?= htmlspecialchars($anomalyVal) ?>">
               <div class="mobile-card-top">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                   <?php if ($rep['report_type'] === 'indoor'): ?>
@@ -305,8 +420,8 @@ foreach ($reports as $r) {
                 <a href="api/delete_report.php?id=<?= $rep['id'] ?>&return=reports" onclick="return confirm('Hapus laporan ini dari riwayat?');" class="mobile-delete-btn" title="Hapus Laporan">&times;</a>
               </div>
 
-              <h4 class="mobile-card-title"><?= htmlspecialchars($rep['site_name'] ?: 'Site #' . $rep['site_id']) ?></h4>
-              <p class="mobile-card-sub"><?= htmlspecialchars($rep['location_detail'] ?: $rep['region'] ?: '-') ?></p>
+              <h4 class="mobile-card-title"><?= htmlspecialchars($siteDisplayName) ?></h4>
+              <p class="mobile-card-sub"><?= htmlspecialchars($locDisplayName) ?></p>
 
               <div class="mobile-card-meta">
                 <div class="mobile-meta-item">
@@ -319,6 +434,18 @@ foreach ($reports as $r) {
                     <span><?= htmlspecialchars($rep['team_leader']) ?></span>
                   </div>
                 <?php endif; ?>
+                <div class="mobile-meta-item">
+                  <span class="mobile-meta-label">Kondisi:</span>
+                  <?php if (!empty($rep['findings']['has_nok'])): ?>
+                    <span class="status-badge status-badge-warning" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                      ⚠️ Ada <?= $rep['findings']['count'] ?> Temuan
+                    </span>
+                  <?php else: ?>
+                    <span class="status-badge status-badge-ok" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                      ✓ Normal (OK)
+                    </span>
+                  <?php endif; ?>
+                </div>
                 <div class="mobile-meta-item">
                   <span class="mobile-meta-label">Waktu:</span>
                   <span><?= htmlspecialchars($rep['inspection_time'] ?: '-') ?> <?= htmlspecialchars($rep['timezone'] ?: 'WIB') ?></span>
@@ -346,10 +473,13 @@ foreach ($reports as $r) {
 </main>
 
 <script>
-  // Realtime Client-Side Search and Type Filter
+  // Realtime Client-Side Multi-Filter: Search, Type, Site, Month, & Anomaly Status
   (function () {
     const searchInput = document.getElementById('report_search_input');
     const filterButtons = document.querySelectorAll('.btn-filter-type');
+    const selectSite = document.getElementById('filter_site_select');
+    const selectMonth = document.getElementById('filter_month_select');
+    const selectStatus = document.getElementById('filter_status_select');
     const tableRows = document.querySelectorAll('.report-row');
     const mobileCards = document.querySelectorAll('.report-card-item');
     const noMatchBox = document.getElementById('no_filter_match');
@@ -357,20 +487,37 @@ foreach ($reports as $r) {
     const resetBtn = document.getElementById('btn_reset_filter');
 
     let currentType = 'all';
+    let currentSite = 'all';
+    let currentMonth = 'all';
+    let currentStatus = 'all';
     let searchQuery = '';
+
+    const curMonthKey = '<?= date("Y-m") ?>';
 
     function applyFilter() {
       let visibleCount = 0;
 
-      // Filter Desktop Rows
-      tableRows.forEach(function (row) {
-        const rowType = row.getAttribute('data-type');
-        const rowSearch = row.getAttribute('data-search') || '';
+      function matchElement(el) {
+        const rowType = el.getAttribute('data-type') || '';
+        const rowSearch = el.getAttribute('data-search') || '';
+        const rowSite = el.getAttribute('data-site') || '';
+        const rowMonth = el.getAttribute('data-month') || '';
+        const rowAnomaly = el.getAttribute('data-anomaly') || '';
 
         const typeMatch = (currentType === 'all' || rowType === currentType);
         const searchMatch = !searchQuery || rowSearch.includes(searchQuery);
+        const siteMatch = (currentSite === 'all' || rowSite === currentSite);
+        const monthMatch = (currentMonth === 'all') || 
+                           (currentMonth === 'current_month' && rowMonth === curMonthKey) || 
+                           (rowMonth === currentMonth);
+        const statusMatch = (currentStatus === 'all' || rowAnomaly === currentStatus);
 
-        if (typeMatch && searchMatch) {
+        return typeMatch && searchMatch && siteMatch && monthMatch && statusMatch;
+      }
+
+      // Filter Desktop Rows
+      tableRows.forEach(function (row) {
+        if (matchElement(row)) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -381,13 +528,7 @@ foreach ($reports as $r) {
       // Filter Mobile Cards
       let mobileVisibleCount = 0;
       mobileCards.forEach(function (card) {
-        const cardType = card.getAttribute('data-type');
-        const cardSearch = card.getAttribute('data-search') || '';
-
-        const typeMatch = (currentType === 'all' || cardType === currentType);
-        const searchMatch = !searchQuery || cardSearch.includes(searchQuery);
-
-        if (typeMatch && searchMatch) {
+        if (matchElement(card)) {
           card.style.display = '';
           mobileVisibleCount++;
         } else {
@@ -397,7 +538,7 @@ foreach ($reports as $r) {
 
       const totalVisible = Math.max(visibleCount, mobileVisibleCount);
       if (countBadge) {
-        countBadge.textContent = 'Menampilkan ' + totalVisible + ' laporan';
+        countBadge.textContent = 'Menampilkan ' + totalVisible + ' dari <?= $totalReports ?> laporan';
       }
 
       if (noMatchBox) {
@@ -416,12 +557,33 @@ foreach ($reports as $r) {
       });
     }
 
+    if (selectSite) {
+      selectSite.addEventListener('change', function () {
+        currentSite = this.value;
+        applyFilter();
+      });
+    }
+
+    if (selectMonth) {
+      selectMonth.addEventListener('change', function () {
+        currentMonth = this.value;
+        applyFilter();
+      });
+    }
+
+    if (selectStatus) {
+      selectStatus.addEventListener('change', function () {
+        currentStatus = this.value;
+        applyFilter();
+      });
+    }
+
     filterButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         filterButtons.forEach(function (b) {
           b.classList.remove('active');
-          b.style.backgroundColor = '';
-          b.style.color = '';
+          b.style.backgroundColor = 'var(--bg-alt)';
+          b.style.color = 'var(--text-subtle)';
         });
         btn.classList.add('active');
         btn.style.backgroundColor = 'var(--primary)';
@@ -435,8 +597,16 @@ foreach ($reports as $r) {
     if (resetBtn) {
       resetBtn.addEventListener('click', function () {
         if (searchInput) searchInput.value = '';
+        if (selectSite) selectSite.value = 'all';
+        if (selectMonth) selectMonth.value = 'all';
+        if (selectStatus) selectStatus.value = 'all';
+
         searchQuery = '';
         currentType = 'all';
+        currentSite = 'all';
+        currentMonth = 'all';
+        currentStatus = 'all';
+
         filterButtons.forEach(function (b) {
           if (b.getAttribute('data-type') === 'all') {
             b.classList.add('active');
@@ -444,8 +614,8 @@ foreach ($reports as $r) {
             b.style.color = '#ffffff';
           } else {
             b.classList.remove('active');
-            b.style.backgroundColor = '';
-            b.style.color = '';
+            b.style.backgroundColor = 'var(--bg-alt)';
+            b.style.color = 'var(--text-subtle)';
           }
         });
         applyFilter();

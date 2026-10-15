@@ -25,6 +25,19 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
   <link rel="icon" type="image/png" href="assets/img/logo_ias.png?v=3">
+
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('iass_theme');
+        if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -58,21 +71,43 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
       </div>
     </a>
     
-    <nav class="nav-actions web-nav">
-      <a href="./" class="nav-link-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
-        <span>📊</span> Dashboard
-      </a>
-      <a href="reports" class="nav-link-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
-        <span>📋</span> Riwayat Laporan
-      </a>
-      <a href="sites" class="nav-link-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
-        <span>📍</span> Master Site
-      </a>
-      
-      <div class="nav-cta-buttons">
-        <a href="form_indoor" class="btn btn-sm btn-primary-soft" title="Checklist PM Indoor IBC Telkomsel (7 Halaman)">+ PM Indoor</a>
-        <a href="form_outdoor" class="btn btn-sm btn-primary" title="Checklist PM Outdoor Pole / Tower (13 Halaman)">+ PM Outdoor</a>
-      </div>
-    </nav>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button type="button" id="theme_toggle_btn" class="theme-toggle-btn" onclick="toggleIassTheme()" title="Ganti Mode Terang / Gelap" aria-label="Ganti Tema">
+        <span class="theme-icon-light" aria-hidden="true">☀️</span>
+        <span class="theme-icon-dark" aria-hidden="true">🌙</span>
+      </button>
+
+      <script>
+        function toggleIassTheme() {
+          var html = document.documentElement;
+          var cur = html.getAttribute('data-theme') || 'light';
+          var next = (cur === 'dark') ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          if (document.body) {
+            document.body.setAttribute('data-theme', next);
+          }
+          try {
+            localStorage.setItem('iass_theme', next);
+          } catch(e) {}
+        }
+      </script>
+
+      <nav class="nav-actions web-nav">
+        <a href="./" class="nav-link-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
+          <span>📊</span> Dashboard
+        </a>
+        <a href="reports" class="nav-link-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
+          <span>📋</span> Riwayat Laporan
+        </a>
+        <a href="sites" class="nav-link-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
+          <span>📍</span> Master Site
+        </a>
+        
+        <div class="nav-cta-buttons">
+          <a href="form_indoor" class="btn btn-sm btn-primary-soft" title="Checklist PM Indoor IBC Telkomsel (7 Halaman)">+ PM Indoor</a>
+          <a href="form_outdoor" class="btn btn-sm btn-primary" title="Checklist PM Outdoor Pole / Tower (13 Halaman)">+ PM Outdoor</a>
+        </div>
+      </nav>
+    </div>
   </div>
 </header>

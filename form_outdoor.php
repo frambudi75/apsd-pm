@@ -32,6 +32,9 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
       <span id="autosave_status" class="autosave-badge">💾 Auto-Save Siap</span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="saveDraftManual('outdoor')" style="min-height: 40px; font-weight: 600;" title="Simpan draft data checklist & foto ke memori HP sekarang">
+        💾 Simpan Draft
+      </button>
       <button type="button" id="btn_set_all_ok" class="btn btn-secondary btn-sm" style="font-weight: 700; color: var(--status-ok); border-color: var(--status-ok); min-height: 40px;">
         ✓ Set Semua Checklist OK
       </button>
@@ -646,9 +649,11 @@ include __DIR__ . '/includes/header.php';
         <strong style="color: var(--text-main); font-size: 0.95rem;">Siap Memproses Laporan Outdoor?</strong>
         <p style="font-size: 0.8rem; color: var(--text-subtle); margin: 2px 0 0 0;">Pastikan data inspeksi dan dokumentasi foto telah diperiksa.</p>
       </div>
-      <div style="display: flex; gap: 0.75rem;">
-        <a href="./" class="btn btn-secondary">Batal</a>
-        <button type="submit" id="btn_submit_report" class="btn btn-primary" style="background-color: var(--secondary); border-color: var(--secondary); padding: 0.65rem 1.75rem; font-size: 0.95rem;">
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" onclick="saveDraftManual('outdoor')" style="min-height: 44px; display: inline-flex; align-items: center; gap: 6px;">
+          💾 Simpan ke Draft
+        </button>
+        <button type="submit" id="btn_submit_report" class="btn btn-primary" style="background-color: var(--secondary); border-color: var(--secondary); padding: 0.65rem 1.75rem; font-size: 0.95rem; min-height: 44px;">
           Simpan & Buat Laporan PM Outdoor (PDF)
         </button>
       </div>
@@ -659,6 +664,13 @@ include __DIR__ . '/includes/header.php';
 </main>
 
 <script>
+  function saveDraftManual(type) {
+    if (window.DraftManager) {
+      window.DraftManager.saveDraft(type);
+      alert('✅ Draft tersimpan aman di perangkat! Anda dapat melanjutkan pengisian kapan saja.');
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     if (window.DraftManager) {
       window.DraftManager.init('outdoor');

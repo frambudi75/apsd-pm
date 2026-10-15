@@ -241,3 +241,48 @@ function get_outdoor_photo_slots(): array {
         ]
     ];
 }
+
+/**
+ * Analyzes report checklist data and returns finding count and summary
+ */
+function get_report_findings_summary(array $rep): array {
+    $nokCount = 0;
+    $findings = [];
+
+    if (($rep['report_type'] ?? '') === 'indoor' && !empty($rep['indoor_checklist'])) {
+        $chk = is_array($rep['indoor_checklist']) ? $rep['indoor_checklist'] : json_decode($rep['indoor_checklist'], true);
+        if (is_array($chk)) {
+            foreach ($chk as $k => $item) {
+                if (is_array($item) && strtoupper($item['status'] ?? '') === 'NOK') {
+                    $nokCount++;
+                    $findings[] = !empty($item['name']) ? $item['name'] : (string)$k;
+                }
+            }
+        }
+    } elseif (($rep['report_type'] ?? '') === 'outdoor') {
+        $fields = [
+            'grounding_json', 'tower_json', 'lighting_fence_other_json',
+            'structural_json', 'tenant_ac_json', 'tenant_electrical_json', 'pln_function_json'
+        ];
+        foreach ($fields as $f) {
+            if (!empty($rep[$f])) {
+                $chk = is_array($rep[$f]) ? $rep[$f] : json_decode($rep[$f], true);
+                if (is_array($chk)) {
+                    foreach ($chk as $k => $item) {
+                        if (is_array($item) && strtoupper($item['status'] ?? '') === 'NOK') {
+                            $nokCount++;
+                            $findings[] = !empty($item['remarks']) ? $item['remarks'] : (is_string($k) ? ucwords(str_replace('_', ' ', $k)) : 'Temuan');
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return [
+        'has_nok' => ($nokCount > 0),
+        'count' => $nokCount,
+        'summary' => implode(', ', array_slice(array_unique($findings), 0, 3))
+    ];
+}
+

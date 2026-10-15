@@ -137,7 +137,9 @@ try {
 
         // 1. Check if client sent base64 image (from client-side canvas watermark)
         $base64Data = $_POST['photo_base64'][$slotCode] ?? '';
-        if (!$isNa && !empty($base64Data) && strpos($base64Data, 'data:image') === 0) {
+        $isClientWatermarked = ($_POST['photo_watermarked'][$slotCode] ?? '0') === '1';
+
+        if (!$isNa && $isClientWatermarked && !empty($base64Data) && strpos($base64Data, 'data:image') === 0) {
             $parts = explode(',', $base64Data);
             $decoded = base64_decode($parts[1] ?? '');
             if (!empty($decoded)) {
@@ -159,8 +161,18 @@ try {
                 if (compress_and_save_image($tmpName, $targetFile, 1600, 85, $watermarkInfo)) {
                     $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
                 } elseif (move_uploaded_file($tmpName, $targetFile)) {
+                    compress_and_save_image($targetFile, $targetFile, 1600, 85, $watermarkInfo);
                     $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
                 }
+            }
+        } elseif (!$imagePath && !$isNa && !empty($base64Data) && strpos($base64Data, 'data:image') === 0) {
+            // Client sent unwatermarked base64 fallback: burn watermark on server
+            $parts = explode(',', $base64Data);
+            $decoded = base64_decode($parts[1] ?? '');
+            if (!empty($decoded)) {
+                file_put_contents($targetFile, $decoded);
+                compress_and_save_image($targetFile, $targetFile, 1600, 85, $watermarkInfo);
+                $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
             }
         }
 

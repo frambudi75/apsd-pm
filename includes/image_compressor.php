@@ -7,6 +7,7 @@
  */
 
 function compress_and_save_image(string $sourcePath, string $destPath, int $maxDimension = 1600, int $quality = 85, ?array $watermark = null): bool {
+    @ini_set('memory_limit', '512M');
     if (!file_exists($sourcePath)) {
         return false;
     }

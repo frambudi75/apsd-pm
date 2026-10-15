@@ -191,16 +191,17 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.restore();
   }
 
-  function assignFileToSlot(slotCode, file, dataUrl) {
+  function assignFileToSlot(slotCode, file, dataUrl, isWatermarked = false) {
     const fileInput = document.getElementById('file_' + slotCode);
     const cameraInput = document.getElementById('camera_' + slotCode);
     const base64Input = document.getElementById('base64_' + slotCode);
+    const watermarkedInput = document.getElementById('watermarked_' + slotCode);
     const previewImg = document.getElementById('preview_img_' + slotCode);
     const naOverlay = document.getElementById('na_overlay_' + slotCode);
     const placeholder = document.getElementById('placeholder_' + slotCode);
     const isNaCheckbox = document.getElementById('isna_' + slotCode);
 
-    if (previewImg) {
+    if (previewImg && dataUrl) {
       previewImg.src = dataUrl;
       previewImg.style.display = 'block';
     }
@@ -208,12 +209,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (placeholder) placeholder.style.display = 'none';
     if (isNaCheckbox) isNaCheckbox.checked = false;
 
-    // Save base64 string to hidden input (works on 100% of mobile browsers)
+    // Only store Base64 if it has been watermarked
     if (base64Input) {
-      base64Input.value = dataUrl;
+      base64Input.value = isWatermarked ? (dataUrl || '') : '';
+    }
+    if (watermarkedInput) {
+      watermarkedInput.value = isWatermarked ? '1' : '0';
     }
 
-    if (fileInput) {
+    if (fileInput && file) {
       try {
         const dt = new DataTransfer();
         dt.items.add(file);
@@ -224,111 +228,121 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  async function compressAndWatermarkImage(file, slotCode, callback) {
+  function compressAndWatermarkImage(file, slotCode, callback) {
     if (!file) {
-      if (callback) callback(file, null);
+      if (callback) callback(file, null, false);
       return;
     }
 
-    // Flexible image detection (Android camera files often have empty file.type or generic octet-stream)
     const fileName = file.name || '';
-    const isImage = (file.type && file.type.startsWith('image/')) ||
-                    (/\.(jpe?g|png|webp|bmp|heic|heif|gif)$/i.test(fileName)) ||
-                    (!file.type && file.size > 0);
-
-    if (!isImage) {
-      if (callback) callback(file, null);
-      return;
+    let objUrl = null;
+    try {
+      objUrl = URL.createObjectURL(file);
+    } catch (e) {
+      console.warn('createObjectURL failed:', e);
     }
 
-    try {
-      let sourceWidth = 0;
-      let sourceHeight = 0;
-      let drawSource = null;
+    const img = new Image();
 
-      // Primary engine: modern createImageBitmap with hardware EXIF orientation handling
-      if (window.createImageBitmap) {
-        try {
-          drawSource = await createImageBitmap(file, { imageOrientation: 'from-image' });
-          sourceWidth = drawSource.width;
-          sourceHeight = drawSource.height;
-        } catch (bErr) {
-          console.warn('createImageBitmap fallback:', bErr);
-          drawSource = null;
+    function drawAndStamp(imgSource, naturalW, naturalH) {
+      try {
+        const maxDim = 1600;
+        let targetW = naturalW;
+        let targetH = naturalH;
+        if (targetW > maxDim || targetH > maxDim) {
+          if (targetW > targetH) {
+            targetH = Math.round((targetH / targetW) * maxDim);
+            targetW = maxDim;
+          } else {
+            targetW = Math.round((targetW / targetH) * maxDim);
+            targetH = maxDim;
+          }
         }
-      }
 
-      // Secondary engine: HTMLImageElement via lightweight ObjectURL
-      if (!drawSource) {
-        const objUrl = URL.createObjectURL(file);
-        const img = new Image();
-        await new Promise((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = (e) => reject(e);
-          img.src = objUrl;
-        });
-        URL.revokeObjectURL(objUrl);
-        drawSource = img;
-        sourceWidth = img.naturalWidth || img.width;
-        sourceHeight = img.naturalHeight || img.height;
-      }
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgSource, 0, 0, targetW, targetH);
 
-      if (!sourceWidth || !sourceHeight) {
-        throw new Error('Dimensi gambar tidak valid');
-      }
+        // Revoke ObjectURL after canvas draw
+        if (objUrl) {
+          URL.revokeObjectURL(objUrl);
+          objUrl = null;
+        }
 
-      // Scale down proportionally to max 1600px
-      const maxDim = 1600;
-      let targetW = sourceWidth;
-      let targetH = sourceHeight;
-      if (targetW > maxDim || targetH > maxDim) {
-        if (targetW > targetH) {
-          targetH = Math.round((targetH / targetW) * maxDim);
-          targetW = maxDim;
+        // Stamp official inspection watermark
+        stampWatermark(canvas, slotCode);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        if (canvas.toBlob) {
+          canvas.toBlob(function (blob) {
+            if (blob) {
+              const outName = (fileName ? fileName.replace(/\.[^/.]+$/, "") : ('photo_' + slotCode)) + '.jpg';
+              const stampedFile = new File([blob], outName, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              callback(stampedFile, dataUrl, true);
+            } else {
+              callback(file, dataUrl, true);
+            }
+          }, 'image/jpeg', 0.85);
         } else {
-          targetW = Math.round((targetW / targetH) * maxDim);
-          targetH = maxDim;
+          callback(file, dataUrl, true);
         }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(drawSource, 0, 0, targetW, targetH);
-
-      // Clean up bitmap memory if available
-      if (drawSource && typeof drawSource.close === 'function') {
-        drawSource.close();
-      }
-
-      // Stamp official inspection watermark
-      stampWatermark(canvas, slotCode);
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-      canvas.toBlob(function (blob) {
-        if (blob) {
-          const outName = (fileName ? fileName.replace(/\.[^/.]+$/, "") : ('photo_' + slotCode)) + '.jpg';
-          const stampedFile = new File([blob], outName, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          });
-          callback(stampedFile, dataUrl);
-        } else {
-          callback(file, dataUrl);
+      } catch (err) {
+        console.error('drawAndStamp error:', err);
+        if (objUrl) {
+          URL.revokeObjectURL(objUrl);
+          objUrl = null;
         }
-      }, 'image/jpeg', 0.85);
+        callback(file, null, false);
+      }
+    }
 
-    } catch (err) {
-      console.error('Gagal kompresi watermark client:', err);
-      // Fallback via FileReader
+    if (objUrl) {
+      img.onload = function () {
+        drawAndStamp(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+      };
+      img.onerror = function () {
+        if (objUrl) {
+          URL.revokeObjectURL(objUrl);
+          objUrl = null;
+        }
+        // Fallback to FileReader
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const fallbackImg = new Image();
+          fallbackImg.onload = function () {
+            drawAndStamp(fallbackImg, fallbackImg.naturalWidth || fallbackImg.width, fallbackImg.naturalHeight || fallbackImg.height);
+          };
+          fallbackImg.onerror = function () {
+            callback(file, null, false);
+          };
+          fallbackImg.src = e.target.result;
+        };
+        reader.onerror = function () {
+          callback(file, null, false);
+        };
+        reader.readAsDataURL(file);
+      };
+      img.src = objUrl;
+    } else {
       const reader = new FileReader();
       reader.onload = function (e) {
-        callback(file, e.target.result);
+        const fallbackImg = new Image();
+        fallbackImg.onload = function () {
+          drawAndStamp(fallbackImg, fallbackImg.naturalWidth || fallbackImg.width, fallbackImg.naturalHeight || fallbackImg.height);
+        };
+        fallbackImg.onerror = function () {
+          callback(file, null, false);
+        };
+        fallbackImg.src = e.target.result;
       };
       reader.onerror = function () {
-        callback(file, null);
+        callback(file, null, false);
       };
       reader.readAsDataURL(file);
     }
@@ -517,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (blob) {
           const fileName = 'photo_' + activeSlotCode + '_' + Date.now() + '.jpg';
           const file = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
-          assignFileToSlot(activeSlotCode, file, canvas.toDataURL('image/jpeg', 0.85));
+          assignFileToSlot(activeSlotCode, file, canvas.toDataURL('image/jpeg', 0.85), true);
         }
         closeLiveCamera();
       }, 'image/jpeg', 0.85);
@@ -537,8 +551,8 @@ document.addEventListener('DOMContentLoaded', function () {
           placeholder.innerHTML = '<span style="font-size: 0.8rem; font-weight: 700; color: var(--primary, #008080); padding: 8px;">⏳ Memproses Watermark...</span>';
           placeholder.style.display = 'flex';
         }
-        compressAndWatermarkImage(rawFile, slotCode, function (stampedFile, dataUrl) {
-          assignFileToSlot(slotCode, stampedFile, dataUrl);
+        compressAndWatermarkImage(rawFile, slotCode, function (stampedFile, dataUrl, isWatermarked) {
+          assignFileToSlot(slotCode, stampedFile, dataUrl, isWatermarked);
         });
       }
     });

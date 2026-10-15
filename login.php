@@ -71,6 +71,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
       } catch(e) {}
     })();
+
+    // Smart Anti-Inspect & DevTools Protection
+    (function() {
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && e.target.closest('input, textarea, [contenteditable="true"]')) {
+          return true;
+        }
+        e.preventDefault();
+        return false;
+      }, false);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || e.keyCode === 123) {
+          e.preventDefault();
+          return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].indexOf(e.key) !== -1) {
+          e.preventDefault();
+          return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
+          e.preventDefault();
+          return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'S' || e.key === 's') && !e.target.closest('input, textarea')) {
+          e.preventDefault();
+          return false;
+        }
+      }, false);
+
+      try {
+        console.log('%c[KEAMANAN SISTEM]', 'color: #e11424; font-size: 16px; font-weight: bold;');
+        console.log('%cAplikasi Sistem PM IASS SBU ICT KNO dilindungi oleh sistem keamanan client-server.', 'font-size: 12px; color: #64748b;');
+      } catch(e) {}
+    })();
   </script>
 
   <style>

@@ -42,6 +42,48 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
         }
       } catch(e) {}
     })();
+
+    // Smart Anti-Inspect & DevTools Protection
+    (function() {
+      // 1. Disable Right Click except on form inputs/textareas
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && e.target.closest('input, textarea, [contenteditable="true"]')) {
+          return true;
+        }
+        e.preventDefault();
+        return false;
+      }, false);
+
+      // 2. Disable DevTools and Source Shortcuts
+      document.addEventListener('keydown', function(e) {
+        // F12
+        if (e.key === 'F12' || e.keyCode === 123) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+Shift+C (Element selector)
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].indexOf(e.key) !== -1) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+U (View Source)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+S (Save webpage outside form)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'S' || e.key === 's') && !e.target.closest('input, textarea')) {
+          e.preventDefault();
+          return false;
+        }
+      }, false);
+
+      // Security Console Notice
+      try {
+        console.log('%c[KEAMANAN SISTEM]', 'color: #e11424; font-size: 16px; font-weight: bold;');
+        console.log('%cAplikasi Sistem PM IASS SBU ICT KNO dilindungi oleh sistem keamanan client-server.', 'font-size: 12px; color: #64748b;');
+      } catch(e) {}
+    })();
   </script>
 </head>
 <body>

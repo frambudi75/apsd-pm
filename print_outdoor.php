@@ -119,6 +119,30 @@ $totalPages = 5 + $totalPhotoPages;
       font-weight: bold;
     }
   </style>
+  <script>
+    (function() {
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && e.target.closest('input, textarea, [contenteditable="true"]')) return true;
+        e.preventDefault();
+        return false;
+      }, false);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || e.keyCode === 123) {
+          e.preventDefault();
+          return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].indexOf(e.key) !== -1) {
+          e.preventDefault();
+          return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u')) {
+          e.preventDefault();
+          return false;
+        }
+      }, false);
+    })();
+  </script>
 </head>
 <body class="preview-mode">
 

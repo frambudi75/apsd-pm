@@ -547,15 +547,16 @@ include __DIR__ . '/includes/header.php';
 
                   <!-- Dual Action Buttons: Live Camera & Gallery -->
                   <div class="photo-btn-row">
-                    <button type="button" class="btn btn-primary btn-open-camera" data-slot="<?= $slotCode ?>" style="background-color: var(--secondary); border-color: var(--secondary);">
+                    <label for="camera_<?= $slotCode ?>" class="btn btn-primary btn-open-camera" data-slot="<?= $slotCode ?>" style="background-color: var(--secondary); border-color: var(--secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 40px;">
                       📷 Kamera Live
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-pick-file" data-slot="<?= $slotCode ?>">
+                    </label>
+                    <label for="file_<?= $slotCode ?>" class="btn btn-secondary btn-pick-file" data-slot="<?= $slotCode ?>" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 40px;">
                       📁 Galeri
-                    </button>
+                    </label>
                   </div>
 
-                  <input type="file" id="file_<?= $slotCode ?>" name="photo_files[<?= $slotCode ?>]" accept="image/*" class="photo-file-input" data-slot="<?= $slotCode ?>" style="display: none;">
+                  <input type="file" id="camera_<?= $slotCode ?>" name="camera_files[<?= $slotCode ?>]" accept="image/*" capture="environment" class="photo-file-input photo-hidden-input" data-slot="<?= $slotCode ?>">
+                  <input type="file" id="file_<?= $slotCode ?>" name="photo_files[<?= $slotCode ?>]" accept="image/*" class="photo-file-input photo-hidden-input" data-slot="<?= $slotCode ?>">
 
                   <?php if ($slot['has_measurement']): ?>
                     <div class="form-group" style="margin-top: 0.35rem;">

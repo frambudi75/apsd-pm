@@ -82,7 +82,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   </div>
 </div>
 
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"></script>
 <script>
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {

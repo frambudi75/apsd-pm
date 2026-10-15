@@ -151,10 +151,14 @@ try {
         $imagePath = null;
         $pageGroup = substr($slotCode, 0, 1);
 
-        // Check file upload
-        if (!$isNa && isset($_FILES['photo_files']['name'][$slotCode]) && $_FILES['photo_files']['error'][$slotCode] === UPLOAD_ERR_OK) {
-            $tmpName = $_FILES['photo_files']['tmp_name'][$slotCode];
-            $ext = strtolower(pathinfo($_FILES['photo_files']['name'][$slotCode], PATHINFO_EXTENSION));
+        // Check file upload (from gallery input or native camera input)
+        $hasPhoto = isset($_FILES['photo_files']['name'][$slotCode]) && $_FILES['photo_files']['error'][$slotCode] === UPLOAD_ERR_OK;
+        $hasCamera = isset($_FILES['camera_files']['name'][$slotCode]) && $_FILES['camera_files']['error'][$slotCode] === UPLOAD_ERR_OK;
+
+        if (!$isNa && ($hasPhoto || $hasCamera)) {
+            $fileSource = $hasPhoto ? $_FILES['photo_files'] : $_FILES['camera_files'];
+            $tmpName = $fileSource['tmp_name'][$slotCode];
+            $ext = strtolower(pathinfo($fileSource['name'][$slotCode], PATHINFO_EXTENSION));
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
                 $targetFile = "{$uploadDir}/photo_{$slotCode}.jpg";
                 if (compress_and_save_image($tmpName, $targetFile, 1600, 82)) {

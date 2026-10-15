@@ -23,7 +23,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   <meta name="apple-mobile-web-app-title" content="APSD PM">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
   
-  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
   <link rel="icon" type="image/png" href="assets/img/logo_ias.png">
 </head>
 <body>

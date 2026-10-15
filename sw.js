@@ -3,7 +3,7 @@
  * PT Angkasa Pura Sarana Digital
  */
 
-const CACHE_NAME = 'apsd-pm-v3';
+const CACHE_NAME = 'apsd-pm-v4';
 const STATIC_ASSETS = [
   './',
   'index.php',

@@ -53,20 +53,24 @@ document.addEventListener('DOMContentLoaded', function () {
   let liveGpsCoords = null;
 
   function initGeolocation() {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          liveGpsCoords = {
-            lat: pos.coords.latitude.toFixed(6),
-            long: pos.coords.longitude.toFixed(6)
-          };
-          updateHudText();
-        },
-        function () {
-          // Fallback to form coordinates handled in getActiveCoords
-        },
-        { enableHighAccuracy: true, timeout: 6000 }
-      );
+    try {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            liveGpsCoords = {
+              lat: pos.coords.latitude.toFixed(6),
+              long: pos.coords.longitude.toFixed(6)
+            };
+            updateHudText();
+          },
+          function (err) {
+            console.warn('Geolocation info:', err.message);
+          },
+          { enableHighAccuracy: true, timeout: 6000 }
+        );
+      }
+    } catch (err) {
+      console.warn('Geolocation exception:', err);
     }
   }
   initGeolocation();
@@ -268,6 +272,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  const isWebcamSupported = !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
   async function openLiveCamera(slotCode) {
     activeSlotCode = slotCode;
     const modal = document.getElementById('camera_modal');
@@ -279,7 +285,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (hudInterval) clearInterval(hudInterval);
     hudInterval = setInterval(updateHudText, 1000);
 
-    await startCameraStream(currentFacingMode);
+    const started = await startCameraStream(currentFacingMode);
+    if (!started) {
+      closeLiveCamera();
+      // Fallback directly to native device camera or file input
+      const camInp = document.getElementById('camera_' + slotCode);
+      const fileInp = document.getElementById('file_' + slotCode);
+      if (camInp) camInp.click();
+      else if (fileInp) fileInp.click();
+    }
   }
 
   function closeLiveCamera() {
@@ -300,10 +314,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
     }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return false;
+    }
     try {
       const constraints = {
         video: {
-          facingMode: facingMode,
+          facingMode: { ideal: facingMode },
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         },
@@ -312,31 +329,32 @@ document.addEventListener('DOMContentLoaded', function () {
       cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
       if (video) {
         video.srcObject = cameraStream;
-        video.play();
+        await video.play();
       }
+      return true;
     } catch (err) {
-      console.warn('getUserMedia unavailable, falling back to file picker:', err);
-      closeLiveCamera();
-      const fileInput = document.getElementById('file_' + activeSlotCode);
-      if (fileInput) fileInput.click();
+      console.warn('getUserMedia unavailable, falling back:', err);
+      return false;
     }
   }
 
   // Bind Camera & Gallery Trigger Buttons
   document.querySelectorAll('.btn-open-camera').forEach(btn => {
     btn.addEventListener('click', function (e) {
-      e.stopPropagation();
       const slot = this.getAttribute('data-slot');
-      openLiveCamera(slot);
+      if (isWebcamSupported) {
+        e.preventDefault();
+        openLiveCamera(slot);
+      }
+      // If WebRTC is unavailable (e.g. HTTP context), native <label for="camera_..."> opens device camera directly
     });
   });
 
   document.querySelectorAll('.btn-pick-file').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
+    btn.addEventListener('click', function () {
       const slot = this.getAttribute('data-slot');
       const fileInp = document.getElementById('file_' + slot);
-      if (fileInp) fileInp.click();
+      if (fileInp && !this.htmlFor) fileInp.click();
     });
   });
 
@@ -344,9 +362,30 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.photo-preview-box').forEach(box => {
     box.addEventListener('click', function () {
       const slot = this.getAttribute('data-slot');
-      if (slot) openLiveCamera(slot);
+      if (!slot) return;
+      if (isWebcamSupported) {
+        openLiveCamera(slot);
+      } else {
+        const camInp = document.getElementById('camera_' + slot);
+        const fileInp = document.getElementById('file_' + slot);
+        if (camInp) camInp.click();
+        else if (fileInp) fileInp.click();
+      }
     });
   });
+
+  // Global helper fallback
+  window.triggerPhotoChoice = function (slotCode) {
+    if (!slotCode) return;
+    if (isWebcamSupported) {
+      openLiveCamera(slotCode);
+    } else {
+      const camInp = document.getElementById('camera_' + slotCode);
+      const fileInp = document.getElementById('file_' + slotCode);
+      if (camInp) camInp.click();
+      else if (fileInp) fileInp.click();
+    }
+  };
 
   // Camera modal controls
   const btnCloseCam = document.getElementById('btn_close_camera');

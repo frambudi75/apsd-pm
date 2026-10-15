@@ -255,10 +255,13 @@ foreach ($reports as $r) {
                   </td>
                   <td style="text-align: right;">
                     <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
-                      <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary btn-sm" title="Buka Pratinjau & Cetak PDF Resmi">
-                        Cetak PDF
+                      <a href="<?= $printUrl ?>&compact=1" target="_blank" class="btn btn-secondary btn-sm" title="Cetak Ringkas (Hanya Foto Terisi, lewati N/A)">
+                        🖨️ Cetak Ringkas
                       </a>
-                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary btn-sm" title="Unduh File PDF">
+                      <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary btn-sm" title="Cetak Dokumen Lengkap (Semua Halaman Slot)">
+                        Lengkap
+                      </a>
+                      <a href="download_pdf.php?id=<?= $rep['id'] ?>&compact=1" class="btn btn-primary btn-sm" title="Unduh File PDF Ringkas">
                         Download
                       </a>
                       <a href="api/delete_report.php?id=<?= $rep['id'] ?>&return=reports" onclick="return confirm('Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.');" class="btn btn-danger btn-sm" title="Hapus Laporan">
@@ -324,13 +327,16 @@ foreach ($reports as $r) {
               </div>
 
               <div class="mobile-card-actions">
-                <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary mobile-act-btn">
+                <a href="<?= $printUrl ?>&compact=1" target="_blank" class="btn btn-secondary mobile-act-btn" title="Cetak Ringkas (Hanya Foto Terisi)">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                  Lihat / Cetak
+                  Cetak (Ringkas)
                 </a>
-                <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary mobile-act-btn">
+                <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary mobile-act-btn" style="flex: 0 0 auto; padding: 0.5rem 0.75rem;" title="Dokumen Lengkap">
+                  Lengkap
+                </a>
+                <a href="download_pdf.php?id=<?= $rep['id'] ?>&compact=1" class="btn btn-primary mobile-act-btn" title="Download PDF Ringkas">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Download PDF
+                  PDF
                 </a>
               </div>
             </div>

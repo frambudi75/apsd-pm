@@ -3,7 +3,7 @@
  * PT Angkasa Pura Sarana Digital
  */
 
-const CACHE_NAME = 'apsd-pm-v7';
+const CACHE_NAME = 'apsd-pm-v8';
 const STATIC_ASSETS = [
   './',
   'index.php',
@@ -13,6 +13,10 @@ const STATIC_ASSETS = [
   'sites.php',
   'manifest.json',
   'assets/css/app.css',
+  'assets/css/print.css',
+  'assets/js/qrcode.min.js',
+  'assets/js/draft_manager.js',
+  'assets/js/qr_scanner.js',
   'assets/js/app.js',
   'assets/img/logo_ias.png',
   'assets/img/logo_telkomsel.png',

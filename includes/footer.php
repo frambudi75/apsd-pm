@@ -82,7 +82,40 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   </div>
 </div>
 
-<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v7"></script>
+<!-- QR Code Scanner Modal (Live Viewfinder & File Fallback) -->
+<div id="qr_scanner_modal" class="qr-modal-overlay no-print" style="display: none;">
+  <div class="qr-scanner-card">
+    <div class="qr-scanner-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.25rem;">📷</span>
+        <h4>Pindai QR Code Tiang / Shelter</h4>
+      </div>
+      <button type="button" id="btn_close_qr" style="color: #ffffff; background: none; border: none; font-size: 1.75rem; cursor: pointer; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;">&times;</button>
+    </div>
+    
+    <div class="qr-viewfinder-container">
+      <video id="qr_video" autoplay playsinline muted></video>
+      <div class="qr-target-box"></div>
+    </div>
+    
+    <div class="qr-scanner-footer">
+      <p id="qr_scan_status" style="color: #94a3b8; font-size: 0.85rem; margin: 0;">
+        Arahkan kamera ke stiker QR Code pada site untuk memilih otomatis...
+      </p>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+        <label for="qr_fallback_file" class="btn btn-secondary btn-sm" style="cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem;">
+          📁 Unggah Foto QR
+        </label>
+        <input type="file" id="qr_fallback_file" accept="image/*" style="display: none;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/qrcode.min.js"></script>
+<script src="assets/js/draft_manager.js?v=<?= filemtime(__DIR__ . '/../assets/js/draft_manager.js') ?>"></script>
+<script src="assets/js/qr_scanner.js?v=<?= filemtime(__DIR__ . '/../assets/js/qr_scanner.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v8"></script>
 <script>
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {

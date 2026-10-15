@@ -229,7 +229,8 @@ try {
     AppRedis::del('reports:all');
 
     // Redirect to the outdoor print/preview page
-    header("Location: ../print_outdoor.php?id={$report_id}&new=1");
+    $compactParam = (!empty($_POST['compact_pdf'])) ? '&compact=1' : '';
+    header("Location: ../print_outdoor.php?id={$report_id}&new=1{$compactParam}");
     exit;
 
 } catch (Exception $e) {

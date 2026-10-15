@@ -52,9 +52,11 @@ if (!is_dir($tempDir)) {
 $pdfFilename = ($isIndoor ? 'PM_Indoor_' : 'PM_Outdoor_') . preg_replace('/[^A-Za-z0-9_\-]/', '_', $report['site_name'] ?: 'Site') . '_' . date('Ymd_His', strtotime($report['report_date'])) . '.pdf';
 $pdfPath = $tempDir . '/' . $pdfFilename;
 
+$isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
+
 // Construct local URL
 $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1';
-$url = "http://{$host}/apsd/{$printFile}?id={$report_id}";
+$url = "http://{$host}/apsd/{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : '');
 
 // Execute headless print-to-pdf command
 $cmd = sprintf(

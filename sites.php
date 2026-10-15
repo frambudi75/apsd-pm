@@ -207,9 +207,21 @@ include __DIR__ . '/includes/header.php';
                 <?= htmlspecialchars($s['latitude'] ?: '-') ?>, <?= htmlspecialchars($s['longitude'] ?: '-') ?>
               </td>
               <td style="text-align: right;">
-                <a href="sites.php?delete=<?= $s['id'] ?>" onclick="return confirm('Hapus site ini?');" class="btn btn-danger btn-sm">
-                  Hapus
-                </a>
+                <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                  <button type="button" 
+                    class="btn btn-secondary btn-sm btn-print-sticker"
+                    data-name="<?= htmlspecialchars($s['site_name']) ?>"
+                    data-code="<?= htmlspecialchars($s['site_id_str']) ?>"
+                    data-location="<?= htmlspecialchars($s['location_detail'] ?: $s['region']) ?>"
+                    data-coords="<?= htmlspecialchars($s['latitude'] . ', ' . $s['longitude']) ?>"
+                    data-type="<?= htmlspecialchars($s['site_type'] . ' - ' . $s['tower_type']) ?>"
+                    title="Cetak Stiker QR Code untuk Tiang / Shelter">
+                    🏷️ Stiker QR
+                  </button>
+                  <a href="sites.php?delete=<?= $s['id'] ?>" onclick="return confirm('Hapus site ini?');" class="btn btn-danger btn-sm">
+                    Hapus
+                  </a>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -219,5 +231,100 @@ include __DIR__ . '/includes/header.php';
   </div>
 
 </main>
+
+<!-- Modal Cetak Stiker QR Code -->
+<div id="sticker_modal" class="qr-modal-overlay no-print" style="display: none;">
+  <div class="qr-scanner-card" style="max-width: 500px; background: #ffffff; color: #000000;">
+    <div class="qr-scanner-header" style="background: var(--bg-alt); border-bottom: 1px solid var(--border);">
+      <h4 style="color: var(--text-main); font-size: 1rem; margin: 0; font-weight: 700;">Pratinjau Stiker QR Code Site</h4>
+      <button type="button" id="btn_close_sticker" style="color: var(--text-main); background: none; border: none; font-size: 1.5rem; cursor: pointer; min-width: 44px; min-height: 44px;">&times;</button>
+    </div>
+    
+    <div style="padding: 1.5rem; background: #f8fafc; display: flex; justify-content: center;">
+      <!-- Area yang dicetak (80mm x 50mm) -->
+      <div id="qr_print_area" class="sticker-label-card">
+        <div class="sticker-header">
+          <div class="brand">PT ANGKASA PURA SARANA DIGITAL</div>
+          <div class="sub">BANDARA INTERNASIONAL KUALANAMU</div>
+        </div>
+        <div class="sticker-body">
+          <div class="sticker-meta">
+            <div class="sticker-meta-title" id="sticker_site_name">Bandara Kualanamu Pole 2</div>
+            <div><strong>ID:</strong> <span id="sticker_site_code">APSD-DSER-078-08</span></div>
+            <div><strong>Lokasi:</strong> <span id="sticker_location">Server Domestik</span></div>
+            <div><strong>GPS:</strong> <span id="sticker_coords">3.618278, 98.861139</span></div>
+            <div><strong>Tipe:</strong> <span id="sticker_type">Green Field</span></div>
+          </div>
+          <div class="sticker-qr" id="sticker_qr_container"></div>
+        </div>
+        <div class="sticker-footer">
+          Pindai QR ini pada Formulir PM untuk Identifikasi & Pengisian Otomatis
+        </div>
+      </div>
+    </div>
+    
+    <div style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" id="btn_dismiss_sticker" class="btn btn-secondary">Tutup</button>
+      <button type="button" id="btn_print_sticker_action" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+        🖨️ Cetak Stiker (80x50mm)
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modal = document.getElementById('sticker_modal');
+  const btnClose = document.getElementById('btn_close_sticker');
+  const btnDismiss = document.getElementById('btn_dismiss_sticker');
+  const btnPrint = document.getElementById('btn_print_sticker_action');
+
+  function closeModal() {
+    if (modal) modal.style.display = 'none';
+    document.body.classList.remove('printing-sticker');
+  }
+
+  if (btnClose) btnClose.onclick = closeModal;
+  if (btnDismiss) btnDismiss.onclick = closeModal;
+
+  document.querySelectorAll('.btn-print-sticker').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const name = this.getAttribute('data-name');
+      const code = this.getAttribute('data-code');
+      const loc = this.getAttribute('data-location');
+      const coords = this.getAttribute('data-coords');
+      const type = this.getAttribute('data-type');
+
+      document.getElementById('sticker_site_name').innerText = name || 'Site APSD';
+      document.getElementById('sticker_site_code').innerText = code || '-';
+      document.getElementById('sticker_location').innerText = loc || '-';
+      document.getElementById('sticker_coords').innerText = coords || '-';
+      document.getElementById('sticker_type').innerText = type || '-';
+
+      const qrContainer = document.getElementById('sticker_qr_container');
+      qrContainer.innerHTML = '';
+      
+      const qrPayload = code || name;
+      new QRCode(qrContainer, {
+        text: qrPayload,
+        width: 120,
+        height: 120
+      });
+
+      if (modal) modal.style.display = 'flex';
+    });
+  });
+
+  if (btnPrint) {
+    btnPrint.addEventListener('click', function () {
+      document.body.classList.add('printing-sticker');
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('printing-sticker');
+      }, 1000);
+    });
+  }
+});
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

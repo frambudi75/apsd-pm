@@ -24,21 +24,42 @@ include __DIR__ . '/includes/header.php';
     <a href="#sec_submit" class="quick-jump-chip">4. Simpan Laporan</a>
   </div>
 
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
     <div>
       <span style="font-size: 0.8rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Modul PM Outdoor</span>
       <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-main);">Checklist PM Mechanical Electrical - Pole & Site (13 Halaman)</h2>
       <p style="color: var(--text-subtle); font-size: 0.9rem;">Inspeksi tiang pole, grounding, struktur, pagar, kelistrikan PLN/genset, dan 48 slot foto dokumentasi.</p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-      <button type="button" id="btn_set_all_ok" class="btn btn-secondary btn-sm" style="font-weight: 700; color: var(--status-ok); border-color: var(--status-ok);">
+    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+      <span id="autosave_status" class="autosave-badge">💾 Auto-Save Siap</span>
+      <button type="button" id="btn_set_all_ok" class="btn btn-secondary btn-sm" style="font-weight: 700; color: var(--status-ok); border-color: var(--status-ok); min-height: 40px;">
         ✓ Set Semua Checklist OK
       </button>
-      <a href="index.php" class="btn btn-secondary btn-sm">&larr; Batal / Kembali</a>
+      <a href="index.php" class="btn btn-secondary btn-sm" style="min-height: 40px; display: inline-flex; align-items: center;">&larr; Batal / Kembali</a>
+    </div>
+  </div>
+
+  <!-- Offline Draft Restore Banner -->
+  <div id="draft_restore_banner" class="draft-banner no-print" style="display: none;">
+    <div class="draft-banner-info">
+      <span style="font-size: 1.4rem;">💾</span>
+      <div>
+        <strong>Ditemukan Draf Tersimpan di HP</strong>
+        <p id="draft_banner_time">Tersimpan otomatis dari sesi sebelumnya. Ingin memulihkan data inspeksi?</p>
+      </div>
+    </div>
+    <div class="draft-banner-actions">
+      <button type="button" id="btn_restore_draft" class="btn btn-primary btn-sm" style="min-height: 44px; font-weight: 700; padding: 0.4rem 0.9rem;">
+        🔄 Pulihkan Draft
+      </button>
+      <button type="button" id="btn_discard_draft" class="btn btn-secondary btn-sm" style="min-height: 44px; padding: 0.4rem 0.9rem;">
+        🗑️ Buang
+      </button>
     </div>
   </div>
 
   <form id="pm_report_form" action="api/save_outdoor.php" method="POST" enctype="multipart/form-data">
+    <input type="hidden" id="report_type_hidden" value="outdoor">
 
     <!-- Section 1: Informasi Cover Site -->
     <div class="card" id="sec_admin">
@@ -49,8 +70,9 @@ include __DIR__ . '/includes/header.php';
         
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <label class="form-label" style="color: var(--secondary); font-size: 0.9rem;">Pilih Master Site (Otomatis Isi Data)</label>
-          <select id="site_id_select" name="site_id" class="form-control" style="font-weight: 600;">
-            <option value="">-- Pilih Site Tersimpan atau Ketik Manual di Bawah --</option>
+          <div style="display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap;">
+            <select id="site_id_select" name="site_id" class="form-control" style="flex: 1; min-width: 240px; font-weight: 600;">
+              <option value="">-- Pilih Site Tersimpan atau Ketik Manual di Bawah --</option>
             <?php foreach ($sites as $s): ?>
               <option value="<?= $s['id'] ?>"
                 data-name="<?= htmlspecialchars($s['site_name']) ?>"
@@ -69,7 +91,11 @@ include __DIR__ . '/includes/header.php';
                 <?= htmlspecialchars($s['site_name']) ?> (<?= htmlspecialchars($s['site_id_str'] ?: $s['region']) ?>)
               </option>
             <?php endforeach; ?>
-          </select>
+            </select>
+            <button type="button" id="btn_scan_qr" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; min-height: 44px; padding: 0.5rem 1rem;">
+              📷 Scan QR Site
+            </button>
+          </div>
         </div>
 
         <div class="form-grid" style="margin-bottom: 1rem;">
@@ -496,6 +522,29 @@ include __DIR__ . '/includes/header.php';
       </div>
       <div class="card-body">
 
+        <!-- Photo Filter & Group Jump Toolbar -->
+        <div class="photo-filter-toolbar no-print">
+          <div class="photo-filter-tabs">
+            <button type="button" class="btn-photo-filter active" data-filter="all">Semua Slot (<span id="count_all_slots">48</span>)</button>
+            <button type="button" class="btn-photo-filter" data-filter="filled">📸 Hanya Terisi (<span id="count_filled_slots">0</span>)</button>
+            <button type="button" class="btn-photo-filter" data-filter="empty">⏳ Belum Terisi (<span id="count_empty_slots">48</span>)</button>
+          </div>
+          <div class="photo-jump-group">
+            <label for="jump_photo_group" style="font-size: 0.8rem; font-weight: 600; color: var(--text-subtle);">Lompat:</label>
+            <select id="jump_photo_group" class="form-control" style="font-size: 0.825rem; padding: 0.35rem 0.6rem; min-height: 40px; width: auto;">
+              <option value="">-- Ke Halaman Foto --</option>
+              <option value="grp_A">Halaman 6 (Grup A)</option>
+              <option value="grp_B">Halaman 7 (Grup B)</option>
+              <option value="grp_C">Halaman 8 (Grup C)</option>
+              <option value="grp_D">Halaman 9 (Grup D)</option>
+              <option value="grp_E">Halaman 10 (Grup E)</option>
+              <option value="grp_F">Halaman 11 (Grup F)</option>
+              <option value="grp_G">Halaman 12 (Grup G)</option>
+              <option value="grp_H">Halaman 13 (Grup H)</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Watermark Controller Card -->
         <div class="watermark-controller-card" style="border-color: #bae6fd; background: #f0f9ff;">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -514,7 +563,7 @@ include __DIR__ . '/includes/header.php';
         </div>
 
         <?php foreach ($photoGroups as $grpKey => $grp): ?>
-          <div style="margin-bottom: 2rem;">
+          <div id="grp_<?= $grpKey ?>" style="margin-bottom: 2rem;">
             <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--secondary); padding-bottom: 0.5rem; border-bottom: 2px solid #e0f2fe; margin-bottom: 1rem;">
               <?= htmlspecialchars($grp['page_title']) ?>
             </h4>
@@ -580,7 +629,12 @@ include __DIR__ . '/includes/header.php';
     <div class="sticky-footer-bar" id="sec_submit">
       <div>
         <strong style="color: var(--text-main); font-size: 0.95rem;">Siap Memproses Laporan Outdoor?</strong>
-        <p style="font-size: 0.8rem; color: var(--text-subtle);">Laporan akan dikompilasi menjadi dokumen resmi 13 halaman.</p>
+        <div style="margin-top: 4px;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.825rem; font-weight: 600; color: var(--secondary); cursor: pointer;">
+            <input type="checkbox" id="compact_pdf" name="compact_pdf" value="1" checked style="width: 18px; height: 18px; accent-color: var(--secondary); cursor: pointer;">
+            📄 Cetak PDF Ringkas (Lewati slot foto kosong / N/A)
+          </label>
+        </div>
       </div>
       <div style="display: flex; gap: 0.75rem;">
         <a href="index.php" class="btn btn-secondary">Batal</a>
@@ -593,5 +647,13 @@ include __DIR__ . '/includes/header.php';
   </form>
 
 </main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.DraftManager) {
+      window.DraftManager.init('outdoor');
+    }
+  });
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

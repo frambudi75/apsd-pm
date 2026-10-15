@@ -226,6 +226,10 @@ document.addEventListener('DOMContentLoaded', function () {
         console.warn('DataTransfer not supported:', err);
       }
     }
+
+    if (typeof window.updatePhotoFilterCounts === 'function') {
+      window.updatePhotoFilterCounts();
+    }
   }
 
   function compressAndWatermarkImage(file, slotCode, callback) {
@@ -577,6 +581,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (naOverlay) naOverlay.style.display = 'none';
         if (placeholder) placeholder.style.display = 'flex';
       }
+
+      if (typeof window.updatePhotoFilterCounts === 'function') {
+        window.updatePhotoFilterCounts();
+      }
     });
   });
 
@@ -673,6 +681,77 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('APSD PM PWA installed successfully');
     if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
   });
+
+  // 8. Photo Slot Filter Toolbar
+  function initPhotoFilterToolbar() {
+    const filterBtns = document.querySelectorAll('.btn-photo-filter');
+    const jumpSelect = document.getElementById('jump_photo_group');
+
+    function updateCounts() {
+      const cards = document.querySelectorAll('.photo-slot-card');
+      if (!cards.length) return;
+
+      let filled = 0;
+      let empty = 0;
+
+      cards.forEach(card => {
+        const previewImg = card.querySelector('.photo-preview-img');
+        const base64Input = card.querySelector('input[type="hidden"][name^="photo_base64"]');
+        const naCheck = card.querySelector('.photo-na-toggle');
+        const isFilled = (previewImg && previewImg.style.display !== 'none' && previewImg.src && !previewImg.src.endsWith('/')) ||
+                         (base64Input && base64Input.value) ||
+                         (naCheck && naCheck.checked);
+
+        card.setAttribute('data-filled', isFilled ? 'true' : 'false');
+        if (isFilled) filled++;
+        else empty++;
+      });
+
+      const cAll = document.getElementById('count_all_slots');
+      const cFilled = document.getElementById('count_filled_slots');
+      const cEmpty = document.getElementById('count_empty_slots');
+
+      if (cAll) cAll.innerText = cards.length;
+      if (cFilled) cFilled.innerText = filled;
+      if (cEmpty) cEmpty.innerText = empty;
+    }
+
+    window.updatePhotoFilterCounts = updateCounts;
+    updateCounts();
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', function () {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.getAttribute('data-filter');
+
+        const cards = document.querySelectorAll('.photo-slot-card');
+        cards.forEach(card => {
+          const isFilled = card.getAttribute('data-filled') === 'true';
+          if (filter === 'all') {
+            card.style.display = '';
+          } else if (filter === 'filled') {
+            card.style.display = isFilled ? '' : 'none';
+          } else if (filter === 'empty') {
+            card.style.display = !isFilled ? '' : 'none';
+          }
+        });
+      });
+    });
+
+    if (jumpSelect) {
+      jumpSelect.addEventListener('change', function () {
+        const targetId = this.value;
+        if (targetId) {
+          const el = document.getElementById(targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    }
+  }
+  initPhotoFilterToolbar();
 
   // Offline / Online network status monitor
   function updateOnlineStatus() {

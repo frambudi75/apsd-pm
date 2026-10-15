@@ -46,6 +46,57 @@ $dateAbbr = date('d-M-y', strtotime($report['report_date']));
 
 $rightLogoPath = $report['custom_logo_path'] ?? 'assets/img/logo_ias.png';
 $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_exists(__DIR__ . '/' . $rightLogoPath));
+
+// Compact Mode: Only print filled photos, skipping empty N/A slots
+$isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
+
+$allSlots = [];
+foreach ($photoGroups as $grpKey => $grp) {
+    foreach ($grp['slots'] as $slotCode => $slotDef) {
+        $p = $photos[$slotCode] ?? null;
+        $hasImage = ($p && !empty($p['image_path']) && file_exists(__DIR__ . '/' . $p['image_path']));
+        $allSlots[] = [
+            'code' => $slotCode,
+            'def' => $slotDef,
+            'photo' => $p,
+            'has_image' => $hasImage,
+            'group' => $grpKey,
+            'group_title' => $grp['page_title'] ?? ''
+        ];
+    }
+}
+
+$filledSlots = array_values(array_filter($allSlots, fn($s) => $s['has_image']));
+$filledCount = count($filledSlots);
+
+if ($isCompact) {
+    if (empty($filledSlots)) {
+        $photoPages = [[]];
+    } else {
+        $photoPages = array_chunk($filledSlots, 6);
+    }
+} else {
+    $photoPages = [];
+    foreach ($photoGroups as $grpKey => $grp) {
+        $pageSlots = [];
+        foreach ($grp['slots'] as $slotCode => $slotDef) {
+            $p = $photos[$slotCode] ?? null;
+            $hasImage = ($p && !empty($p['image_path']) && file_exists(__DIR__ . '/' . $p['image_path']));
+            $pageSlots[] = [
+                'code' => $slotCode,
+                'def' => $slotDef,
+                'photo' => $p,
+                'has_image' => $hasImage,
+                'group' => $grpKey,
+                'group_title' => $grp['page_title'] ?? ''
+            ];
+        }
+        $photoPages[] = $pageSlots;
+    }
+}
+
+$totalPhotoPages = count($photoPages);
+$totalPages = 5 + $totalPhotoPages;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -72,21 +123,37 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
   <!-- Top Action Toolbar (Hidden when printing) -->
   <div class="no-print" style="width: 210mm; margin: 0 auto 15px auto; background: #ffffff; padding: 12px 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <div>
-      <strong style="color: #0f172a; font-size: 15px;">Pratinjau Cetak: PM Outdoor (13 Halaman)</strong>
-      <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Format telah dipresisikan dengan ukuran A4 standar resmi PT IAS Support Indonesia.</p>
+      <strong style="color: #0f172a; font-size: 15px;">Pratinjau Cetak: PM Outdoor (<?= $totalPages ?> Halaman)</strong>
+      <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">
+        <?= $isCompact ? "Mode Ringkas Aktif: {$filledCount} foto terlampir ({$totalPhotoPages} hal foto)" : "Mode Standar: Semua 48 slot tercetak ({$totalPages} halaman)" ?>
+      </p>
     </div>
-    <div style="display: flex; gap: 8px;">
-      <a href="index.php" style="display: inline-block; padding: 6px 14px; background: #e2e8f0; color: #1e293b; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
-        &larr; Dashboard
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 6px 12px; border-radius: 6px;">
+        <input type="checkbox" id="toggle_compact" <?= $isCompact ? 'checked' : '' ?> onchange="window.location.search = updateQueryParam('compact', this.checked ? '1' : '0')" style="width: 16px; height: 16px; cursor: pointer;">
+        <label for="toggle_compact" style="font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; margin: 0;">
+          Hanya Foto Terisi (Skip N/A)
+        </label>
+      </div>
+      <a href="reports.php" style="display: inline-block; padding: 6px 14px; background: #e2e8f0; color: #1e293b; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
+        &larr; Riwayat
       </a>
       <button onclick="window.print()" style="display: inline-block; padding: 6px 16px; background: #008080; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
         🖨️ Cetak / Simpan PDF
       </button>
-      <a href="download_pdf.php?id=<?= $report['id'] ?>" style="display: inline-block; padding: 6px 14px; background: #0284c7; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
+      <a href="download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>" style="display: inline-block; padding: 6px 14px; background: #0284c7; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
         ⬇️ Download PDF
       </a>
     </div>
   </div>
+
+  <script>
+    function updateQueryParam(key, val) {
+      const u = new URL(window.location.href);
+      u.searchParams.set(key, val);
+      return u.search;
+    }
+  </script>
 
   <div class="preview-container">
 
@@ -700,9 +767,9 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
     </div>
 
     <!-- ==========================================
-         HALAMAN 6 s/d 13: DOKUMENTASI FOTO (GRUP A s/d H)
+         HALAMAN 6 s/d <?= $totalPages ?>: DOKUMENTASI FOTO
          ========================================== -->
-    <?php foreach ($photoGroups as $grpKey => $grp): ?>
+    <?php foreach ($photoPages as $pageIdx => $pageSlots): ?>
       <div class="print-page">
         
         <!-- Header Foto Tiap Halaman -->
@@ -715,7 +782,7 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
               <div style="font-size: 8pt; font-weight: bold;">PT IAS SUPPORT INDONESIA</div>
               <div style="font-size: 8.5pt; font-weight: bold;">CHECK LIST PREVENTIVE MAINTANANCE</div>
               <div style="font-size: 8pt; font-weight: bold;">MECHANICAL ELECTRICAL</div>
-              <div style="font-size: 7.5pt; font-weight: bold; background: #e2e8f0;">BASE SERVICE</div>
+              <div style="font-size: 7.5pt; font-weight: bold; background: #e2e8f0;">BASE SERVICE (HAL <?= 5 + $pageIdx + 1 ?> DARI <?= $totalPages ?>)</div>
             </td>
             <td style="width: 20%; text-align: center; vertical-align: middle; padding: 4px;">
               <?php if ($showRightLogo): ?>
@@ -750,32 +817,39 @@ $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_ex
 
         <!-- 2x3 Grid Foto (6 Slot per halaman) -->
         <div class="photo-grid-container">
-          <?php foreach ($grp['slots'] as $slotCode => $slotDef): ?>
-            <?php 
-              $p = $photos[$slotCode] ?? null;
-              $hasImage = ($p && !empty($p['image_path']) && file_exists(__DIR__ . '/' . $p['image_path']));
-              $isNa = (!$p || $p['is_na'] || !$hasImage);
-              $meas = $p['measurement_value'] ?? ($slotDef['default_label'] ?? '');
-            ?>
-            <div class="photo-cell">
-              <div class="photo-cell-image-wrapper">
-                <?php if ($hasImage): ?>
-                  <img src="<?= htmlspecialchars($p['image_path']) ?>" alt="<?= htmlspecialchars($slotDef['title']) ?>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; margin: auto;">
-                <?php else: ?>
-                  <div class="photo-cell-na">N/A</div>
-                <?php endif; ?>
-              </div>
-              <div class="photo-cell-footer">
-                <span class="photo-cell-code">Foto <?= htmlspecialchars($slotCode) ?></span>
-                <span class="photo-cell-desc">
-                  <?= htmlspecialchars($slotDef['title']) ?>
-                  <?php if (!empty($meas) && $slotDef['has_measurement']): ?>
-                    (<?= htmlspecialchars($meas) ?>)
-                  <?php endif; ?>
-                </span>
-              </div>
+          <?php if (empty($pageSlots)): ?>
+            <div style="grid-column: 1 / -1; height: 180mm; display: flex; align-items: center; justify-content: center; border: 1px solid #000; font-size: 11pt; color: #64748b; font-weight: bold;">
+              Tidak ada dokumentasi foto yang diunggah untuk site ini.
             </div>
-          <?php endforeach; ?>
+          <?php else: ?>
+            <?php foreach ($pageSlots as $slotItem): ?>
+              <?php 
+                $slotCode = $slotItem['code'];
+                $slotDef = $slotItem['def'];
+                $p = $slotItem['photo'];
+                $hasImage = $slotItem['has_image'];
+                $meas = $p['measurement_value'] ?? ($slotDef['default_label'] ?? '');
+              ?>
+              <div class="photo-cell">
+                <div class="photo-cell-image-wrapper">
+                  <?php if ($hasImage): ?>
+                    <img src="<?= htmlspecialchars($p['image_path']) ?>" alt="<?= htmlspecialchars($slotDef['title']) ?>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; margin: auto;">
+                  <?php else: ?>
+                    <div class="photo-cell-na">N/A</div>
+                  <?php endif; ?>
+                </div>
+                <div class="photo-cell-footer">
+                  <span class="photo-cell-code">Foto <?= htmlspecialchars($slotCode) ?></span>
+                  <span class="photo-cell-desc">
+                    <?= htmlspecialchars($slotDef['title']) ?>
+                    <?php if (!empty($meas) && !empty($slotDef['has_measurement'])): ?>
+                      (<?= htmlspecialchars($meas) ?>)
+                    <?php endif; ?>
+                  </span>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
 
       </div>

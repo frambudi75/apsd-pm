@@ -1,7 +1,7 @@
 <?php
 /**
  * API Save PM Outdoor / Pole Report
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/image_compressor.php';
@@ -35,9 +35,9 @@ try {
     $site_height = trim($_POST['site_height'] ?? '18');
     $tower_type = trim($_POST['tower_type'] ?? 'Pole PJU 18 m');
     $site_type = trim($_POST['site_type'] ?? 'Green Field');
-    $anchor_tenant = trim($_POST['anchor_tenant'] ?? 'APSD');
+    $anchor_tenant = trim($_POST['anchor_tenant'] ?? 'IASS SBU ICT KNO');
     $om_vendor = trim($_POST['om_vendor'] ?? 'PT. Naer Tunas Indonesia');
-    $operator = trim($_POST['operator'] ?? 'APSD');
+    $operator = trim($_POST['operator'] ?? 'IASS SBU ICT KNO');
     $preset_logo = trim($_POST['preset_logo'] ?? 'ias');
 
     // 2. Insert into pm_reports
@@ -155,7 +155,7 @@ try {
         $targetFile = "{$uploadDir}/photo_{$slotCode}.jpg";
         $watermarkInfo = [
             'date' => date('d/m/Y H:i:s', strtotime($report_date . ' ' . date('H:i:s'))) . ' WIB',
-            'site' => $site_name ?: 'Site APSD',
+            'site' => $site_name ?: 'Site KNO',
             'location' => $location_detail,
             'gps' => (!empty($_POST['latitude']) && !empty($_POST['longitude'])) 
                 ? "Lat: {$_POST['latitude']}, Long: {$_POST['longitude']}" 

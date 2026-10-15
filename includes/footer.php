@@ -1,7 +1,7 @@
 <?php
 /**
  * Shared Application Footer with Mobile PWA Navigation
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 ?>
@@ -121,7 +121,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js')
+      navigator.serviceWorker.register('sw.js?v=10')
         .then(function (reg) {
           console.log('PWA ServiceWorker registered with scope:', reg.scope);
         })

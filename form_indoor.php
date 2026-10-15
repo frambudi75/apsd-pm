@@ -1,7 +1,7 @@
 <?php
 /**
  * Form Input PM Indoor (Daily Check List IBC Telkomsel - 7 Halaman)
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/checklist_data.php';
@@ -199,7 +199,7 @@ include __DIR__ . '/includes/header.php';
               <label class="form-label">Pilihan Logo Kop Kanan</label>
               <select id="preset_logo_select" name="preset_logo" class="form-control">
                 <option value="telkomsel" selected>Telkomsel</option>
-                <option value="ias">IAS Support / APSD</option>
+                <option value="ias">IAS Support / IASS SBU ICT KNO</option>
                 <option value="indosat">Indosat Ooredoo</option>
                 <option value="xl">XL Axiata</option>
                 <option value="custom">-- Upload Logo Custom / Provider Lain --</option>

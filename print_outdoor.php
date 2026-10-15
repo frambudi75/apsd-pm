@@ -1,7 +1,7 @@
 <?php
 /**
  * Pixel-Perfect Print View: PM Outdoor / Pole (13 Halaman)
- * PT Angkasa Pura Sarana Digital & PT IAS Support Indonesia
+ * IASS SBU ICT KNO & PT IAS Support Indonesia
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/checklist_data.php';
@@ -251,11 +251,11 @@ $totalPages = 5 + $totalPhotoPages;
       <!-- Site Details Table -->
       <table class="table-bordered" style="margin-top: -1px; margin-bottom: 0; font-size: 8.5pt;">
         <tr>
-          <td style="width: 25%; font-weight: bold;">APSD Site ID</td>
+          <td style="width: 25%; font-weight: bold;">IASS Site ID</td>
           <td style="width: 75%;">: <?= htmlspecialchars($site['site_id_str'] ?? '') ?></td>
         </tr>
         <tr>
-          <td style="font-weight: bold;">APSD Site Name</td>
+          <td style="font-weight: bold;">IASS Site Name</td>
           <td>: <?= htmlspecialchars($site['site_name'] ?? '') ?></td>
         </tr>
         <tr>
@@ -296,7 +296,7 @@ $totalPages = 5 + $totalPhotoPages;
         </tr>
         <tr>
           <td style="font-weight: bold;">Anchor Tenant</td>
-          <td>: <?= htmlspecialchars($site['anchor_tenant'] ?? 'APSD') ?></td>
+          <td>: <?= htmlspecialchars($site['anchor_tenant'] ?? 'IASS SBU ICT KNO') ?></td>
         </tr>
         <tr>
           <td style="font-weight: bold;">Total Tenant</td>
@@ -321,7 +321,7 @@ $totalPages = 5 + $totalPhotoPages;
         <tbody>
           <tr>
             <td class="text-center">1</td>
-            <td class="text-center">APSD</td>
+            <td class="text-center">IASS SBU ICT KNO</td>
             <td class="text-center">-</td>
             <td class="text-center">-</td>
             <td class="text-center">PLN</td>
@@ -379,13 +379,13 @@ $totalPages = 5 + $totalPhotoPages;
       <!-- Meta Bar -->
       <table class="table-bordered" style="margin-top: -1px; margin-bottom: 0; font-size: 7.5pt;">
         <tr>
-          <td style="width: 20%; font-weight: bold;">APSD Site ID</td>
+          <td style="width: 20%; font-weight: bold;">IASS Site ID</td>
           <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? '0') ?></td>
           <td style="width: 15%; font-weight: bold;">Date</td>
           <td style="width: 35%;">: <?= $formattedDate ?></td>
         </tr>
         <tr>
-          <td style="font-weight: bold;">APSD Site Name</td>
+          <td style="font-weight: bold;">IASS Site Name</td>
           <td>: <?= htmlspecialchars($site['site_name'] ?? '') ?></td>
           <td style="font-weight: bold;">Time</td>
           <td>: <?= htmlspecialchars($report['inspection_time'] ?? '10.25') ?> &nbsp; <span class="circle-wrap"><?= htmlspecialchars($report['timezone'] ?? 'WIB') ?></span>/WITA/WIT</td>
@@ -541,13 +541,13 @@ $totalPages = 5 + $totalPhotoPages;
       <!-- Meta Bar -->
       <table class="table-bordered" style="margin-top: -1px; margin-bottom: 0; font-size: 7.5pt;">
         <tr>
-          <td style="width: 20%; font-weight: bold;">APSD Site ID</td>
+          <td style="width: 20%; font-weight: bold;">IASS Site ID</td>
           <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? '0') ?></td>
           <td style="width: 15%; font-weight: bold;">Date</td>
           <td style="width: 35%;">: <?= $formattedDate ?></td>
         </tr>
         <tr>
-          <td style="font-weight: bold;">APSD Site Name</td>
+          <td style="font-weight: bold;">IASS Site Name</td>
           <td>: <?= htmlspecialchars($site['site_name'] ?? '') ?></td>
           <td style="font-weight: bold;">Time</td>
           <td>: <?= htmlspecialchars($report['inspection_time'] ?? '10.25') ?> &nbsp; <span class="circle-wrap"><?= htmlspecialchars($report['timezone'] ?? 'WIB') ?></span>/WITA/WIT</td>
@@ -666,13 +666,13 @@ $totalPages = 5 + $totalPhotoPages;
 
       <table class="table-bordered" style="margin-top: -1px; margin-bottom: 0; font-size: 7pt;">
         <tr>
-          <td style="width: 20%; font-weight: bold;">APSD Site ID</td>
+          <td style="width: 20%; font-weight: bold;">IASS Site ID</td>
           <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? '0') ?></td>
           <td style="width: 15%; font-weight: bold;">Date</td>
           <td style="width: 35%;">: <?= $formattedDate ?></td>
         </tr>
         <tr>
-          <td style="font-weight: bold;">APSD Site Name</td>
+          <td style="font-weight: bold;">IASS Site Name</td>
           <td>: <?= htmlspecialchars($site['site_name'] ?? '') ?></td>
           <td style="font-weight: bold;">Time</td>
           <td>: <?= htmlspecialchars($report['inspection_time'] ?? '10.25') ?> &nbsp; <span class="circle-wrap"><?= htmlspecialchars($report['timezone'] ?? 'WIB') ?></span>/WITA/WIT</td>
@@ -680,7 +680,7 @@ $totalPages = 5 + $totalPhotoPages;
         <tr>
           <td colspan="2"></td>
           <td style="font-weight: bold;">Operator</td>
-          <td>: APSD</td>
+          <td>: IASS SBU ICT KNO</td>
         </tr>
       </table>
 
@@ -757,13 +757,13 @@ $totalPages = 5 + $totalPhotoPages;
 
       <table class="table-bordered" style="margin-top: -1px; margin-bottom: 0; font-size: 7.5pt;">
         <tr>
-          <td style="width: 20%; font-weight: bold;">APSD Site ID</td>
+          <td style="width: 20%; font-weight: bold;">IASS Site ID</td>
           <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? '0') ?></td>
           <td style="width: 15%; font-weight: bold;">Date</td>
           <td style="width: 35%;">: <?= $formattedDate ?></td>
         </tr>
         <tr>
-          <td style="font-weight: bold;">APSD Site Name</td>
+          <td style="font-weight: bold;">IASS Site Name</td>
           <td>: <?= htmlspecialchars($site['site_name'] ?? '') ?></td>
           <td style="font-weight: bold;">Time</td>
           <td>: <?= htmlspecialchars($report['inspection_time'] ?? '10.25') ?> &nbsp; <span class="circle-wrap"><?= htmlspecialchars($report['timezone'] ?? 'WIB') ?></span>/WITA/WIT</td>
@@ -771,7 +771,7 @@ $totalPages = 5 + $totalPhotoPages;
         <tr>
           <td colspan="2"></td>
           <td style="font-weight: bold;">Operator</td>
-          <td>: APSD</td>
+          <td>: IASS SBU ICT KNO</td>
         </tr>
       </table>
 
@@ -838,13 +838,13 @@ $totalPages = 5 + $totalPhotoPages;
         <!-- Metadata Sub Header -->
         <table class="table-bordered" style="margin-top: -1px; margin-bottom: 6px; font-size: 7.5pt;">
           <tr>
-            <td style="width: 20%; font-weight: bold;">APSD Site ID</td>
-            <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? 'APSD-DSER-078-08') ?></td>
+            <td style="width: 20%; font-weight: bold;">IASS Site ID</td>
+            <td style="width: 30%;">: <?= htmlspecialchars($site['site_id_str'] ?? 'IASS-DSER-078-08') ?></td>
             <td style="width: 15%; font-weight: bold;">Date</td>
             <td style="width: 35%;">: <?= $dateAbbr ?></td>
           </tr>
           <tr>
-            <td style="font-weight: bold;">APSD Site Name</td>
+            <td style="font-weight: bold;">IASS Site Name</td>
             <td>: <?= htmlspecialchars($site['site_name'] ?? 'Bandara Kualanamu Pole 2') ?></td>
             <td style="font-weight: bold;">Time</td>
             <td>: <?= htmlspecialchars($report['inspection_time'] ?? '10.25') ?> &nbsp; <span class="circle-wrap"><?= htmlspecialchars($report['timezone'] ?? 'WIB') ?></span>/WITA/WIT</td>
@@ -852,7 +852,7 @@ $totalPages = 5 + $totalPhotoPages;
           <tr>
             <td colspan="2"></td>
             <td style="font-weight: bold;">Operator</td>
-            <td>: <?= htmlspecialchars($report['operator'] ?: 'APSD') ?></td>
+            <td>: <?= htmlspecialchars($report['operator'] ?: 'IASS SBU ICT KNO') ?></td>
           </tr>
         </table>
 

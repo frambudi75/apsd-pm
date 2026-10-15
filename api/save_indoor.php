@@ -1,7 +1,7 @@
 <?php
 /**
  * API Save PM Indoor Report
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/image_compressor.php';
@@ -126,7 +126,7 @@ try {
         $targetFile = "{$uploadDir}/photo_{$slotCode}.jpg";
         $watermarkInfo = [
             'date' => date('d/m/Y H:i:s', strtotime($report_date . ' ' . date('H:i:s'))) . ' WIB',
-            'site' => $site_name ?: 'Site APSD',
+            'site' => $site_name ?: 'Site KNO',
             'location' => $location_detail,
             'gps' => (!empty($_POST['latitude']) && !empty($_POST['longitude'])) 
                 ? "Lat: {$_POST['latitude']}, Long: {$_POST['longitude']}" 

@@ -148,7 +148,7 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
 
     $headerStr = 'IASS SBU ICT KNO | PM INSPECTION';
     $timeStr = 'WAKTU : ' . ($meta['date'] ?? date('d/m/Y H:i:s') . ' WIB');
-    $siteStr = 'SITE  : ' . ($meta['site'] ?? 'Site APSD') . (!empty($meta['location']) ? ' (' . $meta['location'] . ')' : '');
+    $siteStr = 'SITE  : ' . ($meta['site'] ?? 'Site KNO') . (!empty($meta['location']) ? ' (' . $meta['location'] . ')' : '');
     $gpsStr = 'GPS   : ' . ($meta['gps'] ?? 'GPS: -');
     $slotStr = 'FOTO  : Slot ' . ($meta['slot'] ?? '') . (!empty($meta['title']) ? ' (' . $meta['title'] . ')' : '');
 

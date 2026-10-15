@@ -1,7 +1,7 @@
 <?php
 /**
  * Shared Application Header
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 if (!isset($page_title)) {
     $page_title = 'Sistem Preventive Maintenance';
@@ -13,14 +13,14 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title><?= htmlspecialchars($page_title) ?> - APSD PM System</title>
+  <title><?= htmlspecialchars($page_title) ?> - IASS SBU ICT KNO</title>
   
   <!-- PWA Meta Tags -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
   <meta name="theme-color" content="#008080">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="APSD PM">
+  <meta name="apple-mobile-web-app-title" content="IASS SBU ICT KNO">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
   
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
@@ -36,9 +36,9 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 <!-- PWA Install Prompt Banner (Visible on mobile/desktop browsers when app is installable) -->
 <div id="pwa_install_banner" class="pwa-install-banner" style="display: none;">
   <div class="pwa-install-info">
-    <img src="assets/img/icon-192.png" alt="APSD PM Icon" width="36" height="36" style="border-radius: 8px;">
+    <img src="assets/img/icon-192.png" alt="IASS PM Icon" width="36" height="36" style="border-radius: 8px;">
     <div>
-      <div style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">Instal Aplikasi APSD PM</div>
+      <div style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">Instal Aplikasi IASS SBU ICT KNO</div>
       <div style="font-size: 0.72rem; opacity: 0.9; color: #e0f2fe;">Akses cepat di lapangan tanpa browser bar</div>
     </div>
   </div>

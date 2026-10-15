@@ -1,7 +1,7 @@
 <?php
 /**
  * Form Input PM Outdoor / Pole (13 Halaman)
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/checklist_data.php';
@@ -109,12 +109,12 @@ include __DIR__ . '/includes/header.php';
 
         <div class="form-grid" style="margin-bottom: 1rem;">
           <div class="form-group">
-            <label class="form-label">APSD Site ID</label>
-            <input type="text" id="site_id_str" name="site_id_str" class="form-control" value="APSD-DSER-078-08">
+            <label class="form-label">IASS Site ID</label>
+            <input type="text" id="site_id_str" name="site_id_str" class="form-control" value="IASS-DSER-078-08">
           </div>
 
           <div class="form-group">
-            <label class="form-label">APSD Site Name *</label>
+            <label class="form-label">IASS Site Name *</label>
             <input type="text" id="site_name" name="site_name" class="form-control" value="Bandara Kualanamu Pole 2" required>
           </div>
 
@@ -194,7 +194,7 @@ include __DIR__ . '/includes/header.php';
 
           <div class="form-group">
             <label class="form-label">Anchor Tenant</label>
-            <input type="text" name="anchor_tenant" class="form-control" value="APSD">
+            <input type="text" name="anchor_tenant" class="form-control" value="IASS SBU ICT KNO">
           </div>
 
           <div class="form-group">
@@ -215,7 +215,7 @@ include __DIR__ . '/includes/header.php';
             <div class="form-group">
               <label class="form-label">Pilihan Logo Kop Kanan</label>
               <select id="preset_logo_select" name="preset_logo" class="form-control">
-                <option value="ias" selected>IAS Support / APSD</option>
+                <option value="ias" selected>IAS Support / IASS SBU ICT KNO</option>
                 <option value="telkomsel">Telkomsel</option>
                 <option value="indosat">Indosat Ooredoo</option>
                 <option value="xl">XL Axiata</option>
@@ -226,7 +226,7 @@ include __DIR__ . '/includes/header.php';
 
             <div class="form-group">
               <label class="form-label">Nama Provider / Operator</label>
-              <input type="text" id="operator_name_input" name="operator" class="form-control" value="APSD" placeholder="Contoh: APSD, TELKOMSEL, INDOSAT, XL">
+              <input type="text" id="operator_name_input" name="operator" class="form-control" value="IASS SBU ICT KNO" placeholder="Contoh: IASS SBU ICT KNO, TELKOMSEL, INDOSAT, XL">
             </div>
 
             <div class="form-group" id="custom_logo_group">

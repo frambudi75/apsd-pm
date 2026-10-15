@@ -1,6 +1,6 @@
 {
-  "name": "APSD Preventive Maintenance System",
-  "short_name": "APSD PM",
+  "name": "IASS SBU ICT KNO PM System",
+  "short_name": "IASS SBU ICT KNO",
   "description": "Sistem Checklist Pemeliharaan Berkala & Generator Laporan PDF Standar Resmi IASS SBU ICT KNO",
   "start_url": "index.php",
   "scope": "./",

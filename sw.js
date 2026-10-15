@@ -1,9 +1,9 @@
 /**
- * Service Worker - APSD PM Progressive Web App
- * PT Angkasa Pura Sarana Digital
+ * Service Worker - IASS SBU ICT KNO Progressive Web App
+ * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'apsd-pm-v9';
+const CACHE_NAME = 'iass-pm-v10';
 const STATIC_ASSETS = [
   './',
   'index.php',

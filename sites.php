@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $site_height = trim($_POST['site_height'] ?? '');
     $tower_type = trim($_POST['tower_type'] ?? '');
     $site_type = trim($_POST['site_type'] ?? '');
-    $anchor_tenant = trim($_POST['anchor_tenant'] ?? 'APSD');
+    $anchor_tenant = trim($_POST['anchor_tenant'] ?? 'IASS SBU ICT KNO');
     $total_tenant = intval($_POST['total_tenant'] ?? 1);
 
     if (!empty($site_name)) {
@@ -101,7 +101,7 @@ include __DIR__ . '/includes/header.php';
 
           <div class="form-group">
             <label class="form-label">Site ID</label>
-            <input type="text" name="site_id_str" class="form-control" placeholder="Contoh: APSD-DSER-078-08">
+            <input type="text" name="site_id_str" class="form-control" placeholder="Contoh: IASS-DSER-078-08">
           </div>
 
           <div class="form-group">
@@ -156,7 +156,7 @@ include __DIR__ . '/includes/header.php';
 
           <div class="form-group">
             <label class="form-label">Anchor Tenant</label>
-            <input type="text" name="anchor_tenant" class="form-control" value="APSD">
+            <input type="text" name="anchor_tenant" class="form-control" value="IASS SBU ICT KNO">
           </div>
         </div>
 
@@ -252,7 +252,7 @@ include __DIR__ . '/includes/header.php';
         <div class="sticker-body">
           <div class="sticker-meta">
             <div class="sticker-meta-title" id="sticker_site_name">Bandara Kualanamu Pole 2</div>
-            <div><strong>ID:</strong> <span id="sticker_site_code">APSD-DSER-078-08</span></div>
+            <div><strong>ID:</strong> <span id="sticker_site_code">IASS-DSER-078-08</span></div>
             <div><strong>Lokasi:</strong> <span id="sticker_location">Server Domestik</span></div>
             <div><strong>GPS:</strong> <span id="sticker_coords">3.618278, 98.861139</span></div>
             <div><strong>Tipe:</strong> <span id="sticker_type">Green Field</span></div>
@@ -318,8 +318,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let activeSite = {
     id: '',
-    name: 'Site APSD',
-    code: 'APSD',
+    name: 'Site KNO',
+    code: 'KNO',
     loc: '-',
     coords: '-',
     type: '-',
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const siteParam = activeSite.id ? ('site_id=' + encodeURIComponent(activeSite.id)) : ('code=' + encodeURIComponent(activeSite.code || activeSite.name));
     const fullUrl = baseUrl + targetForm + '?' + siteParam;
-    const rawCode = activeSite.code || activeSite.name || 'APSD';
+    const rawCode = activeSite.code || activeSite.name || 'KNO';
 
     activePayload = isUrl ? fullUrl : rawCode;
 
@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Site Name
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 26px Arial, sans-serif';
-    const siteTitle = data.name || 'Site APSD';
+    const siteTitle = data.name || 'Site KNO';
     if (ctx.measureText(siteTitle).width > 480) {
       ctx.font = 'bold 21px Arial, sans-serif';
     }
@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       activeSite = { id, name, code, loc, coords, type, sitetype };
 
-      document.getElementById('sticker_site_name').innerText = name || 'Site APSD';
+      document.getElementById('sticker_site_name').innerText = name || 'Site KNO';
       document.getElementById('sticker_site_code').innerText = code || '-';
       document.getElementById('sticker_location').innerText = loc || '-';
       document.getElementById('sticker_coords').innerText = coords || '-';

@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function getActiveSiteInfo() {
     const siteInp = document.getElementById('site_name');
     const locInp = document.getElementById('location_detail') || document.getElementById('address') || document.getElementById('city');
-    const name = siteInp && siteInp.value ? siteInp.value.trim() : 'Site APSD';
+    const name = siteInp && siteInp.value ? siteInp.value.trim() : 'Site KNO';
     const loc = locInp && locInp.value ? locInp.value.trim() : '';
     return loc ? (name + ' (' + loc + ')') : name;
   }
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (presetLogoSelect && logoPreviewImg) {
     const logoMap = {
       'telkomsel': { src: 'assets/img/logo_telkomsel.png?v=2', name: 'TELKOMSEL' },
-      'ias': { src: 'assets/img/logo_ias.png?v=2', name: 'APSD' },
+      'ias': { src: 'assets/img/logo_ias.png?v=2', name: 'IASS SBU ICT KNO' },
       'indosat': { src: 'assets/img/logo_indosat.svg', name: 'INDOSAT OOREDOO' },
       'xl': { src: 'assets/img/logo_xl.svg', name: 'XL AXIATA' },
       'none': { src: '', name: '-' }
@@ -707,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.addEventListener('appinstalled', function () {
-    console.log('APSD PM PWA installed successfully');
+    console.log('IASS SBU ICT KNO PWA installed successfully');
     if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
   });
 

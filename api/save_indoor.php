@@ -106,8 +106,9 @@ try {
     // 4. Handle Photos
     $uploadDir = __DIR__ . "/../uploads/reports/{$report_id}";
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        @mkdir($uploadDir, 0777, true);
     }
+    @chmod($uploadDir, 0777);
 
     $photosMeta = $_POST['photos'] ?? [];
     $stmtPhoto = $pdo->prepare("

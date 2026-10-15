@@ -23,17 +23,35 @@ RUN pecl install redis \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
+# Configure PHP settings for high upload limits and large forms (PM reports have up to 48 photos)
+RUN { \
+    echo 'upload_max_filesize = 64M'; \
+    echo 'post_max_size = 128M'; \
+    echo 'max_file_uploads = 100'; \
+    echo 'memory_limit = 512M'; \
+    echo 'max_execution_time = 300'; \
+    echo 'max_input_time = 300'; \
+    echo 'max_input_vars = 5000'; \
+} > /usr/local/etc/php/conf.d/apsd-limits.ini
+
 # Set working directory
 WORKDIR /var/www/html
+
+# Copy entrypoint script and ensure Unix line endings
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy application files
 COPY . /var/www/html/
 
-# Set appropriate permissions for SQLite database and uploads directories
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/database /var/www/html/uploads
+# Set initial permissions for database and uploads directories
+RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 777 /var/www/html/database /var/www/html/uploads
 
 # Expose internal Apache port
 EXPOSE 80
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["apache2-foreground"]

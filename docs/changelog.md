@@ -4,6 +4,18 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.0.1] - 2026-10-15
+
+#### Diperbaiki
+* **Batas Maksimal Upload File PHP (Docker & Server)**:
+  - Mengonfigurasi `max_file_uploads = 100` pada `/usr/local/etc/php/conf.d/apsd-limits.ini` untuk mengakomodasi seluruh 24 slot foto PM Indoor dan 48 slot foto PM Outdoor tanpa memicu warning PHP.
+  - Meningkatkan `post_max_size = 128M`, `upload_max_filesize = 64M`, `memory_limit = 512M`, dan `max_input_vars = 5000`.
+* **Izin Tulis Database SQLite pada Volume Mount Docker**:
+  - Menambahkan script `entrypoint.sh` yang dijalankan sebagai root pada saat container start untuk secara otomatis memberikan hak kepemilikan `www-data:www-data` dan hak akses `chmod -R 777` pada direktori mount `./database` dan `./uploads`.
+  - Mengaktifkan mode SQLite Write-Ahead Logging (`PRAGMA journal_mode = WAL;`) dan `PRAGMA busy_timeout = 5000;` pada `config/database.php` untuk mencegah error database readonly dan kunci transaksi konkurensi.
+
+---
+
 ### [Versi 2.0.0] - 2026-10-15
 
 #### Ditambahkan

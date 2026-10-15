@@ -12,16 +12,24 @@ function get_db_connection() {
 
     $dbDir = __DIR__ . '/../database';
     if (!is_dir($dbDir)) {
-        mkdir($dbDir, 0777, true);
+        @mkdir($dbDir, 0777, true);
     }
+    @chmod($dbDir, 0777);
 
     $dbPath = $dbDir . '/apsd.sqlite';
     $isNew = !file_exists($dbPath);
+    if (file_exists($dbPath)) {
+        @chmod($dbPath, 0666);
+    }
 
     try {
         $pdo = new PDO('sqlite:' . $dbPath);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+        // WAL mode & busy timeout for robust concurrency and write permissions
+        $pdo->exec('PRAGMA journal_mode = WAL;');
+        $pdo->exec('PRAGMA busy_timeout = 5000;');
 
         // Auto migrate schema if tables don't exist
         init_db_schema($pdo, $isNew);

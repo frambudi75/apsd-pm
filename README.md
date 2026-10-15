@@ -58,11 +58,17 @@ Aplikasi web dan Progressive Web App (PWA) untuk input checklist pemeliharaan be
    git clone https://github.com/frambudi75/apsd-pm.git
    cd apsd-pm
    ```
-2. Jalankan docker compose:
+2. Pastikan service Docker di Linux aktif otomatis saat server booting / restart:
+   ```bash
+   sudo systemctl enable docker
+   sudo systemctl enable containerd
+   ```
+3. Jalankan docker compose:
    ```bash
    docker compose up -d --build
    ```
-3. Akses aplikasi melalui browser pada port **2022**:
+   *(Seluruh service `web`, `db`, dan `redis` telah dilengkapi kebijakan `restart: always`, sehingga otomatis berjalan kembali saat mesin Linux menyala setelah restart/reboot).*
+4. Akses aplikasi melalui browser pada port **2022**:
    `http://<ip-server-anda>:2022/`
 
 #### Opsi 2: Menjalankan via XAMPP / Web Server PHP Lokal

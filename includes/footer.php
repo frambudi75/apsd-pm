@@ -30,10 +30,17 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
     <span>+ Outdoor</span>
   </a>
-  <a href="sites" class="mobile-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
-    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-    <span>Sites</span>
-  </a>
+  <?php if (function_exists('has_role') && has_role(['superadmin', 'admin'])): ?>
+    <a href="users" class="mobile-nav-item <?= ($curPage === 'users.php') ? 'active' : '' ?>">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span>Pengguna</span>
+    </a>
+  <?php else: ?>
+    <a href="sites" class="mobile-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      <span>Sites</span>
+    </a>
+  <?php endif; ?>
 </nav>
 
 <!-- Live In-App Camera Modal with Timestamp & GPS -->

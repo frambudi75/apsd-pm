@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/image_compressor.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
 $pdo = get_db_connection();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

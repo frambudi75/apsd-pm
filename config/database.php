@@ -207,7 +207,25 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 6. Table users (Authentication & RBAC)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'user',
+            is_active INT NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            last_login DATETIME NULL,
+            INDEX idx_users_username (username),
+            INDEX idx_users_role (role)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
+    seed_default_users_if_empty($pdo);
 }
 
 /**
@@ -322,7 +340,25 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_sites_site_id_str ON sites(site_id_str);
     ");
 
+    // 7. Table users (Authentication & RBAC)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'user',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_login DATETIME NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+        CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    ");
+
     seed_default_sites_if_empty($pdo);
+    seed_default_users_if_empty($pdo);
 }
 
 /**
@@ -375,3 +411,48 @@ function seed_default_sites_if_empty(PDO $pdo) {
         ]);
     }
 }
+
+/**
+ * Seed Default Users if table has zero rows
+ */
+function seed_default_users_if_empty(PDO $pdo) {
+    try {
+        $count = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        if ($count == 0) {
+            $stmt = $pdo->prepare("
+                INSERT INTO users (username, password_hash, full_name, role, is_active)
+                VALUES (?, ?, ?, ?, ?)
+            ");
+
+            // 1. Superadmin (Super Administrator KNO)
+            $stmt->execute([
+                'superadmin',
+                password_hash('admin123', PASSWORD_BCRYPT),
+                'Super Administrator KNO',
+                'superadmin',
+                1
+            ]);
+
+            // 2. Admin (Administrator SBU ICT)
+            $stmt->execute([
+                'admin',
+                password_hash('admin123', PASSWORD_BCRYPT),
+                'Administrator SBU ICT',
+                'admin',
+                1
+            ]);
+
+            // 3. User biasa (Teknisi Lapangan KNO)
+            $stmt->execute([
+                'teknisi',
+                password_hash('admin123', PASSWORD_BCRYPT),
+                'Teknisi Lapangan KNO',
+                'user',
+                1
+            ]);
+        }
+    } catch (Exception $e) {
+        // Ignored if table already exists or initializing
+    }
+}
+

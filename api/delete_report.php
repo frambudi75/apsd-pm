@@ -4,6 +4,13 @@
  * PT Angkasa Pura Sarana Digital
  */
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
+
+if (!has_role(['superadmin', 'admin'])) {
+    die("Akses ditolak: Hanya Admin dan Superadmin yang dapat menghapus laporan.");
+}
+
 $pdo = get_db_connection();
 
 $report_id = intval($_GET['id'] ?? 0);

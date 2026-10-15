@@ -201,7 +201,7 @@ try {
 
     // Redirect to the print/preview page
     $compactParam = (!empty($_POST['compact_pdf'])) ? '&compact=1' : '';
-    header("Location: ../print_indoor.php?id={$report_id}&new=1{$compactParam}");
+    header("Location: ../print_indoor?id={$report_id}&new=1{$compactParam}");
     exit;
 
 } catch (Exception $e) {

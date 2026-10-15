@@ -31,7 +31,7 @@ if ($report_id > 0) {
         AppRedis::flushPrefix('dashboard:');
         AppRedis::del('reports:all');
 
-        $returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports.php?msg=deleted' : '../index.php?msg=deleted';
+        $returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports?msg=deleted' : '../?msg=deleted';
         header("Location: " . $returnDest);
         exit;
     } catch (Exception $e) {
@@ -42,6 +42,6 @@ if ($report_id > 0) {
     }
 }
 
-$returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports.php' : '../index.php';
+$returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports' : '../';
 header("Location: " . $returnDest);
 exit;

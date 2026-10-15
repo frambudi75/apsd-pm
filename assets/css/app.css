@@ -1271,4 +1271,405 @@ body {
   }
 }
 
+/* ==========================================================
+   Modern Dashboard & Executive UI Enhancements
+   ========================================================== */
+
+/* 1. Refined Navbar Items */
+.nav-link-item {
+  color: var(--text-subtle);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-link-item:hover {
+  color: var(--primary);
+  background-color: var(--bg-alt);
+}
+
+.nav-link-item.active {
+  color: var(--primary);
+  background-color: var(--primary-subtle);
+  font-weight: 700;
+}
+
+.nav-cta-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+}
+
+.btn-primary-soft {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid rgba(0, 128, 128, 0.25);
+}
+
+.btn-primary-soft:hover {
+  background-color: #008080;
+  color: #ffffff;
+}
+
+/* 2. Floating Desktop PWA Install Toast */
+@media (min-width: 768px) {
+  .pwa-install-banner {
+    position: fixed;
+    top: auto;
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    max-width: 440px;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: pwaSlideUp 0.3s ease-out;
+  }
+
+  @keyframes pwaSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* 3. Hero Header & Quick Start Inspection Cards */
+.hero-header {
+  background: linear-gradient(135deg, #008080 0%, #0369a1 100%);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 14px rgba(0, 128, 128, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.quick-start-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.quick-start-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-start-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--card-accent, var(--primary));
+  opacity: 0.85;
+}
+
+.quick-start-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: var(--card-accent, var(--primary));
+}
+
+.quick-start-indoor {
+  --card-accent: #008080;
+}
+
+.quick-start-outdoor {
+  --card-accent: #0284c7;
+}
+
+.quick-start-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.quick-start-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-start-indoor .quick-start-icon {
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.quick-start-outdoor .quick-start-icon {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.quick-start-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.quick-start-desc {
+  font-size: 0.825rem;
+  color: var(--text-subtle);
+  line-height: 1.45;
+}
+
+.quick-start-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+
+.quick-start-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+}
+
+.quick-start-indoor .quick-start-badge {
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.quick-start-outdoor .quick-start-badge {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.quick-start-action {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--card-accent, var(--primary));
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 4. Interactive Stat Metric Cards */
+.stat-filter-card {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.stat-filter-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stat-filter-card.active-filter {
+  border-color: var(--primary);
+  background-color: var(--primary-subtle);
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.25);
+}
+
+.stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 5. Live Search & Filter Toolbar */
+.table-toolbar {
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 420px;
+}
+
+.search-input-wrapper svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.table-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.table-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.15);
+}
+
+.filter-tab-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #ffffff;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.filter-tab-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.filter-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+/* 6. Polished Action Buttons in Table */
+.table-action-group {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn-action-view {
+  background: #ffffff;
+  color: var(--primary);
+  border: 1px solid rgba(0, 128, 128, 0.35);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-action-view:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+  color: var(--primary-hover);
+}
+
+.btn-action-dl {
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid var(--primary);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-action-dl:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-action-del {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-action-del:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+
 

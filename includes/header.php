@@ -59,13 +59,20 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     </a>
     
     <nav class="nav-actions web-nav">
-      <a href="index.php" class="btn <?= ($curPage === 'index.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">Dashboard</a>
-      <a href="reports.php" class="btn <?= ($curPage === 'reports.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+      <a href="index.php" class="nav-link-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
+        <span>📊</span> Dashboard
+      </a>
+      <a href="reports.php" class="nav-link-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
         <span>📋</span> Riwayat Laporan
       </a>
-      <a href="form_indoor.php" class="btn <?= ($curPage === 'form_indoor.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">+ Buat PM Indoor</a>
-      <a href="form_outdoor.php" class="btn <?= ($curPage === 'form_outdoor.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">+ Buat PM Outdoor</a>
-      <a href="sites.php" class="btn <?= ($curPage === 'sites.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">Master Site</a>
+      <a href="sites.php" class="nav-link-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
+        <span>📍</span> Master Site
+      </a>
+      
+      <div class="nav-cta-buttons">
+        <a href="form_indoor.php" class="btn btn-sm btn-primary-soft" title="Checklist PM Indoor IBC Telkomsel (7 Halaman)">+ PM Indoor</a>
+        <a href="form_outdoor.php" class="btn btn-sm btn-primary" title="Checklist PM Outdoor Pole / Tower (13 Halaman)">+ PM Outdoor</a>
+      </div>
     </nav>
   </div>
 </header>

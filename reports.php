@@ -1,7 +1,7 @@
 <?php
 /**
  * Riwayat & Arsip Laporan PM
- * PT Angkasa Pura Sarana Digital
+ * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/redis.php';

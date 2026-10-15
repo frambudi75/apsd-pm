@@ -62,81 +62,148 @@ if ($cachedStats !== null && is_array($cachedStats)) {
     </div>
   <?php endif; ?>
 
-  <!-- Welcome Hero Banner -->
-  <div style="background: linear-gradient(135deg, #008080 0%, #0369a1 100%); color: #ffffff; border-radius: var(--radius-md); padding: 1.5rem 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-      <div>
-        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem;">Portal Preventive Maintenance (PM)</h2>
-        <p style="font-size: 0.9rem; opacity: 0.9; max-width: 600px;">Generator checklist dan dokumentasi foto standar resmi IASS SBU ICT KNO & Operator Seluler.</p>
+  <!-- Hero Section with Executive Header -->
+  <div class="hero-header">
+    <div>
+      <div class="hero-badge">
+        <span>⚡</span> Bandara Internasional Kualanamu
       </div>
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%; max-width: 380px;">
-        <a href="form_indoor.php" class="btn btn-secondary" style="flex: 1; color: #008080; font-weight: 700; min-height: 44px;">+ PM Indoor</a>
-        <a href="form_outdoor.php" class="btn btn-secondary" style="flex: 1; color: #0369a1; font-weight: 700; min-height: 44px;">+ PM Outdoor</a>
-      </div>
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.35rem;">Portal Preventive Maintenance (PM)</h2>
+      <p style="font-size: 0.875rem; opacity: 0.92; max-width: 620px; line-height: 1.5; margin: 0;">
+        Generator checklist pemeliharaan berkala dan dokumentasi foto standar resmi IASS SBU ICT KNO & Operator Seluler.
+      </p>
+    </div>
+    <div>
+      <a href="reports.php" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 600; padding: 0.45rem 0.85rem;">
+        <span>📂</span> Buka Semua Arsip
+      </a>
     </div>
   </div>
 
-  <!-- Summary Stats Grid -->
+  <!-- Quick Start Inspection Cards (Indoor & Outdoor) -->
+  <div class="quick-start-grid">
+    <a href="form_indoor.php" class="quick-start-card quick-start-indoor">
+      <div>
+        <div class="quick-start-header">
+          <div class="quick-start-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 class="quick-start-title">Checklist PM Indoor</h3>
+            <p class="quick-start-desc">Formulir inspeksi perangkat IBC Telkomsel (7 Halaman). Pengukuran tegangan S/T/G-N, catu daya, dan temperatur ruangan.</p>
+          </div>
+        </div>
+      </div>
+      <div class="quick-start-footer">
+        <span class="quick-start-badge">7 HALAMAN STANDAR</span>
+        <span class="quick-start-action">Mulai Checklist &rarr;</span>
+      </div>
+    </a>
+
+    <a href="form_outdoor.php" class="quick-start-card quick-start-outdoor">
+      <div>
+        <div class="quick-start-header">
+          <div class="quick-start-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20"></path>
+              <path d="M17 5H7"></path>
+              <path d="M19 9H5"></path>
+              <path d="M21 13H3"></path>
+              <path d="M16 17H8"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="quick-start-title">Checklist PM Outdoor</h3>
+            <p class="quick-start-desc">Formulir inspeksi pole PJU & tower site (13 Halaman). Pemeriksaan tiang, grounding, catu daya PLN, dan 6 foto per halaman.</p>
+          </div>
+        </div>
+      </div>
+      <div class="quick-start-footer">
+        <span class="quick-start-badge">13 HALAMAN STANDAR</span>
+        <span class="quick-start-action">Mulai Checklist &rarr;</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Summary Stats Grid with Click-to-Filter -->
   <div class="form-grid" style="margin-bottom: 1.5rem;">
-    <div class="card" style="margin-bottom: 0;">
+    <div class="card stat-filter-card active-filter" data-filter="all" style="margin-bottom: 0;" title="Klik untuk menampilkan semua laporan">
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase;">Total Laporan</span>
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px;">Total Laporan</span>
           <p style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem;"><?= $totalReports ?></p>
         </div>
-        <div style="width: 44px; height: 44px; background: var(--primary-subtle); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
-          #
+        <div class="stat-icon-wrapper" style="background: var(--bg-alt); color: var(--text-main);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
+    <div class="card stat-filter-card" data-filter="indoor" style="margin-bottom: 0;" title="Klik untuk memfilter laporan PM Indoor">
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase;">PM Indoor</span>
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px;">PM Indoor</span>
           <p style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-top: 0.2rem;"><?= $indoorCount ?></p>
         </div>
-        <div style="width: 44px; height: 44px; background: var(--primary-subtle); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: bold;">
-          IN
+        <div class="stat-icon-wrapper" style="background: var(--primary-subtle); color: var(--primary);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
+    <div class="card stat-filter-card" data-filter="outdoor" style="margin-bottom: 0;" title="Klik untuk memfilter laporan PM Outdoor">
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase;">PM Outdoor</span>
-          <p style="font-size: 1.6rem; font-weight: 800; color: var(--secondary); margin-top: 0.2rem;"><?= $outdoorCount ?></p>
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px;">PM Outdoor</span>
+          <p style="font-size: 1.6rem; font-weight: 800; color: #0284c7; margin-top: 0.2rem;"><?= $outdoorCount ?></p>
         </div>
-        <div style="width: 44px; height: 44px; background: #e0f2fe; color: var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: bold;">
-          OUT
+        <div class="stat-icon-wrapper" style="background: #e0f2fe; color: #0284c7;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H7M19 9H5M21 13H3M16 17H8"/></svg>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom: 0;">
+    <a href="sites.php" class="card stat-filter-card" style="margin-bottom: 0; text-decoration: none; color: inherit;" title="Buka Master Data Site Bandara">
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase;">Master Site</span>
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px;">Master Site</span>
           <p style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem;"><?= $siteCount ?></p>
         </div>
-        <div style="width: 44px; height: 44px; background: var(--bg-alt); color: var(--text-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: bold;">
-          Site
+        <div class="stat-icon-wrapper" style="background: #f1f5f9; color: var(--text-main);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
         </div>
       </div>
-    </div>
+    </a>
   </div>
 
-  <!-- Reports Section -->
+  <!-- Reports Section with Live Filter & Search Toolbar -->
   <div class="card">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
       <div>
-        <h3 class="card-title" style="margin-bottom: 0;">Daftar Arsip Laporan Pemeliharaan (PM)</h3>
-        <span style="font-size: 0.85rem; color: var(--text-subtle);"><?= $totalReports ?> dokumen tercatat</span>
+        <h3 class="card-title" style="margin-bottom: 0.15rem;">Daftar Arsip Laporan Pemeliharaan (PM)</h3>
+        <span style="font-size: 0.825rem; color: var(--text-subtle);">Menampilkan <strong id="reports_count_display"><?= $totalReports ?></strong> dokumen tercatat</span>
       </div>
-      <a href="reports.php" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+      <a href="reports.php" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
         <span>📋</span> Buka Riwayat Lengkap &rarr;
       </a>
+    </div>
+
+    <!-- Live Search & Filter Bar -->
+    <div class="table-toolbar">
+      <div class="search-input-wrapper">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="report_live_search" class="table-search-input" placeholder="Cari site, lokasi, PIC, atau tanggal...">
+      </div>
+      <div class="filter-tab-group">
+        <button type="button" class="filter-tab-btn active" data-filter="all">Semua (<?= $totalReports ?>)</button>
+        <button type="button" class="filter-tab-btn" data-filter="indoor">Indoor (<?= $indoorCount ?>)</button>
+        <button type="button" class="filter-tab-btn" data-filter="outdoor">Outdoor (<?= $outdoorCount ?>)</button>
+      </div>
     </div>
 
     <div class="card-body" style="padding: 0;">
@@ -165,12 +232,24 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                 <th>Tanggal Inspeksi</th>
                 <th>Petugas / PIC</th>
                 <th>Status</th>
-                <th style="text-align: right; width: 260px;">Aksi</th>
+                <th style="text-align: right; width: 230px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($reports as $index => $rep): ?>
-                <tr>
+                <?php 
+                  $siteDisplayName = $rep['site_name'];
+                  if (empty($siteDisplayName)) {
+                      $siteDisplayName = ($rep['report_type'] === 'indoor') 
+                          ? 'IBC Bandara International Kualanamu' 
+                          : 'Bandara Kualanamu Pole ' . ($rep['site_id'] ?: '1');
+                  }
+                  $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: 'Area Bandara Kualanamu';
+                  $printUrl = ($rep['report_type'] === 'indoor') 
+                    ? 'print_indoor.php?id=' . $rep['id'] 
+                    : 'print_outdoor.php?id=' . $rep['id'];
+                ?>
+                <tr data-type="<?= $rep['report_type'] ?>">
                   <td style="font-weight: bold;"><?= $index + 1 ?></td>
                   <td>
                     <?php if ($rep['report_type'] === 'indoor'): ?>
@@ -184,9 +263,9 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                     <?php endif; ?>
                   </td>
                   <td>
-                    <strong style="display: block; color: var(--text-main);"><?= htmlspecialchars($rep['site_name'] ?: 'Site ID #' . $rep['site_id']) ?></strong>
+                    <strong style="display: block; color: var(--text-main); font-size: 0.9rem;"><?= htmlspecialchars($siteDisplayName) ?></strong>
                     <span style="font-size: 0.8rem; color: var(--text-subtle);">
-                      <?= htmlspecialchars($rep['location_detail'] ?: $rep['region'] ?: '-') ?>
+                      <?= htmlspecialchars($locDisplayName) ?>
                     </span>
                   </td>
                   <td>
@@ -200,25 +279,23 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                     <?php endif; ?>
                   </td>
                   <td>
-                    <span style="background: var(--status-ok-bg); color: var(--status-ok); font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm);">
+                    <span style="display: inline-flex; align-items: center; gap: 5px; background: var(--status-ok-bg); color: var(--status-ok); font-weight: 600; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 20px;">
+                      <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--status-ok);"></span>
                       Selesai
                     </span>
                   </td>
                   <td style="text-align: right;">
-                    <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
-                      <?php 
-                        $printUrl = ($rep['report_type'] === 'indoor') 
-                          ? 'print_indoor.php?id=' . $rep['id'] 
-                          : 'print_outdoor.php?id=' . $rep['id'];
-                      ?>
-                      <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary btn-sm" title="Buka Pratinjau & Cetak">
-                        Cetak PDF
+                    <div class="table-action-group">
+                      <a href="<?= $printUrl ?>" target="_blank" class="btn-action-view" title="Buka Dokumen PDF Resmi">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Cetak
                       </a>
-                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary btn-sm" title="Download File PDF Langsung">
-                        Download
+                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Unduh
                       </a>
-                      <a href="api/delete_report.php?id=<?= $rep['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus laporan ini?');" class="btn btn-danger btn-sm" title="Hapus Laporan">
-                        &times;
+                      <a href="api/delete_report.php?id=<?= $rep['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus laporan ini?');" class="btn-action-del" title="Hapus Laporan">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </a>
                     </div>
                   </td>
@@ -232,11 +309,18 @@ if ($cachedStats !== null && is_array($cachedStats)) {
         <div class="mobile-cards-container">
           <?php foreach ($reports as $index => $rep): ?>
             <?php 
+              $siteDisplayName = $rep['site_name'];
+              if (empty($siteDisplayName)) {
+                  $siteDisplayName = ($rep['report_type'] === 'indoor') 
+                      ? 'IBC Bandara International Kualanamu' 
+                      : 'Bandara Kualanamu Pole ' . ($rep['site_id'] ?: '1');
+              }
+              $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: 'Area Bandara Kualanamu';
               $printUrl = ($rep['report_type'] === 'indoor') 
                 ? 'print_indoor.php?id=' . $rep['id'] 
                 : 'print_outdoor.php?id=' . $rep['id'];
             ?>
-            <div class="mobile-report-card">
+            <div class="mobile-report-card" data-type="<?= $rep['report_type'] ?>">
               <div class="mobile-card-top">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                   <?php if ($rep['report_type'] === 'indoor'): ?>
@@ -249,8 +333,8 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                 <a href="api/delete_report.php?id=<?= $rep['id'] ?>" onclick="return confirm('Hapus laporan ini?');" class="mobile-delete-btn" title="Hapus">&times;</a>
               </div>
 
-              <h4 class="mobile-card-title"><?= htmlspecialchars($rep['site_name'] ?: 'Site #' . $rep['site_id']) ?></h4>
-              <p class="mobile-card-sub"><?= htmlspecialchars($rep['location_detail'] ?: $rep['region'] ?: '-') ?></p>
+              <h4 class="mobile-card-title"><?= htmlspecialchars($siteDisplayName) ?></h4>
+              <p class="mobile-card-sub"><?= htmlspecialchars($locDisplayName) ?></p>
 
               <div class="mobile-card-meta">
                 <div class="mobile-meta-item">
@@ -284,5 +368,79 @@ if ($cachedStats !== null && is_array($cachedStats)) {
   </div>
 
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('report_live_search');
+  const filterBtns = document.querySelectorAll('.filter-tab-btn, .stat-filter-card');
+  const desktopRows = document.querySelectorAll('.desktop-table-container tbody tr');
+  const mobileCards = document.querySelectorAll('.mobile-report-card');
+  const countDisplay = document.getElementById('reports_count_display');
+
+  let currentFilter = 'all';
+  let searchQuery = '';
+
+  function applyFilters() {
+    let visibleCount = 0;
+
+    desktopRows.forEach(row => {
+      const type = row.getAttribute('data-type') || '';
+      const text = row.innerText.toLowerCase();
+      const matchesFilter = (currentFilter === 'all' || type === currentFilter);
+      const matchesSearch = !searchQuery || text.includes(searchQuery);
+
+      if (matchesFilter && matchesSearch) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    mobileCards.forEach(card => {
+      const type = card.getAttribute('data-type') || '';
+      const text = card.innerText.toLowerCase();
+      const matchesFilter = (currentFilter === 'all' || type === currentFilter);
+      const matchesSearch = !searchQuery || text.includes(searchQuery);
+
+      if (matchesFilter && matchesSearch) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (countDisplay) {
+      countDisplay.innerText = visibleCount;
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      searchQuery = this.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const filter = this.getAttribute('data-filter');
+      if (!filter) return;
+
+      currentFilter = filter;
+
+      document.querySelectorAll('.filter-tab-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-filter') === filter);
+      });
+
+      document.querySelectorAll('.stat-filter-card').forEach(c => {
+        c.classList.toggle('active-filter', c.getAttribute('data-filter') === filter);
+      });
+
+      applyFilters();
+    });
+  });
+});
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

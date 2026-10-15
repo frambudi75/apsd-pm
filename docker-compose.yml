@@ -9,14 +9,42 @@ services:
     ports:
       - "2022:80"
     environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=apsd_pm
+      - DB_USERNAME=apsd_user
+      - DB_PASSWORD=apsd_password_2026
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
       - ./database:/var/www/html/database
       - ./uploads:/var/www/html/uploads
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    container_name: apsd_pm_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=apsd_root_2026
+      - MYSQL_DATABASE=apsd_pm
+      - MYSQL_USER=apsd_user
+      - MYSQL_PASSWORD=apsd_password_2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -28,4 +56,6 @@ services:
       - redis_data:/data
 
 volumes:
+  mariadb_data:
   redis_data:
+

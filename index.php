@@ -129,9 +129,14 @@ if ($cachedStats !== null && is_array($cachedStats)) {
 
   <!-- Reports Section -->
   <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">Daftar Arsip Laporan Pemeliharaan (PM)</h3>
-      <span style="font-size: 0.85rem; color: var(--text-subtle);"><?= $totalReports ?> dokumen tercatat</span>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <h3 class="card-title" style="margin-bottom: 0;">Daftar Arsip Laporan Pemeliharaan (PM)</h3>
+        <span style="font-size: 0.85rem; color: var(--text-subtle);"><?= $totalReports ?> dokumen tercatat</span>
+      </div>
+      <a href="reports.php" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+        <span>📋</span> Buka Riwayat Lengkap &rarr;
+      </a>
     </div>
 
     <div class="card-body" style="padding: 0;">

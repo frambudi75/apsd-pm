@@ -31,7 +31,8 @@ if ($report_id > 0) {
         AppRedis::flushPrefix('dashboard:');
         AppRedis::del('reports:all');
 
-        header("Location: ../index.php?msg=deleted");
+        $returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports.php?msg=deleted' : '../index.php?msg=deleted';
+        header("Location: " . $returnDest);
         exit;
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
@@ -41,5 +42,6 @@ if ($report_id > 0) {
     }
 }
 
-header("Location: ../index.php");
+$returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports.php' : '../index.php';
+header("Location: " . $returnDest);
 exit;

@@ -6,6 +6,7 @@
 if (!isset($page_title)) {
     $page_title = 'Sistem Preventive Maintenance';
 }
+$curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -58,10 +59,13 @@ if (!isset($page_title)) {
     </a>
     
     <nav class="nav-actions web-nav">
-      <a href="index.php" class="btn btn-secondary btn-sm">Dashboard</a>
-      <a href="form_indoor.php" class="btn btn-primary btn-sm">+ Buat PM Indoor</a>
-      <a href="form_outdoor.php" class="btn btn-primary btn-sm">+ Buat PM Outdoor</a>
-      <a href="sites.php" class="btn btn-secondary btn-sm">Master Site</a>
+      <a href="index.php" class="btn <?= ($curPage === 'index.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">Dashboard</a>
+      <a href="reports.php" class="btn <?= ($curPage === 'reports.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+        <span>📋</span> Riwayat Laporan
+      </a>
+      <a href="form_indoor.php" class="btn <?= ($curPage === 'form_indoor.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">+ Buat PM Indoor</a>
+      <a href="form_outdoor.php" class="btn <?= ($curPage === 'form_outdoor.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">+ Buat PM Outdoor</a>
+      <a href="sites.php" class="btn <?= ($curPage === 'sites.php') ? 'btn-primary' : 'btn-secondary' ?> btn-sm">Master Site</a>
     </nav>
   </div>
 </header>

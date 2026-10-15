@@ -275,6 +275,23 @@ include __DIR__ . '/includes/header.php';
       </div>
       <div class="card-body">
 
+        <!-- Watermark Controller Card -->
+        <div class="watermark-controller-card">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              ⏱️
+            </div>
+            <div>
+              <strong style="color: var(--text-main); font-size: 0.88rem;">Timestamp & GPS Watermark Otomatis</strong>
+              <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 1px;">Kamera live otomatis mencetak nama site, waktu terkini (WIB), dan koordinat GPS pada foto.</p>
+            </div>
+          </div>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+            <input type="checkbox" id="auto_watermark_toggle" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+            Aktifkan Watermark Otomatis
+          </label>
+        </div>
+
         <?php foreach ($photoGroups as $grpKey => $grp): ?>
           <div style="margin-bottom: 2rem;">
             <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--primary); padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-subtle); margin-bottom: 1rem;">
@@ -294,23 +311,33 @@ include __DIR__ . '/includes/header.php';
 
                   <div style="margin-bottom: 0.35rem;">
                     <label class="form-label" style="font-size: 0.75rem; color: var(--text-subtle); margin-bottom: 2px;">Keterangan Foto</label>
-                    <input type="text" name="photos[<?= $slotCode ?>][title]" class="form-control" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600;" value="<?= htmlspecialchars($slot['title']) ?>" placeholder="Keterangan foto bebas...">
+                    <input type="text" id="title_<?= $slotCode ?>" name="photos[<?= $slotCode ?>][title]" class="form-control" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600;" value="<?= htmlspecialchars($slot['title']) ?>" placeholder="Keterangan foto bebas...">
                   </div>
 
                   <!-- Image Preview Box -->
-                  <div class="photo-preview-box" onclick="document.getElementById('file_<?= $slotCode ?>').click();">
+                  <div class="photo-preview-box" id="preview_box_<?= $slotCode ?>" data-slot="<?= $slotCode ?>">
                     <img id="preview_img_<?= $slotCode ?>" class="photo-preview-img" alt="Preview Foto">
                     <div id="na_overlay_<?= $slotCode ?>" class="photo-na-overlay">N/A</div>
                     <div id="placeholder_<?= $slotCode ?>" style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-subtle);">
-                      <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                      <span style="font-size: 0.75rem; font-weight: 600;">Klik untuk Upload Foto</span>
+                      <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      <span style="font-size: 0.75rem; font-weight: 600;">Ambil Kamera / Pilih Foto</span>
                     </div>
+                  </div>
+
+                  <!-- Dual Action Buttons: Live Camera & Gallery -->
+                  <div class="photo-btn-row">
+                    <button type="button" class="btn btn-primary btn-open-camera" data-slot="<?= $slotCode ?>">
+                      📷 Kamera Live
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-pick-file" data-slot="<?= $slotCode ?>">
+                      📁 Galeri
+                    </button>
                   </div>
 
                   <input type="file" id="file_<?= $slotCode ?>" name="photo_files[<?= $slotCode ?>]" accept="image/*" class="photo-file-input" data-slot="<?= $slotCode ?>" style="display: none;">
 
                   <?php if ($slot['has_measurement']): ?>
-                    <div class="form-group" style="margin-top: 0.25rem;">
+                    <div class="form-group" style="margin-top: 0.35rem;">
                       <label class="form-label" style="font-size: 0.75rem;">Nilai Pengukuran</label>
                       <input type="text" name="photos[<?= $slotCode ?>][measurement]" class="form-control" style="min-height: 36px; font-size: 0.85rem;" placeholder="Contoh: <?= htmlspecialchars($slot['default_label'] ?? '') ?>" value="<?= htmlspecialchars($slot['default_label'] ?? '') ?>">
                     </div>

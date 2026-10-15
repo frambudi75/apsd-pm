@@ -24,7 +24,13 @@ Aplikasi web dan Progressive Web App (PWA) untuk input checklist pemeliharaan be
    - Kartu Laporan Responsif: otomatis beralih dari tabel desktop ke kartu mobile yang mudah ditap.
    - Touch targets memenuhi standar WCAG (>= 44px) dengan radio button status berdimensi besar.
 
-4. **Kompresi Gambar 2 Tahap (Two-Tier Image Compression)**
+4. **Kamera Langsung & Watermark Timestamp/GPS Otomatis**
+   - **Live In-App Camera Viewfinder**: Ambil foto langsung dari kamera smartphone/laptop dengan preview HUD waktu nyata.
+   - **Label Resmi Otomatis**: Mencetak nama site, waktu terkini (WIB), koordinat GPS (Lat/Long), dan judul foto langsung pada gambar.
+   - **Pilihan Fleksibel**: Tombol **Kamera Live** untuk memotret instan, atau tombol **Galeri** untuk memilih foto dari penyimpanan file.
+   - **Toggle Watermark**: Opsi untuk mengaktifkan atau menonaktifkan watermark otomatis sesuai kebutuhan teknisi.
+
+5. **Kompresi Gambar 2 Tahap (Two-Tier Image Compression)**
    - Tahap 1 (Client Canvas): Foto dari kamera HP (5 s/d 15 MB) dikompresi langsung di browser menjadi ~300 KB sebelum dikirim ke server. Menghemat kuota dan mempercepat upload di lokasi sinyal minim.
    - Tahap 2 (Server GD Bicubic): Memastikan auto-rotasi EXIF kamera HP tegak, scaling proporsional maksimal 1600px, dan kualitas JPEG 82% sehingga teks meteran, barcode, dan detail fisik tetap tajam dan terbaca jelas di cetakan PDF.
 

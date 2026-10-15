@@ -4,6 +4,25 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.1.0] - 2026-10-15
+
+#### Ditambahkan
+* **Kamera Langsung Terintegrasi (Live In-App Camera)**:
+  - Viewfinder kamera live interaktif (`navigator.mediaDevices.getUserMedia`) langsung di dalam aplikasi PWA tanpa perlu berpindah ke aplikasi luar.
+  - Dukungan tombol ganti kamera depan/belakang (*switch camera*) dan tombol shutter besar ramah sentuhan.
+  - Tampilan HUD realtime pada video stream yang menampilkan jam berjalan (WIB), nama site, dan status GPS.
+* **Timestamp & GPS Watermark Otomatis**:
+  - Secara otomatis mencetak label inspeksi resmi pada foto: Nama Site & Lokasi, Waktu Terkini (WIB), Koordinat GPS (Latitude & Longitude), serta Kode & Judul Slot Foto.
+  - Efek bayangan teks dan banner pita gradien semi-transparan untuk menjamin keterbacaan 100% pada kondisi foto gelap maupun terang benderang.
+  - Fallback pintar koordinat GPS: menggunakan sensor lokasi perangkat (*geolocation*) dan otomatis beralih ke koordinat master site jika GPS tidak aktif.
+* **Tombol Aksi Ganda pada Setiap Slot Foto**:
+  - Tombol **Kamera Live** untuk memotret langsung dengan watermark instan.
+  - Tombol **Galeri** untuk memilih foto dari penyimpanan file smartphone/komputer.
+* **Master Controller Watermark**:
+  - Opsi toggle aktif/nonaktif watermark otomatis jika teknisi ingin mengunggah foto dari aplikasi kamera eksternal tanpa risiko double-watermark.
+
+---
+
 ### [Versi 2.0.1] - 2026-10-15
 
 #### Diperbaiki

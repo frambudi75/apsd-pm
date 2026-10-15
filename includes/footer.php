@@ -32,6 +32,52 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   </a>
 </nav>
 
+<!-- Live In-App Camera Modal with Timestamp & GPS -->
+<div id="camera_modal" class="camera-modal no-print" style="display: none;">
+  <div class="camera-modal-content">
+    
+    <!-- Top Bar Controls -->
+    <div class="camera-top-bar">
+      <div class="camera-slot-indicator">
+        <span id="camera_slot_badge">Foto</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="btn_switch_camera" class="camera-ctrl-btn" title="Ganti Kamera Depan/Belakang">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+        <button type="button" id="btn_close_camera" class="camera-ctrl-btn camera-close-btn" title="Tutup Kamera">&times;</button>
+      </div>
+    </div>
+
+    <!-- Live Video Viewfinder -->
+    <div class="camera-viewfinder-wrapper">
+      <video id="camera_video" autoplay playsinline muted></video>
+      <canvas id="camera_canvas" style="display: none;"></canvas>
+
+      <!-- Live Watermark Overlay (Realtime HUD over camera stream) -->
+      <div id="live_watermark_hud" class="live-watermark-hud">
+        <div class="hud-brand">PT ANGKASA PURA SARANA DIGITAL</div>
+        <div id="hud_time" class="hud-line">WAKTU: -</div>
+        <div id="hud_site_name" class="hud-line">SITE : -</div>
+        <div id="hud_coords" class="hud-line">GPS  : Mendeteksi koordinat...</div>
+        <div id="hud_slot_info" class="hud-line">FOTO : -</div>
+      </div>
+    </div>
+
+    <!-- Bottom Shutter Bar -->
+    <div class="camera-bottom-bar">
+      <div style="width: 44px;"></div>
+      <button type="button" id="btn_capture_photo" class="camera-shutter-btn" title="Ambil Foto">
+        <div class="shutter-inner"></div>
+      </button>
+      <button type="button" id="btn_camera_gallery_fallback" class="camera-ctrl-btn" title="Pilih dari Galeri">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <script src="assets/js/app.js"></script>
 <script>
   // Register Service Worker for PWA

@@ -72,10 +72,19 @@ include __DIR__ . '/includes/header.php';
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <label class="form-label" style="color: var(--primary); font-size: 0.9rem;">Pilih Master Site (Otomatis Lengkapi Data)</label>
           <div style="display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap;">
+            <?php 
+              $reqSiteId = trim($_GET['site_id'] ?? $_GET['site'] ?? '');
+              $reqCode = trim($_GET['code'] ?? '');
+            ?>
             <select id="site_id_select" name="site_id" class="form-control" style="flex: 1; min-width: 240px; font-weight: 600;">
               <option value="">-- Pilih Site Tersimpan atau Ketik Manual di Bawah --</option>
             <?php foreach ($sites as $s): ?>
+              <?php 
+                $isSelected = ($reqSiteId && ($reqSiteId == $s['id'] || strcasecmp($reqSiteId, $s['site_id_str']) === 0 || strcasecmp($reqSiteId, $s['site_name']) === 0)) ||
+                              ($reqCode && strcasecmp($reqCode, $s['site_id_str']) === 0);
+              ?>
               <option value="<?= $s['id'] ?>"
+                <?= $isSelected ? 'selected' : '' ?>
                 data-name="<?= htmlspecialchars($s['site_name']) ?>"
                 data-code="<?= htmlspecialchars($s['site_id_str']) ?>"
                 data-location="<?= htmlspecialchars($s['location_detail']) ?>"

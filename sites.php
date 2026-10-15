@@ -210,11 +210,13 @@ include __DIR__ . '/includes/header.php';
                 <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
                   <button type="button" 
                     class="btn btn-secondary btn-sm btn-print-sticker"
+                    data-id="<?= $s['id'] ?>"
                     data-name="<?= htmlspecialchars($s['site_name']) ?>"
                     data-code="<?= htmlspecialchars($s['site_id_str']) ?>"
                     data-location="<?= htmlspecialchars($s['location_detail'] ?: $s['region']) ?>"
                     data-coords="<?= htmlspecialchars($s['latitude'] . ', ' . $s['longitude']) ?>"
                     data-type="<?= htmlspecialchars($s['site_type'] . ' - ' . $s['tower_type']) ?>"
+                    data-sitetype="<?= htmlspecialchars($s['site_type']) ?>"
                     title="Cetak Stiker QR Code untuk Tiang / Shelter">
                     🏷️ Stiker QR
                   </button>
@@ -260,8 +262,31 @@ include __DIR__ . '/includes/header.php';
           </div>
         </div>
         <div class="sticker-footer">
-          Pindai QR ini pada Formulir PM untuk Identifikasi & Pengisian Otomatis
+          Pindai QR dengan kamera HP untuk langsung membuka Formulir PM Site ini
         </div>
+      </div>
+    </div>
+
+    <!-- QR Format Selector & URL Target Box -->
+    <div style="padding: 0.85rem 1.25rem; background: #f8fafc; border-top: 1px solid var(--border); font-size: 0.825rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="color: var(--text-main);">Format Isi QR Code:</strong>
+        <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">Bisa langsung di-scan kamera smartphone</span>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--primary); font-weight: 600;">
+          <input type="radio" name="qr_payload_format" value="url" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
+          🌐 Tautan Web PM (Scan kamera HP langsung buka form)
+        </label>
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-subtle); font-weight: 600;">
+          <input type="radio" name="qr_payload_format" value="raw" style="accent-color: var(--primary); width: 16px; height: 16px;">
+          🏷️ Hanya Teks ID Site
+        </label>
+      </div>
+      <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+        <span style="color: var(--text-subtle); font-size: 0.75rem; white-space: nowrap;">Target QR:</span>
+        <code id="qr_payload_display" style="flex: 1; font-size: 0.75rem; background: #ffffff; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); word-break: break-all; color: var(--text-main); font-family: monospace;">-</code>
+        <button type="button" id="btn_copy_qr_url" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.75rem; min-height: 30px; white-space: nowrap;" title="Salin Tautan">📋 Salin</button>
       </div>
     </div>
     
@@ -292,12 +317,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnDownloadPdf = document.getElementById('btn_download_sticker_pdf');
 
   let activeSite = {
+    id: '',
     name: 'Site APSD',
     code: 'APSD',
     loc: '-',
     coords: '-',
-    type: '-'
+    type: '-',
+    sitetype: ''
   };
+  let activePayload = '';
 
   function closeModal() {
     if (modal) modal.style.display = 'none';
@@ -306,6 +334,61 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (btnClose) btnClose.onclick = closeModal;
   if (btnDismiss) btnDismiss.onclick = closeModal;
+
+  function updateQrCode() {
+    const isUrl = document.querySelector('input[name="qr_payload_format"]:checked')?.value === 'url';
+    const isIndoor = (activeSite.type && activeSite.type.toLowerCase().includes('indoor')) ||
+                     (activeSite.sitetype && activeSite.sitetype.toLowerCase().includes('indoor'));
+    const targetForm = isIndoor ? 'form_indoor.php' : 'form_outdoor.php';
+    const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+
+    const siteParam = activeSite.id ? ('site_id=' + encodeURIComponent(activeSite.id)) : ('code=' + encodeURIComponent(activeSite.code || activeSite.name));
+    const fullUrl = baseUrl + targetForm + '?' + siteParam;
+    const rawCode = activeSite.code || activeSite.name || 'APSD';
+
+    activePayload = isUrl ? fullUrl : rawCode;
+
+    const displayEl = document.getElementById('qr_payload_display');
+    if (displayEl) {
+      displayEl.innerText = activePayload;
+    }
+
+    const canvas = document.getElementById('sticker_qr_canvas');
+    try {
+      if (window.QRious) {
+        new QRious({
+          element: canvas,
+          value: activePayload,
+          size: 240,
+          level: 'H'
+        });
+      }
+    } catch (err) {
+      console.error('Error rendering QRious:', err);
+    }
+  }
+
+  // Format radio change handler
+  document.querySelectorAll('input[name="qr_payload_format"]').forEach(radio => {
+    radio.addEventListener('change', updateQrCode);
+  });
+
+  // Copy QR URL button
+  const btnCopy = document.getElementById('btn_copy_qr_url');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', function () {
+      if (activePayload && navigator.clipboard) {
+        navigator.clipboard.writeText(activePayload).then(() => {
+          btnCopy.innerText = '✅ Tersalin';
+          setTimeout(() => { btnCopy.innerText = '📋 Salin'; }, 1500);
+        }).catch(() => {
+          prompt('Salin link berikut:', activePayload);
+        });
+      } else if (activePayload) {
+        prompt('Salin link berikut:', activePayload);
+      }
+    });
+  }
 
   // Render whole sticker to high-res canvas (960x600 for sharp print quality)
   function renderStickerCanvas(data) {
@@ -387,20 +470,22 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.fillStyle = '#64748b';
     ctx.font = '16px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Pindai QR ini pada Formulir PM untuk Identifikasi & Pengisian Otomatis', c.width / 2, 558);
+    ctx.fillText('Pindai QR dengan kamera HP untuk langsung membuka Formulir PM Site ini', c.width / 2, 558);
 
     return c;
   }
 
   document.querySelectorAll('.btn-print-sticker').forEach(btn => {
     btn.addEventListener('click', function () {
+      const id = this.getAttribute('data-id') || '';
       const name = this.getAttribute('data-name') || '';
       const code = this.getAttribute('data-code') || '';
       const loc = this.getAttribute('data-location') || '';
       const coords = this.getAttribute('data-coords') || '';
       const type = this.getAttribute('data-type') || '';
+      const sitetype = this.getAttribute('data-sitetype') || '';
 
-      activeSite = { name, code, loc, coords, type };
+      activeSite = { id, name, code, loc, coords, type, sitetype };
 
       document.getElementById('sticker_site_name').innerText = name || 'Site APSD';
       document.getElementById('sticker_site_code').innerText = code || '-';
@@ -408,21 +493,11 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('sticker_coords').innerText = coords || '-';
       document.getElementById('sticker_type').innerText = type || '-';
 
-      const qrPayload = code || name || 'APSD';
-      const canvas = document.getElementById('sticker_qr_canvas');
+      // Always reset to URL mode by default when opening modal
+      const radioUrl = document.querySelector('input[name="qr_payload_format"][value="url"]');
+      if (radioUrl) radioUrl.checked = true;
 
-      try {
-        if (window.QRious) {
-          new QRious({
-            element: canvas,
-            value: qrPayload,
-            size: 240,
-            level: 'H'
-          });
-        }
-      } catch (err) {
-        console.error('Error rendering QRious:', err);
-      }
+      updateQrCode();
 
       if (modal) modal.style.display = 'flex';
     });

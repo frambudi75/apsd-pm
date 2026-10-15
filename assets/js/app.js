@@ -29,6 +29,35 @@ document.addEventListener('DOMContentLoaded', function () {
       setVal('tower_type', selectedOpt.getAttribute('data-tower') || '');
       setVal('site_type', selectedOpt.getAttribute('data-sitetype') || '');
     });
+
+    // Auto-select site if passed in URL query param (?site_id=... or ?code=...)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qSiteId = urlParams.get('site_id') || urlParams.get('site') || urlParams.get('id');
+      const qCode = urlParams.get('code');
+
+      if (qSiteId || qCode) {
+        for (let i = 0; i < siteSelect.options.length; i++) {
+          const opt = siteSelect.options[i];
+          const optVal = (opt.value || '').toLowerCase();
+          const optCode = (opt.getAttribute('data-code') || '').toLowerCase();
+          const optName = (opt.getAttribute('data-name') || '').toLowerCase();
+
+          if (
+            (qSiteId && (optVal === qSiteId.toLowerCase() || optCode === qSiteId.toLowerCase() || optName === qSiteId.toLowerCase())) ||
+            (qCode && (optCode === qCode.toLowerCase() || optName === qCode.toLowerCase()))
+          ) {
+            siteSelect.selectedIndex = i;
+            siteSelect.dispatchEvent(new Event('change'));
+            break;
+          }
+        }
+      } else if (siteSelect.value) {
+        siteSelect.dispatchEvent(new Event('change'));
+      }
+    } catch (e) {
+      console.warn('Auto-select site error:', e);
+    }
   }
 
   // 2. Button "Set All OK"

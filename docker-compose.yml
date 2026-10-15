@@ -36,8 +36,6 @@ services:
       - MYSQL_DATABASE=apsd_pm
       - MYSQL_USER=apsd_user
       - MYSQL_PASSWORD=apsd_password_2026
-    ports:
-      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
@@ -49,8 +47,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: apsd_pm_redis
-    ports:
-      - "6379:6379"
     restart: unless-stopped
     volumes:
       - redis_data:/data

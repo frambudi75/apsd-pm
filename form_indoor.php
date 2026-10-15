@@ -298,13 +298,13 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
-    <!-- Section 3: Upload Dokumentasi Foto (24 Slot: Grup A, B, C, D) -->
+    <!-- Section 3: Upload Dokumentasi Foto (26 Slot: Grup A, B, C, D) -->
     <div class="card" id="sec_photos">
       <div class="card-header">
         <div>
           <h3 class="card-title">3. Upload Dokumentasi Foto (Halaman 4 s/d 7)</h3>
           <p style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 2px;">
-            Total 24 slot foto (6 foto per halaman). Centang <strong>Tandai N/A</strong> jika slot tidak memiliki foto.
+            Total 26 slot foto (Grup B berisi 8 foto pengukuran tegangan & MCB). Centang <strong>Tandai N/A</strong> jika slot tidak memiliki foto.
           </p>
         </div>
       </div>
@@ -313,9 +313,9 @@ include __DIR__ . '/includes/header.php';
         <!-- Photo Filter & Group Jump Toolbar -->
         <div class="photo-filter-toolbar no-print">
           <div class="photo-filter-tabs">
-            <button type="button" class="btn-photo-filter active" data-filter="all">Semua Slot (<span id="count_all_slots">24</span>)</button>
+            <button type="button" class="btn-photo-filter active" data-filter="all">Semua Slot (<span id="count_all_slots">26</span>)</button>
             <button type="button" class="btn-photo-filter" data-filter="filled">📸 Hanya Terisi (<span id="count_filled_slots">0</span>)</button>
-            <button type="button" class="btn-photo-filter" data-filter="empty">⏳ Belum Terisi (<span id="count_empty_slots">24</span>)</button>
+            <button type="button" class="btn-photo-filter" data-filter="empty">⏳ Belum Terisi (<span id="count_empty_slots">26</span>)</button>
           </div>
           <div class="photo-jump-group">
             <label for="jump_photo_group" style="font-size: 0.8rem; font-weight: 600; color: var(--text-subtle);">Lompat:</label>

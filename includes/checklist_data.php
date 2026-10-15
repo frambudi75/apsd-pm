@@ -119,7 +119,9 @@ function get_indoor_photo_slots(): array {
                 'B-3' => ['title' => 'Pengukuran Tegangan (R-T)', 'has_measurement' => true, 'default_label' => 'R-T = 403.5'],
                 'B-4' => ['title' => 'Pengukuran Tegangan (S-T)', 'has_measurement' => true, 'default_label' => 'S-T = 402.6'],
                 'B-5' => ['title' => 'Pengukuran Tegangan (R-N)', 'has_measurement' => true, 'default_label' => 'R-N = 230.8'],
-                'B-6' => ['title' => 'Pengukuran Tegangan (G-N)', 'has_measurement' => true, 'default_label' => 'G-N = 0.168'],
+                'B-6' => ['title' => 'Pengukuran Tegangan (S-N)', 'has_measurement' => true, 'default_label' => 'S-N = 231.2'],
+                'B-7' => ['title' => 'Pengukuran Tegangan (T-N)', 'has_measurement' => true, 'default_label' => 'T-N = 230.5'],
+                'B-8' => ['title' => 'Pengukuran Tegangan (G-N)', 'has_measurement' => true, 'default_label' => 'G-N = 0.168'],
             ]
         ],
         'C' => [

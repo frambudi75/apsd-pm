@@ -524,8 +524,8 @@ $totalPages = 3 + $totalPhotoPages;
           </tr>
         </table>
 
-        <!-- 2x3 Grid Foto (6 Slot per halaman) -->
-        <div class="photo-grid-container">
+        <!-- Grid Foto (6 Slot standar 2x3 atau 8 Slot 2x4) -->
+        <div class="photo-grid-container <?= (count($pageSlots) > 6) ? 'grid-8-slots' : '' ?>">
           <?php if (empty($pageSlots)): ?>
             <div style="grid-column: 1 / -1; height: 180mm; display: flex; align-items: center; justify-content: center; border: 1px solid #000; font-size: 11pt; color: #64748b; font-weight: bold;">
               Tidak ada dokumentasi foto yang diunggah untuk site ini.

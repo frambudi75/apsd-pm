@@ -1607,20 +1607,28 @@ body {
   gap: 0.4rem;
   align-items: center;
   justify-content: flex-end;
+  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .btn-action-view {
   background: #ffffff;
   color: var(--primary);
   border: 1px solid rgba(0, 128, 128, 0.35);
-  padding: 0.35rem 0.65rem;
+  padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 6px;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  min-height: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  line-height: 1;
   transition: all 0.15s ease;
 }
 
@@ -1634,14 +1642,20 @@ body {
   background: var(--primary);
   color: #ffffff;
   border: 1px solid var(--primary);
-  padding: 0.35rem 0.65rem;
+  padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 6px;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  min-height: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  line-height: 1;
   transition: all 0.15s ease;
 }
 
@@ -1651,10 +1665,10 @@ body {
 }
 
 .btn-action-del {
-  background: transparent;
+  background: #ffffff;
   color: #94a3b8;
   border: 1px solid #e2e8f0;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.6rem;
   font-size: 0.85rem;
   border-radius: 6px;
   cursor: pointer;
@@ -1662,6 +1676,10 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  line-height: 1;
   transition: all 0.15s ease;
 }
 

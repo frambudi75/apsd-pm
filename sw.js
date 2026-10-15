@@ -3,7 +3,7 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v10';
+const CACHE_NAME = 'iass-pm-v11';
 const STATIC_ASSETS = [
   './',
   'index.php',

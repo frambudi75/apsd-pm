@@ -191,7 +191,7 @@ foreach ($reports as $r) {
                 <th>Tanggal & Waktu</th>
                 <th>Petugas PIC & Leader</th>
                 <th>Status</th>
-                <th style="text-align: right; width: 270px;">Aksi Dokumen</th>
+                <th style="text-align: right; width: 220px;">Aksi Dokumen</th>
               </tr>
             </thead>
             <tbody>
@@ -254,15 +254,17 @@ foreach ($reports as $r) {
                     </span>
                   </td>
                   <td style="text-align: right;">
-                    <div style="display: inline-flex; gap: 0.4rem; align-items: center;">
-                      <a href="<?= $printUrl ?>" target="_blank" class="btn btn-secondary btn-sm" title="Pratinjau & Cetak Laporan">
-                        🖨️ Cetak PDF
+                    <div class="table-action-group">
+                      <a href="<?= $printUrl ?>" target="_blank" class="btn-action-view" title="Buka Dokumen PDF Resmi">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Cetak
                       </a>
-                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary btn-sm" title="Unduh File PDF Langsung">
-                        ⬇️ Download
+                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Unduh
                       </a>
-                      <a href="api/delete_report.php?id=<?= $rep['id'] ?>&return=reports" onclick="return confirm('Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.');" class="btn btn-danger btn-sm" title="Hapus Laporan">
-                        &times;
+                      <a href="api/delete_report.php?id=<?= $rep['id'] ?>&return=reports" onclick="return confirm('Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.');" class="btn-action-del" title="Hapus Laporan">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </a>
                     </div>
                   </td>

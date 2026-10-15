@@ -121,7 +121,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js?v=10')
+      navigator.serviceWorker.register('sw.js?v=11')
         .then(function (reg) {
           console.log('PWA ServiceWorker registered with scope:', reg.scope);
         })

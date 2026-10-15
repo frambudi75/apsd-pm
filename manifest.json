@@ -2,7 +2,7 @@
   "name": "IASS SBU ICT KNO PM System",
   "short_name": "IASS SBU ICT KNO",
   "description": "Sistem Checklist Pemeliharaan Berkala & Generator Laporan PDF Standar Resmi IASS SBU ICT KNO",
-  "start_url": "index.php",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -28,21 +28,21 @@
       "name": "Buat PM Indoor",
       "short_name": "PM Indoor",
       "description": "Formulir Checklist & Dokumentasi PM Indoor (7 Halaman)",
-      "url": "form_indoor.php",
+      "url": "form_indoor",
       "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Buat PM Outdoor",
       "short_name": "PM Outdoor",
       "description": "Formulir Checklist & Dokumentasi PM Outdoor Pole (13 Halaman)",
-      "url": "form_outdoor.php",
+      "url": "form_outdoor",
       "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Master Site Bandara",
       "short_name": "Master Site",
       "description": "Kelola data master site dan koordinat bandara",
-      "url": "sites.php",
+      "url": "sites",
       "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
     }
   ]

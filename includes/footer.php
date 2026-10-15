@@ -14,23 +14,23 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 
 <!-- PWA Mobile Bottom Navigation Bar (Visible on phones) -->
 <nav class="mobile-bottom-nav no-print">
-  <a href="index.php" class="mobile-nav-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
+  <a href="./" class="mobile-nav-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
     <span>Home</span>
   </a>
-  <a href="reports.php" class="mobile-nav-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
+  <a href="reports" class="mobile-nav-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
     <span>Riwayat</span>
   </a>
-  <a href="form_indoor.php" class="mobile-nav-item <?= ($curPage === 'form_indoor.php') ? 'active' : '' ?>">
+  <a href="form_indoor" class="mobile-nav-item <?= ($curPage === 'form_indoor.php') ? 'active' : '' ?>">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
     <span>+ Indoor</span>
   </a>
-  <a href="form_outdoor.php" class="mobile-nav-item <?= ($curPage === 'form_outdoor.php') ? 'active' : '' ?>">
+  <a href="form_outdoor" class="mobile-nav-item <?= ($curPage === 'form_outdoor.php') ? 'active' : '' ?>">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
     <span>+ Outdoor</span>
   </a>
-  <a href="sites.php" class="mobile-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
+  <a href="sites" class="mobile-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
     <span>Sites</span>
   </a>

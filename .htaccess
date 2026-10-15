@@ -1,0 +1,47 @@
+# ----------------------------------------------------------------------
+# IASS SBU ICT KNO - PM System
+# Apache Configuration, Clean URLs & Security Rules
+# ----------------------------------------------------------------------
+
+# 1. Disable Directory Browsing / File Listing
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 2. Block direct access to sensitive system directories & files (HTTP 403)
+    RewriteRule ^database(/.*)?$ - [F,L,NC]
+    RewriteRule ^config(/.*)?$ - [F,L,NC]
+    RewriteRule ^includes(/.*)?$ - [F,L,NC]
+    RewriteRule ^docs(/.*)?$ - [F,L,NC]
+    RewriteRule ^\.git(/.*)?$ - [F,L,NC]
+    RewriteRule ^(\.env|\.gitignore|Dockerfile|docker-compose.*|entrypoint\.sh)$ - [F,L,NC]
+    RewriteRule \.(sqlite|db|log|ini|sql|bak|old|env|yml|yaml|sh|md)$ - [F,L,NC]
+
+    # Block PHP script execution inside uploads directory (Anti-Webshell)
+    RewriteRule ^uploads/.*\.php$ - [F,L,NC]
+
+    # 3. Clean URLs (Remove .php extension)
+    # Redirect GET /index.php to /
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/index\.php [NC]
+    RewriteRule ^index\.php$ ./ [R=301,L]
+
+    # Redirect external GET requests with .php to clean URL (exclude api/)
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/([^.]+)\.php [NC]
+    RewriteCond %{REQUEST_URI} !/api/
+    RewriteRule ^ %1 [R=301,L]
+
+    # Internally resolve clean URL to existing .php file
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+</IfModule>
+
+# 4. Security Headers (Anti-Clickjacking, MIME Sniffing & XSS Protection)
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

@@ -13,5 +13,9 @@ if [ -f /var/www/html/database/apsd.sqlite ]; then
     chmod 666 /var/www/html/database/apsd.sqlite 2>/dev/null || true
 fi
 
+# Ensure Apache AllowOverride All and rewrite/headers modules are active
+sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf 2>/dev/null || true
+a2enmod rewrite headers 2>/dev/null || true
+
 # Execute CMD (default: apache2-foreground)
 exec "$@"

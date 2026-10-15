@@ -3,14 +3,13 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v11';
+const CACHE_NAME = 'iass-pm-v12';
 const STATIC_ASSETS = [
   './',
-  'index.php',
-  'reports.php',
-  'form_indoor.php',
-  'form_outdoor.php',
-  'sites.php',
+  'reports',
+  'form_indoor',
+  'form_outdoor',
+  'sites',
   'manifest.json',
   'assets/css/app.css',
   'assets/css/print.css',
@@ -83,7 +82,7 @@ self.addEventListener('fetch', event => {
           }
           // If HTML navigation fails offline, show cached dashboard
           if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-            return caches.match('index.php');
+            return caches.match('./');
           }
         });
       })

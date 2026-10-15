@@ -22,8 +22,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 RUN pecl install redis \
     && docker-php-ext-enable redis
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache mod_rewrite & headers, and configure AllowOverride All for .htaccess
+RUN a2enmod rewrite headers \
+    && sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 # Configure PHP settings for high upload limits and large forms (PM reports have up to 48 photos)
 RUN { \

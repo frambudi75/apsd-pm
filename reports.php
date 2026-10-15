@@ -41,7 +41,7 @@ foreach ($reports as $r) {
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
     <div>
       <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-subtle); margin-bottom: 0.35rem;">
-        <a href="index.php" style="color: var(--primary); text-decoration: none; font-weight: 600;">Dashboard</a>
+        <a href="./" style="color: var(--primary); text-decoration: none; font-weight: 600;">Dashboard</a>
         <span>/</span>
         <span style="color: var(--text-main); font-weight: 600;">Riwayat Laporan PM</span>
       </div>
@@ -55,10 +55,10 @@ foreach ($reports as $r) {
 
     <!-- Quick Action New Reports -->
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-      <a href="form_indoor.php" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px;">
+      <a href="form_indoor" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px;">
         <span>+</span> Buat PM Indoor
       </a>
-      <a href="form_outdoor.php" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px; color: var(--secondary);">
+      <a href="form_outdoor" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px; color: var(--secondary);">
         <span>+</span> Buat PM Outdoor
       </a>
     </div>
@@ -164,8 +164,8 @@ foreach ($reports as $r) {
             Saat teknisi menyelesaikan inspeksi lapangan melalui form PM Indoor atau PM Outdoor, dokumen laporan akan tersimpan di sini secara otomatis.
           </p>
           <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-            <a href="form_indoor.php" class="btn btn-primary" style="min-height: 44px;">+ Buat PM Indoor Baru</a>
-            <a href="form_outdoor.php" class="btn btn-secondary" style="min-height: 44px; color: var(--secondary);">+ Buat PM Outdoor Baru</a>
+            <a href="form_indoor" class="btn btn-primary" style="min-height: 44px;">+ Buat PM Indoor Baru</a>
+            <a href="form_outdoor" class="btn btn-secondary" style="min-height: 44px; color: var(--secondary);">+ Buat PM Outdoor Baru</a>
           </div>
         </div>
       <?php else: ?>
@@ -198,8 +198,8 @@ foreach ($reports as $r) {
               <?php foreach ($reports as $index => $rep): ?>
                 <?php 
                   $printUrl = ($rep['report_type'] === 'indoor') 
-                    ? 'print_indoor.php?id=' . $rep['id'] 
-                    : 'print_outdoor.php?id=' . $rep['id'];
+                    ? 'print_indoor?id=' . $rep['id'] 
+                    : 'print_outdoor?id=' . $rep['id'];
                   $searchMeta = strtolower(
                     ($rep['site_name'] ?? '') . ' ' . 
                     ($rep['location_detail'] ?? '') . ' ' . 
@@ -259,7 +259,7 @@ foreach ($reports as $r) {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         Cetak
                       </a>
-                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
+                      <a href="download_pdf?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Unduh
                       </a>
@@ -279,8 +279,8 @@ foreach ($reports as $r) {
           <?php foreach ($reports as $index => $rep): ?>
             <?php 
               $printUrl = ($rep['report_type'] === 'indoor') 
-                ? 'print_indoor.php?id=' . $rep['id'] 
-                : 'print_outdoor.php?id=' . $rep['id'];
+                ? 'print_indoor?id=' . $rep['id'] 
+                : 'print_outdoor?id=' . $rep['id'];
               $searchMeta = strtolower(
                 ($rep['site_name'] ?? '') . ' ' . 
                 ($rep['location_detail'] ?? '') . ' ' . 
@@ -330,7 +330,7 @@ foreach ($reports as $r) {
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   Cetak PDF
                 </a>
-                <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary mobile-act-btn" title="Unduh File PDF Langsung">
+                <a href="download_pdf?id=<?= $rep['id'] ?>" class="btn btn-primary mobile-act-btn" title="Unduh File PDF Langsung">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                   Download PDF
                 </a>

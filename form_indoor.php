@@ -36,7 +36,7 @@ include __DIR__ . '/includes/header.php';
       <button type="button" id="btn_set_all_ok" class="btn btn-secondary btn-sm" style="font-weight: 700; color: var(--status-ok); border-color: var(--status-ok); min-height: 40px;">
         ✓ Set Semua Checklist OK
       </button>
-      <a href="index.php" class="btn btn-secondary btn-sm" style="min-height: 40px; display: inline-flex; align-items: center;">&larr; Batal / Kembali</a>
+      <a href="./" class="btn btn-secondary btn-sm" style="min-height: 40px; display: inline-flex; align-items: center;">&larr; Batal / Kembali</a>
     </div>
   </div>
 
@@ -422,7 +422,7 @@ include __DIR__ . '/includes/header.php';
         <p style="font-size: 0.8rem; color: var(--text-subtle); margin: 2px 0 0 0;">Pastikan data inspeksi dan dokumentasi foto telah diperiksa.</p>
       </div>
       <div style="display: flex; gap: 0.75rem;">
-        <a href="index.php" class="btn btn-secondary">Batal</a>
+        <a href="./" class="btn btn-secondary">Batal</a>
         <button type="submit" id="btn_submit_report" class="btn btn-primary" style="padding: 0.65rem 1.75rem; font-size: 0.95rem;">
           Simpan & Buat Laporan PM Indoor (PDF)
         </button>

@@ -135,7 +135,7 @@ $totalPages = 5 + $totalPhotoPages;
           Hanya Foto Terisi (Skip N/A)
         </label>
       </div>
-      <a href="reports.php" style="display: inline-block; padding: 6px 14px; background: #e2e8f0; color: #1e293b; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
+      <a href="reports" style="display: inline-block; padding: 6px 14px; background: #e2e8f0; color: #1e293b; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
         &larr; Riwayat
       </a>
       <button onclick="window.print()" style="display: inline-block; padding: 6px 16px; background: #008080; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
@@ -182,10 +182,10 @@ $totalPages = 5 + $totalPhotoPages;
           }
         }).catch(function(err) {
           console.error(err);
-          window.location.href = 'download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
+          window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
         });
       } else {
-        window.location.href = 'download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
+        window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
       }
     }
 

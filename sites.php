@@ -82,7 +82,7 @@ include __DIR__ . '/includes/header.php';
       <h2 style="font-size: 1.35rem; font-weight: 700;">Master Data Lokasi Site</h2>
       <p style="color: var(--text-subtle); font-size: 0.9rem;">Daftar site telekomunikasi dan tower bandara untuk pengisian formulir otomatis.</p>
     </div>
-    <a href="index.php" class="btn btn-secondary btn-sm">&larr; Kembali ke Dashboard</a>
+    <a href="./" class="btn btn-secondary btn-sm">&larr; Kembali ke Dashboard</a>
   </div>
 
   <div class="card">
@@ -90,7 +90,7 @@ include __DIR__ . '/includes/header.php';
       <h3 class="card-title">+ Tambah Data Site Baru</h3>
     </div>
     <div class="card-body">
-      <form action="sites.php" method="POST">
+      <form action="sites" method="POST">
         <input type="hidden" name="action" value="add_site">
 
         <div class="form-grid" style="margin-bottom: 1rem;">
@@ -220,7 +220,7 @@ include __DIR__ . '/includes/header.php';
                     title="Cetak Stiker QR Code untuk Tiang / Shelter">
                     🏷️ Stiker QR
                   </button>
-                  <a href="sites.php?delete=<?= $s['id'] ?>" onclick="return confirm('Hapus site ini?');" class="btn btn-danger btn-sm">
+                  <a href="sites?delete=<?= $s['id'] ?>" onclick="return confirm('Hapus site ini?');" class="btn btn-danger btn-sm">
                     Hapus
                   </a>
                 </div>
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isUrl = document.querySelector('input[name="qr_payload_format"]:checked')?.value === 'url';
     const isIndoor = (activeSite.type && activeSite.type.toLowerCase().includes('indoor')) ||
                      (activeSite.sitetype && activeSite.sitetype.toLowerCase().includes('indoor'));
-    const targetForm = isIndoor ? 'form_indoor.php' : 'form_outdoor.php';
+    const targetForm = isIndoor ? 'form_indoor' : 'form_outdoor';
     const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
     const siteParam = activeSite.id ? ('site_id=' + encodeURIComponent(activeSite.id)) : ('code=' + encodeURIComponent(activeSite.code || activeSite.name));

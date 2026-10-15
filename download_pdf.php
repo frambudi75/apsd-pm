@@ -157,7 +157,7 @@ $targetPrintUrl = "{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : 
       Dokumen sedang diproses dan akan terunduh otomatis ke perangkat Anda.
     </p>
     <div id="action_container" style="display: none; margin-top: 1.5rem; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-      <a href="reports.php" class="btn">Kembali ke Riwayat</a>
+      <a href="reports" class="btn">Kembali ke Riwayat</a>
       <a href="<?= htmlspecialchars($targetPrintUrl) ?>" class="btn btn-secondary">Buka Pratinjau Cetak</a>
     </div>
   </div>

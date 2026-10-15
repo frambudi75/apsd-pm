@@ -74,7 +74,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
       </p>
     </div>
     <div>
-      <a href="reports.php" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 600; padding: 0.45rem 0.85rem;">
+      <a href="reports" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); color: #ffffff; font-weight: 600; padding: 0.45rem 0.85rem;">
         <span>📂</span> Buka Semua Arsip
       </a>
     </div>
@@ -82,7 +82,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
 
   <!-- Quick Start Inspection Cards (Indoor & Outdoor) -->
   <div class="quick-start-grid">
-    <a href="form_indoor.php" class="quick-start-card quick-start-indoor">
+    <a href="form_indoor" class="quick-start-card quick-start-indoor">
       <div>
         <div class="quick-start-header">
           <div class="quick-start-icon">
@@ -105,7 +105,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
       </div>
     </a>
 
-    <a href="form_outdoor.php" class="quick-start-card quick-start-outdoor">
+    <a href="form_outdoor" class="quick-start-card quick-start-outdoor">
       <div>
         <div class="quick-start-header">
           <div class="quick-start-icon">
@@ -168,7 +168,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
       </div>
     </div>
 
-    <a href="sites.php" class="card stat-filter-card" style="margin-bottom: 0; text-decoration: none; color: inherit;" title="Buka Master Data Site Bandara">
+    <a href="sites" class="card stat-filter-card" style="margin-bottom: 0; text-decoration: none; color: inherit;" title="Buka Master Data Site Bandara">
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
         <div>
           <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px;">Master Site</span>
@@ -188,7 +188,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
         <h3 class="card-title" style="margin-bottom: 0.15rem;">Daftar Arsip Laporan Pemeliharaan (PM)</h3>
         <span style="font-size: 0.825rem; color: var(--text-subtle);">Menampilkan <strong id="reports_count_display"><?= $totalReports ?></strong> dokumen tercatat</span>
       </div>
-      <a href="reports.php" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+      <a href="reports" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
         <span>📋</span> Buka Riwayat Lengkap &rarr;
       </a>
     </div>
@@ -215,8 +215,8 @@ if ($cachedStats !== null && is_array($cachedStats)) {
             Silakan buat laporan baru untuk modul Indoor (7 halaman) atau Outdoor (13 halaman) dengan mengklik salah satu tombol di bawah.
           </p>
           <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-            <a href="form_indoor.php" class="btn btn-primary">+ Buat PM Indoor Baru</a>
-            <a href="form_outdoor.php" class="btn btn-secondary">+ Buat PM Outdoor Baru</a>
+            <a href="form_indoor" class="btn btn-primary">+ Buat PM Indoor Baru</a>
+            <a href="form_outdoor" class="btn btn-secondary">+ Buat PM Outdoor Baru</a>
           </div>
         </div>
       <?php else: ?>
@@ -246,8 +246,8 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                   }
                   $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: 'Area Bandara Kualanamu';
                   $printUrl = ($rep['report_type'] === 'indoor') 
-                    ? 'print_indoor.php?id=' . $rep['id'] 
-                    : 'print_outdoor.php?id=' . $rep['id'];
+                    ? 'print_indoor?id=' . $rep['id'] 
+                    : 'print_outdoor?id=' . $rep['id'];
                 ?>
                 <tr data-type="<?= $rep['report_type'] ?>">
                   <td style="font-weight: bold;"><?= $index + 1 ?></td>
@@ -290,7 +290,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         Cetak
                       </a>
-                      <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
+                      <a href="download_pdf?id=<?= $rep['id'] ?>" class="btn-action-dl" title="Download File PDF">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Unduh
                       </a>
@@ -317,8 +317,8 @@ if ($cachedStats !== null && is_array($cachedStats)) {
               }
               $locDisplayName = $rep['location_detail'] ?: $rep['region'] ?: 'Area Bandara Kualanamu';
               $printUrl = ($rep['report_type'] === 'indoor') 
-                ? 'print_indoor.php?id=' . $rep['id'] 
-                : 'print_outdoor.php?id=' . $rep['id'];
+                ? 'print_indoor?id=' . $rep['id'] 
+                : 'print_outdoor?id=' . $rep['id'];
             ?>
             <div class="mobile-report-card" data-type="<?= $rep['report_type'] ?>">
               <div class="mobile-card-top">
@@ -354,7 +354,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   Lihat / Cetak
                 </a>
-                <a href="download_pdf.php?id=<?= $rep['id'] ?>" class="btn btn-primary mobile-act-btn">
+                <a href="download_pdf?id=<?= $rep['id'] ?>" class="btn btn-primary mobile-act-btn">
                   <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                   Download PDF
                 </a>

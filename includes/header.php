@@ -50,8 +50,8 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 
 <header class="app-navbar no-print">
   <div class="nav-container">
-    <a href="index.php" class="brand-wrapper">
-      <img src="assets/img/logo_ias.png?v=2" alt="IAS Support Logo" class="brand-logo">
+    <a href="./" class="brand-wrapper">
+      <img src="assets/img/logo_ias.png?v=3" alt="IAS Support Logo" class="brand-logo">
       <div class="brand-text">
         <h1>IASS SBU ICT KNO</h1>
         <span>Sistem Checklist & Laporan PM</span>
@@ -59,19 +59,19 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     </a>
     
     <nav class="nav-actions web-nav">
-      <a href="index.php" class="nav-link-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
+      <a href="./" class="nav-link-item <?= ($curPage === 'index.php') ? 'active' : '' ?>">
         <span>📊</span> Dashboard
       </a>
-      <a href="reports.php" class="nav-link-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
+      <a href="reports" class="nav-link-item <?= ($curPage === 'reports.php') ? 'active' : '' ?>">
         <span>📋</span> Riwayat Laporan
       </a>
-      <a href="sites.php" class="nav-link-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
+      <a href="sites" class="nav-link-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
         <span>📍</span> Master Site
       </a>
       
       <div class="nav-cta-buttons">
-        <a href="form_indoor.php" class="btn btn-sm btn-primary-soft" title="Checklist PM Indoor IBC Telkomsel (7 Halaman)">+ PM Indoor</a>
-        <a href="form_outdoor.php" class="btn btn-sm btn-primary" title="Checklist PM Outdoor Pole / Tower (13 Halaman)">+ PM Outdoor</a>
+        <a href="form_indoor" class="btn btn-sm btn-primary-soft" title="Checklist PM Indoor IBC Telkomsel (7 Halaman)">+ PM Indoor</a>
+        <a href="form_outdoor" class="btn btn-sm btn-primary" title="Checklist PM Outdoor Pole / Tower (13 Halaman)">+ PM Outdoor</a>
       </div>
     </nav>
   </div>

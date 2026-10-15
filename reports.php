@@ -49,7 +49,7 @@ foreach ($reports as $r) {
         Riwayat & Arsip Laporan PM
       </h2>
       <p style="font-size: 0.875rem; color: var(--text-subtle); margin-top: 0.25rem;">
-        Arsip digital seluruh checklist pemeliharaan berkala indoor dan outdoor PT Angkasa Pura Sarana Digital.
+        Arsip digital seluruh checklist pemeliharaan berkala indoor dan outdoor IASS SBU ICT KNO.
       </p>
     </div>
 

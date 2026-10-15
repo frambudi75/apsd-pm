@@ -493,7 +493,7 @@ $totalPages = 3 + $totalPhotoPages;
               <img src="assets/img/logo_ias.png?v=2" alt="IAS Support" style="height: 32px; width: auto; max-width: 100%;">
             </td>
             <td style="width: 56%; text-align: center; vertical-align: middle; padding: 2px;">
-              <div style="font-size: 8pt; font-weight: bold;">PT. ANGKASA PURA SARANA DIGITAL</div>
+              <div style="font-size: 8pt; font-weight: bold;">IASS SBU ICT KNO</div>
               <div style="font-size: 8.5pt; font-weight: bold;">CHECK LIST PREVENTIVE MAINTANANCE INDOOR</div>
               <div style="font-size: 8pt; font-weight: bold;">MECHANICAL ELECTRICAL</div>
               <div style="font-size: 7.5pt; font-weight: bold; color: #333;">BASE SERVICE (HAL <?= 3 + $pageIdx + 1 ?> DARI <?= $totalPages ?>)</div>

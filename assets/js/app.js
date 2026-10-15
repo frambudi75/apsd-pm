@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Header Tag
     const headerFont = 'bold ' + Math.round((isPortrait ? 11.5 : 11) * scale) + 'px sans-serif';
     ctx.fillStyle = '#38bdf8';
-    ctx.fillText(fitText('PT ANGKASA PURA SARANA DIGITAL | PM INSPECTION', headerFont), startX, h - boxH + (18 * scale));
+    ctx.fillText(fitText('IASS SBU ICT KNO | PM INSPECTION', headerFont), startX, h - boxH + (18 * scale));
 
     // Line 1: Timestamp
     const timeFont = 'bold ' + Math.round((isPortrait ? 13.5 : 13) * scale) + 'px sans-serif';

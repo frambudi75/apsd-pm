@@ -53,7 +53,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <a href="index.php" class="brand-wrapper">
       <img src="assets/img/logo_ias.png?v=2" alt="IAS Support Logo" class="brand-logo">
       <div class="brand-text">
-        <h1>PT Angkasa Pura Sarana Digital</h1>
+        <h1>IASS SBU ICT KNO</h1>
         <span>Sistem Checklist & Laporan PM</span>
       </div>
     </a>

@@ -67,7 +67,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <div>
         <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem;">Portal Preventive Maintenance (PM)</h2>
-        <p style="font-size: 0.9rem; opacity: 0.9; max-width: 600px;">Generator checklist dan dokumentasi foto standar resmi PT Angkasa Pura Sarana Digital & Operator Seluler.</p>
+        <p style="font-size: 0.9rem; opacity: 0.9; max-width: 600px;">Generator checklist dan dokumentasi foto standar resmi IASS SBU ICT KNO & Operator Seluler.</p>
       </div>
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%; max-width: 380px;">
         <a href="form_indoor.php" class="btn btn-secondary" style="flex: 1; color: #008080; font-weight: 700; min-height: 44px;">+ PM Indoor</a>

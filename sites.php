@@ -246,7 +246,7 @@ include __DIR__ . '/includes/header.php';
       <!-- Area yang dicetak (80mm x 50mm) -->
       <div id="qr_print_area" class="sticker-label-card">
         <div class="sticker-header">
-          <div class="brand">PT ANGKASA PURA SARANA DIGITAL</div>
+          <div class="brand">IASS SBU ICT KNO</div>
           <div class="sub">BANDARA INTERNASIONAL KUALANAMU</div>
         </div>
         <div class="sticker-body">
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('PT ANGKASA PURA SARANA DIGITAL', c.width / 2, 52);
+    ctx.fillText('IASS SBU ICT KNO', c.width / 2, 52);
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 17px Arial, sans-serif';

@@ -7,7 +7,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 ?>
 <footer class="no-print desktop-footer">
   <div class="container">
-    <p>&copy; <?= date('Y') ?> PT Angkasa Pura Sarana Digital / PT IAS Support Indonesia. All rights reserved.</p>
+    <p>&copy; <?= date('Y') ?> IASS SBU ICT KNO. All rights reserved.</p>
     <p style="font-size: 0.75rem; margin-top: 0.25rem;">Sistem Laporan Pemeliharaan Berkala (Preventive Maintenance) Standar Resmi</p>
   </div>
 </footer>
@@ -60,7 +60,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 
       <!-- Live Watermark Overlay (Realtime HUD over camera stream) -->
       <div id="live_watermark_hud" class="live-watermark-hud">
-        <div class="hud-brand">PT ANGKASA PURA SARANA DIGITAL</div>
+        <div class="hud-brand">IASS SBU ICT KNO</div>
         <div id="hud_time" class="hud-line">WAKTU: -</div>
         <div id="hud_site_name" class="hud-line">SITE : -</div>
         <div id="hud_coords" class="hud-line">GPS  : Mendeteksi koordinat...</div>

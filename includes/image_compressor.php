@@ -146,7 +146,7 @@ function apply_server_watermark(&$img, int $width, int $height, array $meta): vo
     $fontFile = __DIR__ . '/../assets/fonts/arial.ttf';
     $hasTtf = function_exists('imagettftext') && file_exists($fontFile);
 
-    $headerStr = 'PT ANGKASA PURA SARANA DIGITAL | PM INSPECTION';
+    $headerStr = 'IASS SBU ICT KNO | PM INSPECTION';
     $timeStr = 'WAKTU : ' . ($meta['date'] ?? date('d/m/Y H:i:s') . ' WIB');
     $siteStr = 'SITE  : ' . ($meta['site'] ?? 'Site APSD') . (!empty($meta['location']) ? ' (' . $meta['location'] . ')' : '');
     $gpsStr = 'GPS   : ' . ($meta['gps'] ?? 'GPS: -');

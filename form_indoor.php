@@ -336,6 +336,7 @@ include __DIR__ . '/includes/header.php';
 
                   <input type="file" id="camera_<?= $slotCode ?>" name="camera_files[<?= $slotCode ?>]" accept="image/*" capture="environment" class="photo-file-input photo-hidden-input" data-slot="<?= $slotCode ?>">
                   <input type="file" id="file_<?= $slotCode ?>" name="photo_files[<?= $slotCode ?>]" accept="image/*" class="photo-file-input photo-hidden-input" data-slot="<?= $slotCode ?>">
+                  <input type="hidden" id="base64_<?= $slotCode ?>" name="photo_base64[<?= $slotCode ?>]">
 
                   <?php if ($slot['has_measurement']): ?>
                     <div class="form-group" style="margin-top: 0.35rem;">

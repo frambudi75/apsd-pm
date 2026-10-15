@@ -117,21 +117,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
-    const scale = Math.max(1, w / 1100);
-    const boxH = Math.round(112 * scale);
+    const maxDim = Math.max(w, h);
+    const scale = Math.max(1, maxDim / 1050);
+    const boxH = Math.round(118 * scale);
     const pad = Math.round(14 * scale);
 
-    // Gradient bar at bottom
-    const grad = ctx.createLinearGradient(0, h - boxH - (16 * scale), 0, h);
+    ctx.save();
+
+    // High-contrast gradient bar at bottom
+    const grad = ctx.createLinearGradient(0, h - boxH - (18 * scale), 0, h);
     grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    grad.addColorStop(0.25, 'rgba(0, 0, 0, 0.78)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0.92)');
+    grad.addColorStop(0.25, 'rgba(15, 23, 42, 0.88)');
+    grad.addColorStop(1, 'rgba(15, 23, 42, 0.98)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, h - boxH - (16 * scale), w, boxH + (16 * scale));
+    ctx.fillRect(0, h - boxH - (18 * scale), w, boxH + (18 * scale));
 
     // Teal vertical accent line
     ctx.fillStyle = '#008080';
-    ctx.fillRect(pad, h - boxH + (4 * scale), 4 * scale, boxH - (14 * scale));
+    ctx.fillRect(pad, h - boxH + (4 * scale), 4 * scale, boxH - (12 * scale));
 
     const startX = pad + (12 * scale);
 
@@ -172,13 +175,13 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.fillStyle = '#e2e8f0';
     ctx.fillText(itemText, startX, h - boxH + (92 * scale));
 
-    // Reset shadow
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   function assignFileToSlot(slotCode, file, dataUrl) {
     const fileInput = document.getElementById('file_' + slotCode);
+    const cameraInput = document.getElementById('camera_' + slotCode);
+    const base64Input = document.getElementById('base64_' + slotCode);
     const previewImg = document.getElementById('preview_img_' + slotCode);
     const naOverlay = document.getElementById('na_overlay_' + slotCode);
     const placeholder = document.getElementById('placeholder_' + slotCode);
@@ -191,6 +194,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (naOverlay) naOverlay.style.display = 'none';
     if (placeholder) placeholder.style.display = 'none';
     if (isNaCheckbox) isNaCheckbox.checked = false;
+
+    // Save base64 string to hidden input (works on 100% of mobile browsers)
+    if (base64Input) {
+      base64Input.value = dataUrl;
+    }
 
     if (fileInput) {
       try {

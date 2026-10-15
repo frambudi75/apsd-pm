@@ -151,17 +151,39 @@ try {
         $imagePath = null;
         $pageGroup = substr($slotCode, 0, 1);
 
-        // Check file upload (from gallery input or native camera input)
+        $targetFile = "{$uploadDir}/photo_{$slotCode}.jpg";
+        $watermarkInfo = [
+            'date' => date('d/m/Y H:i:s', strtotime($report_date . ' ' . date('H:i:s'))) . ' WIB',
+            'site' => $site_name ?: 'Site APSD',
+            'location' => $location_detail,
+            'gps' => (!empty($_POST['latitude']) && !empty($_POST['longitude'])) 
+                ? "Lat: {$_POST['latitude']}, Long: {$_POST['longitude']}" 
+                : 'GPS: Terdeteksi',
+            'slot' => $slotCode,
+            'title' => $title
+        ];
+
+        // 1. Check if client sent base64 image (from client-side canvas watermark)
+        $base64Data = $_POST['photo_base64'][$slotCode] ?? '';
+        if (!$isNa && !empty($base64Data) && strpos($base64Data, 'data:image') === 0) {
+            $parts = explode(',', $base64Data);
+            $decoded = base64_decode($parts[1] ?? '');
+            if (!empty($decoded)) {
+                file_put_contents($targetFile, $decoded);
+                $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
+            }
+        }
+
+        // 2. Check file upload (from gallery input or native camera input) with server-side watermark
         $hasPhoto = isset($_FILES['photo_files']['name'][$slotCode]) && $_FILES['photo_files']['error'][$slotCode] === UPLOAD_ERR_OK;
         $hasCamera = isset($_FILES['camera_files']['name'][$slotCode]) && $_FILES['camera_files']['error'][$slotCode] === UPLOAD_ERR_OK;
 
-        if (!$isNa && ($hasPhoto || $hasCamera)) {
+        if (!$imagePath && !$isNa && ($hasPhoto || $hasCamera)) {
             $fileSource = $hasPhoto ? $_FILES['photo_files'] : $_FILES['camera_files'];
             $tmpName = $fileSource['tmp_name'][$slotCode];
             $ext = strtolower(pathinfo($fileSource['name'][$slotCode], PATHINFO_EXTENSION));
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                $targetFile = "{$uploadDir}/photo_{$slotCode}.jpg";
-                if (compress_and_save_image($tmpName, $targetFile, 1600, 82)) {
+                if (compress_and_save_image($tmpName, $targetFile, 1600, 85, $watermarkInfo)) {
                     $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";
                 } elseif (move_uploaded_file($tmpName, $targetFile)) {
                     $imagePath = "uploads/reports/{$report_id}/photo_{$slotCode}.jpg";

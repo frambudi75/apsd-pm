@@ -1,0 +1,6 @@
+.git
+.agents
+.gemini
+*.pdf
+test.db
+uploads/temp

@@ -1,0 +1,15 @@
+# IDE & System Files
+.agents/
+.gemini/
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary & Test Files
+test.db
+uploads/temp/
+scratch/
+*.tmp
+*.log

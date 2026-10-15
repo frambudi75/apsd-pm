@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <rect width="100%" height="100%" fill="none"/>
+  <circle cx="45" cy="50" r="32" fill="#ED1C24"/>
+  <circle cx="45" cy="50" r="20" fill="#FFD100"/>
+  <circle cx="45" cy="50" r="10" fill="#00A859"/>
+  <text x="90" y="58" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="28" fill="#1D1D1B">indosat</text>
+  <text x="90" y="78" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="14" fill="#ED1C24">ooredoo</text>
+</svg>

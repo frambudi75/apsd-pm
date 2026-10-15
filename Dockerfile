@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     zip \
     unzip \
+    chromium \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure & install PHP extensions (GD with FreeType & JPEG, PDO SQLite, PDO MySQL, EXIF)

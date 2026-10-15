@@ -112,10 +112,11 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   </div>
 </div>
 
-<script src="assets/js/qrcode.min.js"></script>
+<script src="assets/js/qrious.min.js"></script>
+<script src="assets/js/html2pdf.bundle.min.js"></script>
 <script src="assets/js/draft_manager.js?v=<?= filemtime(__DIR__ . '/../assets/js/draft_manager.js') ?>"></script>
 <script src="assets/js/qr_scanner.js?v=<?= filemtime(__DIR__ . '/../assets/js/qr_scanner.js') ?>"></script>
-<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v8"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v9"></script>
 <script>
   // Register Service Worker for PWA
   if ('serviceWorker' in navigator) {

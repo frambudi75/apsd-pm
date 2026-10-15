@@ -146,18 +146,59 @@ $totalPages = 3 + $totalPhotoPages;
       <button onclick="window.print()" style="display: inline-block; padding: 6px 16px; background: #008080; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
         🖨️ Cetak / Simpan PDF
       </button>
-      <a href="download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>" style="display: inline-block; padding: 6px 14px; background: #0284c7; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
+      <button type="button" id="btn_download_pdf" onclick="triggerClientDownload()" style="display: inline-block; padding: 6px 14px; background: #0284c7; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
         ⬇️ Download PDF
-      </a>
+      </button>
     </div>
   </div>
 
+  <script src="assets/js/html2pdf.bundle.min.js"></script>
   <script>
     function updateQueryParam(key, val) {
       const u = new URL(window.location.href);
       u.searchParams.set(key, val);
       return u.search;
     }
+
+    function triggerClientDownload() {
+      const btn = document.getElementById('btn_download_pdf');
+      if (btn) {
+        btn.innerText = '⏳ Memproses...';
+        btn.disabled = true;
+      }
+      const container = document.querySelector('.preview-container');
+      const filename = 'PM_Indoor_<?= preg_replace('/[^A-Za-z0-9_\-]/', '_', $site['site_name'] ?? 'Site') ?>_<?= date('Ymd_His', strtotime($report['report_date'])) ?>.pdf';
+      const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+      if (window.html2pdf) {
+        window.html2pdf().set(opt).from(container).save().then(function() {
+          if (btn) {
+            btn.innerText = '✅ Terunduh';
+            setTimeout(() => {
+              btn.innerText = '⬇️ Download PDF';
+              btn.disabled = false;
+            }, 2500);
+          }
+        }).catch(function(err) {
+          console.error(err);
+          window.location.href = 'download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
+        });
+      } else {
+        window.location.href = 'download_pdf.php?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
+      }
+    }
+
+    <?php if (isset($_GET['autoprint']) && $_GET['autoprint'] == '1'): ?>
+      window.addEventListener('load', function() {
+        setTimeout(function() { window.print(); }, 600);
+      });
+    <?php endif; ?>
   </script>
 
   <div class="preview-container">

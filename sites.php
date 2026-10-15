@@ -255,7 +255,9 @@ include __DIR__ . '/includes/header.php';
             <div><strong>GPS:</strong> <span id="sticker_coords">3.618278, 98.861139</span></div>
             <div><strong>Tipe:</strong> <span id="sticker_type">Green Field</span></div>
           </div>
-          <div class="sticker-qr" id="sticker_qr_container"></div>
+          <div class="sticker-qr">
+            <canvas id="sticker_qr_canvas" style="width: 100%; height: 100%;"></canvas>
+          </div>
         </div>
         <div class="sticker-footer">
           Pindai QR ini pada Formulir PM untuk Identifikasi & Pengisian Otomatis
@@ -263,21 +265,39 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
     
-    <div style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem;">
+    <div style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap;">
       <button type="button" id="btn_dismiss_sticker" class="btn btn-secondary">Tutup</button>
-      <button type="button" id="btn_print_sticker_action" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
-        🖨️ Cetak Stiker (80x50mm)
+      <button type="button" id="btn_download_sticker_png" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+        🖼️ Unduh Gambar (PNG)
+      </button>
+      <button type="button" id="btn_download_sticker_pdf" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+        📄 Unduh PDF
+      </button>
+      <button type="button" id="btn_print_sticker_action" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+        🖨️ Cetak
       </button>
     </div>
   </div>
 </div>
 
+<script src="assets/js/qrious.min.js"></script>
+<script src="assets/js/html2pdf.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const modal = document.getElementById('sticker_modal');
   const btnClose = document.getElementById('btn_close_sticker');
   const btnDismiss = document.getElementById('btn_dismiss_sticker');
   const btnPrint = document.getElementById('btn_print_sticker_action');
+  const btnDownloadPng = document.getElementById('btn_download_sticker_png');
+  const btnDownloadPdf = document.getElementById('btn_download_sticker_pdf');
+
+  let activeSite = {
+    name: 'Site APSD',
+    code: 'APSD',
+    loc: '-',
+    coords: '-',
+    type: '-'
+  };
 
   function closeModal() {
     if (modal) modal.style.display = 'none';
@@ -287,13 +307,100 @@ document.addEventListener('DOMContentLoaded', function () {
   if (btnClose) btnClose.onclick = closeModal;
   if (btnDismiss) btnDismiss.onclick = closeModal;
 
+  // Render whole sticker to high-res canvas (960x600 for sharp print quality)
+  function renderStickerCanvas(data) {
+    const c = document.createElement('canvas');
+    c.width = 960;
+    c.height = 600;
+    const ctx = c.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    // Outer border
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#000000';
+    ctx.strokeRect(12, 12, c.width - 24, c.height - 24);
+
+    // Header bar
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(12, 12, c.width - 24, 96);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PT ANGKASA PURA SARANA DIGITAL', c.width / 2, 52);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 17px Arial, sans-serif';
+    ctx.fillText('BANDARA INTERNASIONAL KUALANAMU', c.width / 2, 84);
+
+    // Left metadata column
+    ctx.textAlign = 'left';
+    const leftX = 40;
+
+    // Site Name
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 26px Arial, sans-serif';
+    const siteTitle = data.name || 'Site APSD';
+    if (ctx.measureText(siteTitle).width > 480) {
+      ctx.font = 'bold 21px Arial, sans-serif';
+    }
+    ctx.fillText(siteTitle, leftX, 155);
+
+    function drawMeta(label, val, y) {
+      ctx.font = 'bold 18px Arial, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(label + ':', leftX, y);
+      const lw = ctx.measureText(label + ': ').width;
+      ctx.font = '18px Arial, sans-serif';
+      ctx.fillStyle = '#334155';
+      const cleanVal = (val && String(val).trim()) ? String(val).trim() : '-';
+      ctx.fillText(cleanVal, leftX + lw, y);
+    }
+
+    drawMeta('ID Site', data.code, 210);
+    drawMeta('Lokasi', data.loc, 265);
+    drawMeta('GPS', data.coords, 320);
+    drawMeta('Tipe', data.type, 375);
+
+    // QR Code column (Right)
+    const qrCanvas = document.getElementById('sticker_qr_canvas');
+    if (qrCanvas) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(570, 130, 340, 340);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeRect(570, 130, 340, 340);
+      ctx.drawImage(qrCanvas, 580, 140, 320, 320);
+    }
+
+    // Footer divider & note
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(30, 520);
+    ctx.lineTo(c.width - 30, 520);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '16px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pindai QR ini pada Formulir PM untuk Identifikasi & Pengisian Otomatis', c.width / 2, 558);
+
+    return c;
+  }
+
   document.querySelectorAll('.btn-print-sticker').forEach(btn => {
     btn.addEventListener('click', function () {
-      const name = this.getAttribute('data-name');
-      const code = this.getAttribute('data-code');
-      const loc = this.getAttribute('data-location');
-      const coords = this.getAttribute('data-coords');
-      const type = this.getAttribute('data-type');
+      const name = this.getAttribute('data-name') || '';
+      const code = this.getAttribute('data-code') || '';
+      const loc = this.getAttribute('data-location') || '';
+      const coords = this.getAttribute('data-coords') || '';
+      const type = this.getAttribute('data-type') || '';
+
+      activeSite = { name, code, loc, coords, type };
 
       document.getElementById('sticker_site_name').innerText = name || 'Site APSD';
       document.getElementById('sticker_site_code').innerText = code || '-';
@@ -301,20 +408,27 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('sticker_coords').innerText = coords || '-';
       document.getElementById('sticker_type').innerText = type || '-';
 
-      const qrContainer = document.getElementById('sticker_qr_container');
-      qrContainer.innerHTML = '';
-      
-      const qrPayload = code || name;
-      new QRCode(qrContainer, {
-        text: qrPayload,
-        width: 120,
-        height: 120
-      });
+      const qrPayload = code || name || 'APSD';
+      const canvas = document.getElementById('sticker_qr_canvas');
+
+      try {
+        if (window.QRious) {
+          new QRious({
+            element: canvas,
+            value: qrPayload,
+            size: 240,
+            level: 'H'
+          });
+        }
+      } catch (err) {
+        console.error('Error rendering QRious:', err);
+      }
 
       if (modal) modal.style.display = 'flex';
     });
   });
 
+  // Print button
   if (btnPrint) {
     btnPrint.addEventListener('click', function () {
       document.body.classList.add('printing-sticker');
@@ -322,6 +436,40 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(() => {
         document.body.classList.remove('printing-sticker');
       }, 1000);
+    });
+  }
+
+  // Download PNG button: renders crisp 960x600 image directly
+  if (btnDownloadPng) {
+    btnDownloadPng.addEventListener('click', function () {
+      const canvas = renderStickerCanvas(activeSite);
+      const safeCode = (activeSite.code || activeSite.name || 'Site').replace(/[^A-Za-z0-9_\-]/g, '_');
+      const a = document.createElement('a');
+      a.download = 'Stiker_' + safeCode + '.png';
+      a.href = canvas.toDataURL('image/png');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  }
+
+  // Download PDF button
+  if (btnDownloadPdf) {
+    btnDownloadPdf.addEventListener('click', function () {
+      const safeCode = (activeSite.code || activeSite.name || 'Site').replace(/[^A-Za-z0-9_\-]/g, '_');
+      const area = document.getElementById('qr_print_area');
+      if (window.html2pdf) {
+        const opt = {
+          margin: 0,
+          filename: 'Stiker_' + safeCode + '.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 3, useCORS: true },
+          jsPDF: { unit: 'mm', format: [80, 50], orientation: 'landscape' }
+        };
+        window.html2pdf().from(area).set(opt).save();
+      } else {
+        window.print();
+      }
     });
   }
 });

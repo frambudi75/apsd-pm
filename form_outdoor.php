@@ -556,10 +556,16 @@ include __DIR__ . '/includes/header.php';
               <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 1px;">Kamera live otomatis mencetak nama site, tanggal & jam inspeksi (WIB), dan koordinat GPS.</p>
             </div>
           </div>
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
-            <input type="checkbox" id="auto_watermark_toggle" checked style="width: 18px; height: 18px; accent-color: var(--secondary);">
-            Aktifkan Watermark Otomatis
-          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+              <input type="checkbox" id="auto_watermark_toggle" checked style="width: 18px; height: 18px; accent-color: var(--secondary);">
+              Aktifkan Watermark Otomatis
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--secondary);">
+              <input type="checkbox" id="compact_pdf" name="compact_pdf" value="1" checked style="width: 18px; height: 18px; accent-color: var(--secondary);">
+              Lewati slot foto kosong (N/A) saat cetak PDF
+            </label>
+          </div>
         </div>
 
         <?php foreach ($photoGroups as $grpKey => $grp): ?>
@@ -629,12 +635,7 @@ include __DIR__ . '/includes/header.php';
     <div class="sticky-footer-bar" id="sec_submit">
       <div>
         <strong style="color: var(--text-main); font-size: 0.95rem;">Siap Memproses Laporan Outdoor?</strong>
-        <div style="margin-top: 4px;">
-          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.825rem; font-weight: 600; color: var(--secondary); cursor: pointer;">
-            <input type="checkbox" id="compact_pdf" name="compact_pdf" value="1" checked style="width: 18px; height: 18px; accent-color: var(--secondary); cursor: pointer;">
-            📄 Cetak PDF Ringkas (Lewati slot foto kosong / N/A)
-          </label>
-        </div>
+        <p style="font-size: 0.8rem; color: var(--text-subtle); margin: 2px 0 0 0;">Pastikan data inspeksi dan dokumentasi foto telah diperiksa.</p>
       </div>
       <div style="display: flex; gap: 0.75rem;">
         <a href="index.php" class="btn btn-secondary">Batal</a>

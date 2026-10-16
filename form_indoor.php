@@ -27,8 +27,8 @@ include __DIR__ . '/includes/header.php';
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-      <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Modul PM Indoor</span>
-      <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-main);">Daily Check List IBC Telkomsel (7 Halaman)</h2>
+      <span id="module_indoor_tag" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Modul PM Indoor</span>
+      <h2 id="module_indoor_title" style="font-size: 1.4rem; font-weight: 700; color: var(--text-main);">Daily Check List IBC Telkomsel (7 Halaman)</h2>
       <p style="color: var(--text-subtle); font-size: 0.9rem;">Inspeksi ruang server domestik, perangkat transmisi, daya listrik, dan dokumentasi foto.</p>
     </div>
     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">

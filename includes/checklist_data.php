@@ -98,13 +98,26 @@ function get_indoor_checklist_definitions(): array {
     ];
 }
 
-function get_indoor_photo_slots(): array {
+function get_indoor_photo_slots(?string $operator = null): array {
+    $brand = 'Telkomsel';
+    if (!empty($operator)) {
+        if (stripos($operator, 'XL') !== false) {
+            $brand = 'XL';
+        } elseif (stripos($operator, 'INDOSAT') !== false) {
+            $brand = 'Indosat';
+        } elseif (stripos($operator, 'IAS') !== false) {
+            $brand = 'IASS';
+        } else {
+            $brand = trim($operator);
+        }
+    }
+
     return [
         'A' => [
             'page_title' => 'Dokumentasi Halaman 4 (Grup A)',
             'slots' => [
                 'A-1' => ['title' => 'KWH Multi Panel', 'has_measurement' => false],
-                'A-2' => ['title' => 'KWH Meter Telkomsel', 'has_measurement' => false],
+                'A-2' => ['title' => "KWH Meter {$brand}", 'has_measurement' => false],
                 'A-3' => ['title' => 'ACPDB Panel Closed', 'has_measurement' => false],
                 'A-4' => ['title' => 'ACPDB Panel Open', 'has_measurement' => false],
                 'A-5' => ['title' => 'View Area Domestik', 'has_measurement' => false],
@@ -114,7 +127,7 @@ function get_indoor_photo_slots(): array {
         'B' => [
             'page_title' => 'Dokumentasi Halaman 5 (Grup B)',
             'slots' => [
-                'B-1' => ['title' => 'MCB ACPDB Telkomsel', 'has_measurement' => false],
+                'B-1' => ['title' => "MCB ACPDB {$brand}", 'has_measurement' => false],
                 'B-2' => ['title' => 'Pengukuran Tegangan (R-S)', 'has_measurement' => true, 'default_label' => 'R-S = 402.6'],
                 'B-3' => ['title' => 'Pengukuran Tegangan (R-T)', 'has_measurement' => true, 'default_label' => 'R-T = 403.5'],
                 'B-4' => ['title' => 'Pengukuran Tegangan (S-T)', 'has_measurement' => true, 'default_label' => 'S-T = 402.6'],

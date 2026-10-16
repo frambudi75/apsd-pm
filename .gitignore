@@ -19,3 +19,7 @@ database/*.sqlite
 database/*.sqlite-wal
 database/*.sqlite-shm
 database/*.sqlite-journal
+
+# User reference files
+hasil contoh/
+

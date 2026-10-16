@@ -63,11 +63,11 @@ try {
 
     // Determine custom logo path
     $custom_logo_path = 'assets/img/logo_ias.png';
-    if ($preset_logo === 'telkomsel') {
+    if ($preset_logo === 'telkomsel' || stripos($operator, 'TELKOMSEL') !== false) {
         $custom_logo_path = 'assets/img/logo_telkomsel.png';
-    } elseif ($preset_logo === 'indosat') {
+    } elseif ($preset_logo === 'indosat' || stripos($operator, 'INDOSAT') !== false) {
         $custom_logo_path = 'assets/img/logo_indosat.svg';
-    } elseif ($preset_logo === 'xl') {
+    } elseif ($preset_logo === 'xl' || stripos($operator, 'XL') !== false) {
         $custom_logo_path = 'assets/img/logo_xl.svg';
     } elseif ($preset_logo === 'none') {
         $custom_logo_path = 'none';

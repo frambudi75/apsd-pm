@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // 6. Logo Provider Customizer
+  // 6. Logo Provider Customizer & Dynamic Operator Parameter Sync
   const presetLogoSelect = document.getElementById('preset_logo_select');
   const operatorNameInput = document.getElementById('operator_name_input');
   const customLogoInput = document.getElementById('custom_logo_file');
@@ -637,12 +637,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (presetLogoSelect && logoPreviewImg) {
     const logoMap = {
-      'telkomsel': { src: 'assets/img/logo_telkomsel.png?v=2', name: 'TELKOMSEL' },
-      'ias': { src: 'assets/img/logo_ias.png?v=2', name: 'IASS SBU ICT KNO' },
-      'indosat': { src: 'assets/img/logo_indosat.svg', name: 'INDOSAT OOREDOO' },
-      'xl': { src: 'assets/img/logo_xl.svg', name: 'XL AXIATA' },
-      'none': { src: '', name: '-' }
+      'telkomsel': { src: 'assets/img/logo_telkomsel.png?v=2', name: 'TELKOMSEL', brand: 'Telkomsel' },
+      'ias': { src: 'assets/img/logo_ias.png?v=2', name: 'IASS SBU ICT KNO', brand: 'IASS' },
+      'indosat': { src: 'assets/img/logo_indosat.svg', name: 'INDOSAT OOREDOO', brand: 'Indosat' },
+      'xl': { src: 'assets/img/logo_xl.svg', name: 'XL AXIATA', brand: 'XL' },
+      'none': { src: '', name: '-', brand: 'Umum' }
     };
+
+    function syncOperatorParameters(brandName, fullName) {
+      const cleanBrand = (brandName && brandName !== '-') ? brandName : 'Telkomsel';
+      const cleanFull = (fullName && fullName !== '-') ? fullName : cleanBrand;
+
+      // 1. Sync Indoor Form Header & Badges
+      const headerTitle = document.getElementById('module_indoor_title');
+      if (headerTitle) {
+        headerTitle.textContent = `Daily Check List IBC ${cleanBrand} (7 Halaman)`;
+      }
+      const headerTag = document.getElementById('module_indoor_tag');
+      if (headerTag) {
+        headerTag.textContent = `Modul PM Indoor (${cleanBrand})`;
+      }
+
+      // 2. Sync Photo Slot A-2 (KWH Meter) & B-1 (MCB ACPDB)
+      const titleA2 = document.getElementById('title_A-2');
+      if (titleA2) {
+        if (!titleA2.value || /KWH\s*Meter/i.test(titleA2.value)) {
+          titleA2.value = `KWH Meter ${cleanBrand}`;
+        }
+      }
+      const titleB1 = document.getElementById('title_B-1');
+      if (titleB1) {
+        if (!titleB1.value || /MCB\s*ACPDB/i.test(titleB1.value)) {
+          titleB1.value = `MCB ACPDB ${cleanBrand}`;
+        }
+      }
+
+      // 3. Sync Outdoor Anchor Tenant if applicable
+      const anchorTenantInput = document.getElementById('anchor_tenant');
+      if (anchorTenantInput && (!anchorTenantInput.value || /TELKOMSEL|XL|INDOSAT|IASS/i.test(anchorTenantInput.value))) {
+        anchorTenantInput.value = cleanFull;
+      }
+    }
 
     presetLogoSelect.addEventListener('change', function () {
       const val = this.value;
@@ -653,9 +688,24 @@ document.addEventListener('DOMContentLoaded', function () {
         logoPreviewImg.style.display = logoMap[val].src ? 'block' : 'none';
         if (operatorNameInput && logoMap[val].name !== '-') {
           operatorNameInput.value = logoMap[val].name;
+          syncOperatorParameters(logoMap[val].brand, logoMap[val].name);
+        } else if (val === 'none') {
+          syncOperatorParameters('Umum', '-');
         }
       }
     });
+
+    if (operatorNameInput) {
+      operatorNameInput.addEventListener('input', function () {
+        const val = this.value.trim();
+        let brand = val;
+        if (/xl/i.test(val)) brand = 'XL';
+        else if (/indosat/i.test(val)) brand = 'Indosat';
+        else if (/telkomsel/i.test(val)) brand = 'Telkomsel';
+        else if (/ias/i.test(val)) brand = 'IASS';
+        syncOperatorParameters(brand, val);
+      });
+    }
 
     if (customLogoInput) {
       customLogoInput.addEventListener('change', function () {

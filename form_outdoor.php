@@ -197,7 +197,7 @@ include __DIR__ . '/includes/header.php';
 
           <div class="form-group">
             <label class="form-label">Anchor Tenant</label>
-            <input type="text" name="anchor_tenant" class="form-control" value="IASS SBU ICT KNO">
+            <input type="text" id="anchor_tenant" name="anchor_tenant" class="form-control" value="IASS SBU ICT KNO">
           </div>
 
           <div class="form-group">

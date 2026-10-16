@@ -40,7 +40,7 @@ foreach ($photosRaw as $p) {
 }
 
 $definitions = get_indoor_checklist_definitions();
-$photoGroups = get_indoor_photo_slots();
+$photoGroups = get_indoor_photo_slots($report['operator'] ?? 'Telkomsel');
 
 $formattedDate = date('d/m/Y', strtotime($report['report_date']));
 $dateMonthYear = date('d F Y', strtotime($report['report_date']));
@@ -223,7 +223,7 @@ $totalPages = 3 + $totalPhotoPages;
           </td>
           <td style="width: 44%; text-align: center; vertical-align: middle;">
             <div style="font-size: 11pt; font-weight: bold;">Daily Check List</div>
-            <div style="font-size: 11pt; font-weight: bold;">IBC Telkomsel</div>
+            <div style="font-size: 11pt; font-weight: bold;">IBC <?= htmlspecialchars($report['operator'] ?: 'Telkomsel') ?></div>
           </td>
           <td style="width: 28%; padding: 0;">
             <table style="width: 100%; border-collapse: collapse; font-size: 7.5pt;">
@@ -527,7 +527,7 @@ $totalPages = 3 + $totalPhotoPages;
             <td style="font-weight: bold;">IASS Site Name</td>
             <td>: <?= htmlspecialchars($site['site_name'] ?? 'Bandara Kualanamu Server Domestik') ?></td>
             <td style="font-weight: bold;">Operator</td>
-            <td>: <?= htmlspecialchars($report['operator'] ?: 'TELKOMSEL') ?> &nbsp;&nbsp;&nbsp;&nbsp; WIB/WITA/WIT</td>
+            <td>: <?= htmlspecialchars($report['operator'] ?: 'TELKOMSEL') ?></td>
           </tr>
         </table>
 
@@ -557,7 +557,16 @@ $totalPages = 3 + $totalPhotoPages;
                 <div class="photo-cell-footer">
                   <span class="photo-cell-code">Foto <?= htmlspecialchars($slotCode) ?></span>
                   <span class="photo-cell-desc">
-                    <?= htmlspecialchars($slotDef['title']) ?>
+                    <?php 
+                      $displayTitle = !empty($p['title']) ? $p['title'] : $slotDef['title'];
+                      if (!empty($report['operator']) && strcasecmp($report['operator'], 'TELKOMSEL') !== 0 && stripos($displayTitle, 'Telkomsel') !== false) {
+                          $opBrand = (stripos($report['operator'], 'XL') !== false) ? 'XL' :
+                                     ((stripos($report['operator'], 'INDOSAT') !== false) ? 'Indosat' :
+                                     ((stripos($report['operator'], 'IAS') !== false) ? 'IASS' : $report['operator']));
+                          $displayTitle = str_ireplace('Telkomsel', $opBrand, $displayTitle);
+                      }
+                    ?>
+                    <?= htmlspecialchars($displayTitle) ?>
                     <?php if (!empty($meas) && !empty($slotDef['has_measurement'])): ?>
                       (<?= htmlspecialchars($meas) ?>)
                     <?php endif; ?>

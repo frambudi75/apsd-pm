@@ -183,6 +183,12 @@
           if (siteSelect && siteSelect.value) {
             siteSelect.dispatchEvent(new Event('change', { bubbles: true }));
           }
+
+          // Trigger change on preset logo selector if present
+          const presetLogo = document.getElementById('preset_logo_select');
+          if (presetLogo && presetLogo.value) {
+            presetLogo.dispatchEvent(new Event('change', { bubbles: true }));
+          }
         }
 
         // 2. Restore photo previews and Base64 values

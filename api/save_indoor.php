@@ -56,11 +56,11 @@ try {
 
     // Determine custom logo path
     $custom_logo_path = 'assets/img/logo_telkomsel.png';
-    if ($preset_logo === 'ias') {
+    if ($preset_logo === 'ias' || stripos($operator, 'IAS') !== false) {
         $custom_logo_path = 'assets/img/logo_ias.png';
-    } elseif ($preset_logo === 'indosat') {
+    } elseif ($preset_logo === 'indosat' || stripos($operator, 'INDOSAT') !== false) {
         $custom_logo_path = 'assets/img/logo_indosat.svg';
-    } elseif ($preset_logo === 'xl') {
+    } elseif ($preset_logo === 'xl' || stripos($operator, 'XL') !== false) {
         $custom_logo_path = 'assets/img/logo_xl.svg';
     } elseif ($preset_logo === 'none') {
         $custom_logo_path = 'none';
@@ -120,6 +120,13 @@ try {
 
     foreach ($photosMeta as $slotCode => $meta) {
         $title = isset($meta['title']) ? trim($meta['title']) : '';
+        // If operator is not Telkomsel, adapt default photo titles seamlessly
+        if (!empty($operator) && strcasecmp($operator, 'TELKOMSEL') !== 0 && stripos($title, 'Telkomsel') !== false) {
+            $opBrand = (stripos($operator, 'XL') !== false) ? 'XL' :
+                       ((stripos($operator, 'INDOSAT') !== false) ? 'Indosat' :
+                       ((stripos($operator, 'IAS') !== false) ? 'IASS' : $operator));
+            $title = str_ireplace('Telkomsel', $opBrand, $title);
+        }
         $measurement = $meta['measurement'] ?? null;
         $isNa = isset($meta['is_na']) ? 1 : 0;
         $imagePath = null;

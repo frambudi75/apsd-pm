@@ -286,6 +286,7 @@ ksort($uniqueMonths);
                   $searchMeta = strtolower(
                     $siteDisplayName . ' ' . 
                     $locDisplayName . ' ' . 
+                    ($rep['operator'] ?? '') . ' ' .
                     ($rep['region'] ?? '') . ' ' . 
                     ($rep['city'] ?? '') . ' ' . 
                     ($rep['inspector_name'] ?? '') . ' ' . 
@@ -320,6 +321,9 @@ ksort($uniqueMonths);
                     </strong>
                     <span style="font-size: 0.8rem; color: var(--text-subtle);">
                       <?= htmlspecialchars($locDisplayName) ?>
+                      <?php if (!empty($rep['operator'])): ?>
+                        &bull; <span style="font-weight: 600; color: var(--primary);"><?= htmlspecialchars($rep['operator']) ?></span>
+                      <?php endif; ?>
                     </span>
                   </td>
                   <td>
@@ -392,6 +396,7 @@ ksort($uniqueMonths);
               $searchMeta = strtolower(
                 $siteDisplayName . ' ' . 
                 $locDisplayName . ' ' . 
+                ($rep['operator'] ?? '') . ' ' .
                 ($rep['region'] ?? '') . ' ' . 
                 ($rep['city'] ?? '') . ' ' . 
                 ($rep['inspector_name'] ?? '') . ' ' . 

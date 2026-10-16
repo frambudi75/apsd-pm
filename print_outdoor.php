@@ -687,7 +687,7 @@ $totalPages = 5 + $totalPhotoPages;
         <tr>
           <td colspan="2"></td>
           <td style="font-weight: bold;">Operator</td>
-          <td>: IASS SBU ICT KNO</td>
+          <td>: <?= htmlspecialchars($report['operator'] ?: 'IASS SBU ICT KNO') ?></td>
         </tr>
       </table>
 
@@ -778,7 +778,7 @@ $totalPages = 5 + $totalPhotoPages;
         <tr>
           <td colspan="2"></td>
           <td style="font-weight: bold;">Operator</td>
-          <td>: IASS SBU ICT KNO</td>
+          <td>: <?= htmlspecialchars($report['operator'] ?: 'IASS SBU ICT KNO') ?></td>
         </tr>
       </table>
 
@@ -889,7 +889,10 @@ $totalPages = 5 + $totalPhotoPages;
                 <div class="photo-cell-footer">
                   <span class="photo-cell-code">Foto <?= htmlspecialchars($slotCode) ?></span>
                   <span class="photo-cell-desc">
-                    <?= htmlspecialchars($slotDef['title']) ?>
+                    <?php 
+                      $displayTitle = !empty($p['title']) ? $p['title'] : $slotDef['title'];
+                    ?>
+                    <?= htmlspecialchars($displayTitle) ?>
                     <?php if (!empty($meas) && !empty($slotDef['has_measurement'])): ?>
                       (<?= htmlspecialchars($meas) ?>)
                     <?php endif; ?>

@@ -79,6 +79,44 @@ body.preview-mode {
   position: relative;
 }
 
+/* Automated PDF Export Clean Mode (html2pdf & headless) */
+body.exporting-pdf {
+  background: #ffffff !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body.exporting-pdf .no-print {
+  display: none !important;
+}
+
+body.exporting-pdf .preview-container {
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #ffffff !important;
+  display: block !important;
+}
+
+body.exporting-pdf .print-page {
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 8mm 10mm !important;
+  width: 210mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
+  height: 297mm !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  page-break-after: always !important;
+  break-after: page !important;
+}
+
+body.exporting-pdf .print-page:last-child {
+  page-break-after: auto !important;
+  break-after: auto !important;
+}
+
 /* Table Utilities */
 .table-bordered {
   width: 100%;

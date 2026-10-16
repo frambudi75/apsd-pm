@@ -58,11 +58,12 @@ if ($browserBin) {
     }
     $pdfPath = $tempDir . '/' . $pdfFilename;
 
-    // Detect internal base URL
+    // Detect internal base URL with secure signed token
     $localPort = $_SERVER['SERVER_PORT'] ?? '80';
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
-    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : '');
+    $pdfToken = hash_hmac('sha256', (string)$report_id, 'apsd_internal_secret_2026');
+    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$report_id}&pdf_token={$pdfToken}" . ($isCompact ? '&compact=1' : '');
 
     $cmd = sprintf(
         '"%s" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
@@ -73,7 +74,19 @@ if ($browserBin) {
 
     @exec($cmd, $output, $returnCode);
 
-    if (file_exists($pdfPath) && filesize($pdfPath) > 1000) {
+    // Wait up to 6 seconds for headless browser to finish writing the PDF file (> 30KB)
+    $maxWait = 6.0;
+    $waited = 0.0;
+    while ($waited < $maxWait) {
+        clearstatcache(true, $pdfPath);
+        if (file_exists($pdfPath) && filesize($pdfPath) > 30000) {
+            break;
+        }
+        usleep(300000); // 300ms
+        $waited += 0.3;
+    }
+
+    if (file_exists($pdfPath) && filesize($pdfPath) > 30000) {
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $pdfFilename . '"');
         header('Content-Length: ' . filesize($pdfPath));
@@ -183,13 +196,18 @@ $targetPrintUrl = "{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : 
             throw new Error('Elemen pratinjau tidak ditemukan');
           }
 
+          // Enable clean export mode (zero gap, exact A4, no shadow)
+          if (frameDoc.body) {
+            frameDoc.body.classList.add('exporting-pdf');
+          }
+
           const opt = {
             margin: 0,
             filename: '<?= $pdfFilename ?>',
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
+            pagebreak: { mode: ['css', 'legacy'], before: '.print-page' }
           };
 
           window.html2pdf().set(opt).from(container).save().then(function () {

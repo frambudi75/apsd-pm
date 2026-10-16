@@ -189,35 +189,16 @@ $totalPages = 3 + $totalPhotoPages;
     function triggerClientDownload() {
       const btn = document.getElementById('btn_download_pdf');
       if (btn) {
-        btn.innerText = '⏳ Memproses...';
+        btn.innerText = '⏳ Mengunduh PDF...';
         btn.disabled = true;
       }
-      const container = document.querySelector('.preview-container');
-      const filename = 'PM_Indoor_<?= preg_replace('/[^A-Za-z0-9_\-]/', '_', $site['site_name'] ?? 'Site') ?>_<?= date('Ymd_His', strtotime($report['report_date'])) ?>.pdf';
-      const opt = {
-        margin: 0,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-      };
-      if (window.html2pdf) {
-        window.html2pdf().set(opt).from(container).save().then(function() {
-          if (btn) {
-            btn.innerText = '✅ Terunduh';
-            setTimeout(() => {
-              btn.innerText = '⬇️ Download PDF';
-              btn.disabled = false;
-            }, 2500);
-          }
-        }).catch(function(err) {
-          console.error(err);
-          window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
-        });
-      } else {
-        window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
-      }
+      window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
+      setTimeout(function() {
+        if (btn) {
+          btn.innerText = '⬇️ Download PDF';
+          btn.disabled = false;
+        }
+      }, 4000);
     }
 
     <?php if (isset($_GET['autoprint']) && $_GET['autoprint'] == '1'): ?>

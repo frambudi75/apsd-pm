@@ -151,6 +151,14 @@ function can_assign_role(string $role_to_assign): bool {
  * Enforce login on protected pages
  */
 function require_login(): void {
+    // Allow internal CLI / headless browser PDF generator with signed token
+    if (!empty($_GET['pdf_token']) && !empty($_GET['id'])) {
+        $expectedToken = hash_hmac('sha256', (string)$_GET['id'], 'apsd_internal_secret_2026');
+        if (hash_equals($expectedToken, (string)$_GET['pdf_token'])) {
+            return;
+        }
+    }
+
     start_secure_session();
     if (!is_logged_in()) {
         $baseUrl = get_app_base_url();

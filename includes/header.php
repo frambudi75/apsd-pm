@@ -4,6 +4,7 @@
  * IASS SBU ICT KNO
  */
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config/version.php';
 require_login();
 
 $currentUser = current_user();
@@ -113,8 +114,11 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <a href="./" class="brand-wrapper">
       <img src="assets/img/logo_ias.png?v=3" alt="IAS Support Logo" class="brand-logo">
       <div class="brand-text">
-        <h1>IASS SBU ICT KNO</h1>
-        <span>Sistem Checklist & Laporan PM</span>
+        <div class="brand-title-row">
+          <h1>IASS SBU ICT KNO</h1>
+          <span class="app-version-badge" title="Versi Rilis Aplikasi"><?= APP_VERSION ?></span>
+        </div>
+        <span class="brand-subtitle">Sistem Checklist & Laporan PM</span>
       </div>
     </a>
     
@@ -223,6 +227,17 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           <span>Keluar dari Sistem</span>
         </a>
+
+        <div class="user-dropdown-divider"></div>
+
+        <!-- Release Info -->
+        <div class="user-dropdown-version-box">
+          <div class="user-version-line">
+            <span>Versi Aplikasi</span>
+            <span class="app-version-badge-sm"><?= APP_VERSION ?></span>
+          </div>
+          <div class="user-version-date">Rilis: <?= APP_BUILD_DATE ?> &bull; <?= APP_RELEASE_TITLE ?></div>
+        </div>
       </div>
     </div>
 

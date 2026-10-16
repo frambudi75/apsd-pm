@@ -3,11 +3,12 @@
  * Shared Application Footer with Mobile PWA Navigation
  * IASS SBU ICT KNO
  */
+require_once __DIR__ . '/../config/version.php';
 $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 ?>
 <footer class="no-print desktop-footer">
   <div class="container">
-    <p>&copy; <?= date('Y') ?> IASS SBU ICT KNO. All rights reserved.</p>
+    <p>&copy; <?= date('Y') ?> IASS SBU ICT KNO. All rights reserved. &bull; <span class="footer-version-tag">Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>)</span></p>
     <p style="font-size: 0.75rem; margin-top: 0.25rem;">Sistem Laporan Pemeliharaan Berkala (Preventive Maintenance) Standar Resmi</p>
   </div>
 </footer>

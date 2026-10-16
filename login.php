@@ -4,6 +4,7 @@
  * Secure 12-Hour Session Authentication
  */
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/config/version.php';
 
 start_secure_session();
 
@@ -207,7 +208,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <img src="assets/img/logo_ias.png?v=3" alt="IAS Support Logo" class="login-logo">
-      <h1 class="login-title">IASS SBU ICT KNO</h1>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 0.25rem;">
+        <h1 class="login-title">IASS SBU ICT KNO</h1>
+        <span class="app-version-badge" title="Versi Rilis Aplikasi"><?= APP_VERSION ?></span>
+      </div>
       <p class="login-subtitle">Sistem Checklist & Laporan Preventive Maintenance</p>
     </div>
 
@@ -253,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <div class="login-footer-info">
-    &copy; <?= date('Y') ?> IASS SBU ICT KNO. Sesi login aktif selama 12 jam.
+    &copy; <?= date('Y') ?> IASS SBU ICT KNO &bull; Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>) &bull; Sesi login aktif 12 jam
   </div>
 
 </div>

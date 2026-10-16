@@ -3,13 +3,14 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v12';
+const CACHE_NAME = 'iass-pm-v2.5.0';
 const STATIC_ASSETS = [
   './',
   'reports',
   'form_indoor',
   'form_outdoor',
   'sites',
+  'operators',
   'manifest.json',
   'assets/css/app.css',
   'assets/css/print.css',
@@ -22,6 +23,7 @@ const STATIC_ASSETS = [
   'assets/img/logo_telkomsel.png',
   'assets/img/logo_indosat.svg',
   'assets/img/logo_xl.svg',
+  'assets/img/logo_smartfren.svg',
   'assets/img/icon-192.png',
   'assets/img/icon-512.png'
 ];

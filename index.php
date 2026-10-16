@@ -66,7 +66,7 @@ if ($cachedStats !== null && is_array($cachedStats)) {
   <div class="hero-header">
     <div>
       <div class="hero-badge">
-        <span>⚡</span> Bandara Internasional Kualanamu
+        <span>⚡</span> Bandara Internasional Kualanamu &bull; <?= APP_VERSION ?>
       </div>
       <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.35rem;">Portal Preventive Maintenance (PM)</h2>
       <p style="font-size: 0.875rem; opacity: 0.92; max-width: 620px; line-height: 1.5; margin: 0;">

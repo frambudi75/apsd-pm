@@ -2784,10 +2784,13 @@ body {
 }
 
 .sidebar-brand-logo {
-  height: 36px;
+  height: 38px;
+  max-height: 42px;
   width: auto;
+  max-width: 120px;
   object-fit: contain;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
 .sidebar-brand-info {
@@ -3103,8 +3106,9 @@ body {
     justify-content: center;
   }
   html.sidebar-collapsed .sidebar-brand-logo {
-    height: 32px;
-    width: 32px;
+    height: 36px;
+    width: 36px;
+    max-width: 36px;
     object-fit: contain;
   }
   html.sidebar-collapsed .sidebar-scroll-area {

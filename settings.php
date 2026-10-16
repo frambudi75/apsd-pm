@@ -54,6 +54,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         @chmod($brandDir, 0777);
 
+        // Helper: Auto-crop transparent padding from uploaded PNG/WebP images
+        $cropTransparency = function(string $filePath): void {
+            if (!extension_loaded('gd') || !file_exists($filePath)) return;
+            $info = @getimagesize($filePath);
+            if (!$info) return;
+            $mime = $info['mime'] ?? '';
+            $src = null;
+            if ($mime === 'image/png') {
+                $src = @imagecreatefrompng($filePath);
+            } elseif ($mime === 'image/webp') {
+                $src = @imagecreatefromwebp($filePath);
+            }
+            if (!$src) return;
+
+            $w = imagesx($src);
+            $h = imagesy($src);
+            $minX = $w; $minY = $h;
+            $maxX = 0; $maxY = 0;
+            $found = false;
+
+            for ($y = 0; $y < $h; $y++) {
+                for ($x = 0; $x < $w; $x++) {
+                    $rgba = imagecolorat($src, $x, $y);
+                    $alpha = ($rgba >> 24) & 0x7F;
+                    if ($alpha < 120) {
+                        if ($x < $minX) $minX = $x;
+                        if ($x > $maxX) $maxX = $x;
+                        if ($y < $minY) $minY = $y;
+                        if ($y > $maxY) $maxY = $y;
+                        $found = true;
+                    }
+                }
+            }
+
+            if ($found && $minX <= $maxX && $minY <= $maxY) {
+                $cw = $maxX - $minX + 1;
+                $ch = $maxY - $minY + 1;
+                if (($cw * $ch) < ($w * $h * 0.88)) {
+                    $pad = 6;
+                    $cropX = max(0, $minX - $pad);
+                    $cropY = max(0, $minY - $pad);
+                    $cropW = min($w - $cropX, $cw + ($pad * 2));
+                    $cropH = min($h - $cropY, $ch + ($pad * 2));
+
+                    $dest = imagecreatetruecolor($cropW, $cropH);
+                    imagealphablending($dest, false);
+                    imagesavealpha($dest, true);
+                    $trans = imagecolorallocatealpha($dest, 0, 0, 0, 127);
+                    imagefilledrectangle($dest, 0, 0, $cropW, $cropH, $trans);
+
+                    imagealphablending($dest, true);
+                    imagecopy($dest, $src, 0, 0, $cropX, $cropY, $cropW, $cropH);
+                    imagesavealpha($dest, true);
+
+                    if ($mime === 'image/png') {
+                        imagepng($dest, $filePath, 8);
+                    } elseif ($mime === 'image/webp') {
+                        imagewebp($dest, $filePath, 90);
+                    }
+                    imagedestroy($dest);
+                }
+            }
+            imagedestroy($src);
+        };
+
         // 1. Handle App Logo (Sidebar & Web UI)
         if (!empty($_POST['reset_app_logo'])) {
             set_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
@@ -64,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest = $brandDir . '/' . $filename;
                 if (move_uploaded_file($_FILES['app_logo_file']['tmp_name'], $dest)) {
                     @chmod($dest, 0666);
+                    $cropTransparency($dest);
                     set_system_setting('app_logo_path', 'uploads/branding/' . $filename);
                 }
             } else {
@@ -81,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest = $brandDir . '/' . $filename;
                 if (move_uploaded_file($_FILES['report_left_logo_file']['tmp_name'], $dest)) {
                     @chmod($dest, 0666);
+                    $cropTransparency($dest);
                     set_system_setting('report_left_logo_path', 'uploads/branding/' . $filename);
                 }
             } else {
@@ -213,8 +280,8 @@ include __DIR__ . '/includes/header.php';
               </div>
               
               <!-- Preview Area -->
-              <div style="background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; align-items: center; justify-content: center; min-height: 80px; margin-bottom: 0.85rem;">
-                <img src="<?= htmlspecialchars($curAppLogo) ?>" alt="Preview Logo Aplikasi" id="preview_app_logo" style="max-height: 52px; max-width: 100%; object-fit: contain;">
+              <div style="background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 1.25rem 1rem; display: flex; align-items: center; justify-content: center; min-height: 105px; margin-bottom: 0.85rem; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 14px 14px;">
+                <img src="<?= htmlspecialchars($curAppLogo) ?>" alt="Preview Logo Aplikasi" id="preview_app_logo" style="max-height: 72px; max-width: 100%; object-fit: contain;">
               </div>
 
               <div style="font-size: 0.73rem; color: var(--text-subtle); line-height: 1.4; margin-bottom: 0.75rem;">
@@ -248,8 +315,8 @@ include __DIR__ . '/includes/header.php';
               </div>
               
               <!-- Preview Area (Paper white mockup) -->
-              <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: var(--radius-sm); padding: 1rem; display: flex; align-items: center; justify-content: center; min-height: 80px; margin-bottom: 0.85rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);">
-                <img src="<?= htmlspecialchars($curReportLeftLogo) ?>" alt="Preview Logo PDF Kiri" id="preview_report_logo" style="max-height: 52px; max-width: 100%; object-fit: contain;">
+              <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: var(--radius-sm); padding: 1.25rem 1rem; display: flex; align-items: center; justify-content: center; min-height: 105px; margin-bottom: 0.85rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);">
+                <img src="<?= htmlspecialchars($curReportLeftLogo) ?>" alt="Preview Logo PDF Kiri" id="preview_report_logo" style="max-height: 68px; max-width: 100%; object-fit: contain;">
               </div>
 
               <div style="font-size: 0.73rem; color: var(--text-subtle); line-height: 1.4; margin-bottom: 0.75rem;">
@@ -564,12 +631,62 @@ include __DIR__ . '/includes/header.php';
 <script>
 function previewSelectedImage(input, targetId) {
   if (input.files && input.files[0]) {
+    var file = input.files[0];
     var reader = new FileReader();
     reader.onload = function(e) {
-      var img = document.getElementById(targetId);
-      if (img) img.src = e.target.result;
+      var targetImg = document.getElementById(targetId);
+      if (!targetImg) return;
+
+      var tempImg = new Image();
+      tempImg.onload = function() {
+        try {
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          canvas.width = tempImg.naturalWidth;
+          canvas.height = tempImg.naturalHeight;
+          ctx.drawImage(tempImg, 0, 0);
+
+          var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var data = imgData.data;
+          var minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+          var found = false;
+
+          for (var y = 0; y < canvas.height; y++) {
+            for (var x = 0; x < canvas.width; x++) {
+              var alpha = data[((y * canvas.width) + x) * 4 + 3];
+              if (alpha > 20) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                found = true;
+              }
+            }
+          }
+
+          if (found && (maxX - minX > 5) && (maxY - minY > 5) && ((maxX - minX + 1) * (maxY - minY + 1) < canvas.width * canvas.height * 0.92)) {
+            var pad = 6;
+            var cropX = Math.max(0, minX - pad);
+            var cropY = Math.max(0, minY - pad);
+            var cropW = Math.min(canvas.width - cropX, (maxX - minX + 1) + (pad * 2));
+            var cropH = Math.min(canvas.height - cropY, (maxY - minY + 1) + (pad * 2));
+
+            var trimCanvas = document.createElement('canvas');
+            trimCanvas.width = cropW;
+            trimCanvas.height = cropH;
+            var trimCtx = trimCanvas.getContext('2d');
+            trimCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            targetImg.src = trimCanvas.toDataURL('image/png');
+          } else {
+            targetImg.src = e.target.result;
+          }
+        } catch (err) {
+          targetImg.src = e.target.result;
+        }
+      };
+      tempImg.src = e.target.result;
     };
-    reader.readAsDataURL(input.files[0]);
+    reader.readAsDataURL(file);
   }
 }
 </script>

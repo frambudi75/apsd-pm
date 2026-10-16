@@ -224,8 +224,26 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 7. Table operators (Master Operator / Tenant)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS operators (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            operator_code VARCHAR(50) NOT NULL UNIQUE,
+            operator_name VARCHAR(100) NOT NULL,
+            brand_name VARCHAR(50) NOT NULL,
+            logo_path VARCHAR(255) NULL,
+            is_active INT NOT NULL DEFAULT 1,
+            display_order INT DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_op_code (operator_code),
+            INDEX idx_op_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
+    seed_default_operators_if_empty($pdo);
 }
 
 /**
@@ -357,8 +375,26 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     ");
 
+    // 8. Table operators (Master Operator / Tenant)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS operators (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            operator_code VARCHAR(50) NOT NULL UNIQUE,
+            operator_name VARCHAR(100) NOT NULL,
+            brand_name VARCHAR(50) NOT NULL,
+            logo_path VARCHAR(255) NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            display_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_op_code ON operators(operator_code);
+        CREATE INDEX IF NOT EXISTS idx_op_active ON operators(is_active);
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
+    seed_default_operators_if_empty($pdo);
 }
 
 /**
@@ -455,4 +491,57 @@ function seed_default_users_if_empty(PDO $pdo) {
         // Ignored if table already exists or initializing
     }
 }
+
+/**
+ * Seed Default Operators if table has zero rows
+ */
+function seed_default_operators_if_empty(PDO $pdo) {
+    try {
+        $count = $pdo->query("SELECT COUNT(*) FROM operators")->fetchColumn();
+        if ($count == 0) {
+            $stmt = $pdo->prepare("
+                INSERT INTO operators (operator_code, operator_name, brand_name, logo_path, is_active, display_order)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+
+            $defaults = [
+                ['telkomsel', 'TELKOMSEL', 'Telkomsel', 'assets/img/logo_telkomsel.png?v=2', 1, 1],
+                ['ias', 'IASS SBU ICT KNO', 'IASS', 'assets/img/logo_ias.png?v=2', 1, 2],
+                ['indosat', 'INDOSAT OOREDOO', 'Indosat', 'assets/img/logo_indosat.svg', 1, 3],
+                ['xl', 'XL AXIATA', 'XL', 'assets/img/logo_xl.svg', 1, 4],
+                ['smartfren', 'SMARTFREN TELECOM', 'Smartfren', 'assets/img/logo_smartfren.svg', 1, 5]
+            ];
+
+            foreach ($defaults as $row) {
+                $stmt->execute($row);
+            }
+        }
+    } catch (Exception $e) {
+        // Ignored if table already exists or initializing
+    }
+}
+
+/**
+ * Get all active operators for form dropdowns & synchronization
+ */
+function get_all_active_operators(PDO $pdo): array {
+    try {
+        $stmt = $pdo->query("SELECT * FROM operators WHERE is_active = 1 ORDER BY display_order ASC, id ASC");
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($results)) {
+            return $results;
+        }
+    } catch (Exception $e) {
+        // Fallback below
+    }
+
+    return [
+        ['operator_code' => 'telkomsel', 'operator_name' => 'TELKOMSEL', 'brand_name' => 'Telkomsel', 'logo_path' => 'assets/img/logo_telkomsel.png?v=2'],
+        ['operator_code' => 'ias', 'operator_name' => 'IASS SBU ICT KNO', 'brand_name' => 'IASS', 'logo_path' => 'assets/img/logo_ias.png?v=2'],
+        ['operator_code' => 'indosat', 'operator_name' => 'INDOSAT OOREDOO', 'brand_name' => 'Indosat', 'logo_path' => 'assets/img/logo_indosat.svg'],
+        ['operator_code' => 'xl', 'operator_name' => 'XL AXIATA', 'brand_name' => 'XL', 'logo_path' => 'assets/img/logo_xl.svg'],
+        ['operator_code' => 'smartfren', 'operator_name' => 'SMARTFREN TELECOM', 'brand_name' => 'Smartfren', 'logo_path' => 'assets/img/logo_smartfren.svg'],
+    ];
+}
+
 

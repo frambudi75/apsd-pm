@@ -10,6 +10,7 @@ $pdo = get_db_connection();
 $sites = $pdo->query("SELECT * FROM sites ORDER BY site_name ASC")->fetchAll();
 $definitions = get_indoor_checklist_definitions();
 $photoGroups = get_indoor_photo_slots();
+$activeOperators = get_all_active_operators($pdo);
 
 $page_title = 'Formulir PM Indoor (IBC Telkomsel)';
 include __DIR__ . '/includes/header.php';
@@ -201,10 +202,15 @@ include __DIR__ . '/includes/header.php';
             <div class="form-group">
               <label class="form-label">Pilihan Logo Kop Kanan</label>
               <select id="preset_logo_select" name="preset_logo" class="form-control">
-                <option value="telkomsel" selected>Telkomsel</option>
-                <option value="ias">IAS Support / IASS SBU ICT KNO</option>
-                <option value="indosat">Indosat Ooredoo</option>
-                <option value="xl">XL Axiata</option>
+                <?php foreach ($activeOperators as $op): ?>
+                  <option value="<?= htmlspecialchars($op['operator_code']) ?>"
+                          data-brand="<?= htmlspecialchars($op['brand_name']) ?>"
+                          data-fullname="<?= htmlspecialchars($op['operator_name']) ?>"
+                          data-logo="<?= htmlspecialchars($op['logo_path']) ?>"
+                          <?= ($op['operator_code'] === 'telkomsel') ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($op['brand_name']) ?> (<?= htmlspecialchars($op['operator_name']) ?>)
+                  </option>
+                <?php endforeach; ?>
                 <option value="custom">-- Upload Logo Custom / Provider Lain --</option>
                 <option value="none">Tanpa Logo</option>
               </select>

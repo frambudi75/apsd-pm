@@ -54,16 +54,22 @@ try {
     ]);
     $report_id = $pdo->lastInsertId();
 
-    // Determine custom logo path
+    // Determine custom logo path from master operators table or presets
     $custom_logo_path = 'assets/img/logo_telkomsel.png';
-    if ($preset_logo === 'ias' || stripos($operator, 'IAS') !== false) {
+    $stmtOp = $pdo->prepare("SELECT logo_path FROM operators WHERE operator_code = ? AND is_active = 1 LIMIT 1");
+    $stmtOp->execute([$preset_logo]);
+    $matchedOp = $stmtOp->fetch(PDO::FETCH_ASSOC);
+
+    if ($matchedOp && !empty($matchedOp['logo_path'])) {
+        $custom_logo_path = explode('?', $matchedOp['logo_path'])[0];
+    } elseif ($preset_logo === 'none') {
+        $custom_logo_path = 'none';
+    } elseif ($preset_logo === 'ias' || stripos($operator, 'IAS') !== false) {
         $custom_logo_path = 'assets/img/logo_ias.png';
     } elseif ($preset_logo === 'indosat' || stripos($operator, 'INDOSAT') !== false) {
         $custom_logo_path = 'assets/img/logo_indosat.svg';
     } elseif ($preset_logo === 'xl' || stripos($operator, 'XL') !== false) {
         $custom_logo_path = 'assets/img/logo_xl.svg';
-    } elseif ($preset_logo === 'none') {
-        $custom_logo_path = 'none';
     }
 
     if (isset($_FILES['custom_logo_file']) && $_FILES['custom_logo_file']['error'] === UPLOAD_ERR_OK) {

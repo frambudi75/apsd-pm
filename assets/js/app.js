@@ -680,9 +680,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     presetLogoSelect.addEventListener('change', function () {
+      const selectedOpt = this.options[this.selectedIndex];
       const val = this.value;
       if (val === 'custom') {
         if (customLogoInput) customLogoInput.click();
+      } else if (val === 'none') {
+        logoPreviewImg.src = '';
+        logoPreviewImg.style.display = 'none';
+        if (operatorNameInput) operatorNameInput.value = '-';
+        syncOperatorParameters('Umum', '-');
+      } else if (selectedOpt && selectedOpt.dataset.logo) {
+        const logoSrc = selectedOpt.dataset.logo;
+        const brand = selectedOpt.dataset.brand || val;
+        const fullName = selectedOpt.dataset.fullname || brand;
+
+        logoPreviewImg.src = logoSrc;
+        logoPreviewImg.style.display = logoSrc ? 'block' : 'none';
+        if (operatorNameInput) {
+          operatorNameInput.value = fullName;
+        }
+        syncOperatorParameters(brand, fullName);
       } else if (logoMap[val]) {
         logoPreviewImg.src = logoMap[val].src;
         logoPreviewImg.style.display = logoMap[val].src ? 'block' : 'none';

@@ -292,9 +292,21 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 11. Table system_settings (System Preferences & Default Leader)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS system_settings (
+            setting_key VARCHAR(50) PRIMARY KEY,
+            setting_value TEXT NULL,
+            setting_label VARCHAR(100) NULL,
+            setting_group VARCHAR(50) DEFAULT 'general',
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
+    seed_default_settings_if_empty($pdo);
 }
 
 /**
@@ -494,9 +506,21 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_actphoto_act ON daily_activity_photos(activity_id);
     ");
 
+    // 12. Table system_settings (System Preferences & Default Leader)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS system_settings (
+            setting_key VARCHAR(50) PRIMARY KEY,
+            setting_value TEXT NULL,
+            setting_label VARCHAR(100) NULL,
+            setting_group VARCHAR(50) DEFAULT 'general',
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
+    seed_default_settings_if_empty($pdo);
 }
 
 /**
@@ -645,5 +669,79 @@ function get_all_active_operators(PDO $pdo): array {
         ['operator_code' => 'smartfren', 'operator_name' => 'SMARTFREN TELECOM', 'brand_name' => 'Smartfren', 'logo_path' => 'assets/img/logo_smartfren.svg'],
     ];
 }
+
+/**
+ * Seed Default System Settings (Default Team Leader, WhatsApp, O&M Vendor)
+ */
+function seed_default_settings_if_empty(PDO $pdo) {
+    try {
+        $count = $pdo->query("SELECT COUNT(*) FROM system_settings")->fetchColumn();
+        if ($count == 0) {
+            $defaults = [
+                ['default_team_leader', 'Eko Sulistyo', 'Nama Default Team Leader / Supervisor', 'leader'],
+                ['default_leader_role', 'Supervisor / Team Leader NOC KNO', 'Jabatan / Posisi Leader', 'leader'],
+                ['default_om_vendor', 'PT. Naer Tunas Indonesia', 'Default Vendor O&M', 'general'],
+                ['whatsapp_target_phone', '', 'Nomor WhatsApp Tujuan Laporan (opsional)', 'notification'],
+                ['company_name', 'PT Angkasa Pura Sarana Digital', 'Nama Perusahaan', 'general'],
+                ['unit_name', 'IASS SBU ICT KNO', 'Unit Kerja / Wilayah', 'general'],
+            ];
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, setting_label, setting_group) VALUES (?, ?, ?, ?)");
+            foreach ($defaults as $row) {
+                $stmt->execute($row);
+            }
+        }
+    } catch (Exception $e) {
+        // Table not ready or initialized
+    }
+}
+
+/**
+ * Get system setting value by key with optional fallback
+ */
+function get_system_setting(string $key, string $default = ''): string {
+    static $cache = [];
+    if (isset($cache[$key])) {
+        return $cache[$key];
+    }
+    try {
+        $pdo = get_db_connection();
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        $val = $stmt->fetchColumn();
+        if ($val !== false && $val !== null && trim((string)$val) !== '') {
+            $cache[$key] = (string)$val;
+            return $cache[$key];
+        }
+    } catch (Exception $e) {}
+    $cache[$key] = $default;
+    return $default;
+}
+
+/**
+ * Update or insert system setting
+ */
+function set_system_setting(string $key, string $value): bool {
+    try {
+        $pdo = get_db_connection();
+        $stmt = $pdo->prepare("
+            INSERT INTO system_settings (setting_key, setting_value, updated_at) 
+            VALUES (?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now', 'localtime')
+        ");
+        try {
+            return $stmt->execute([$key, $value]);
+        } catch (Exception $ex) {
+            $stmt = $pdo->prepare("
+                INSERT INTO system_settings (setting_key, setting_value, updated_at)
+                VALUES (?, ?, NOW())
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
+            ");
+            return $stmt->execute([$key, $value]);
+        }
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 
 

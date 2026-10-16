@@ -25,6 +25,11 @@ $filterShiftType = trim($_GET['shift_type'] ?? $suggestedShift);
 $filterUserId = $isAdmin ? (int)($_GET['user_id'] ?? $userId) : $userId;
 $selectedShiftId = (int)($_GET['shift_id'] ?? 0);
 
+// Load default settings
+$defaultLeader = get_system_setting('default_team_leader', 'Eko Sulistyo');
+$defaultRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
+$defaultWaPhone = get_system_setting('whatsapp_target_phone', '');
+
 // Load all technicians for admin filter
 $technicians = [];
 if ($isAdmin) {
@@ -58,6 +63,9 @@ if ($selectedShiftId > 0) {
 
 // If shift exists, fetch its activities and attached photos
 $activities = [];
+$catSummary = [];
+$totalPhotos = 0;
+
 if ($currentShift) {
     $stmtAct = $pdo->prepare("
         SELECT a.*, u.full_name AS tech_name, u.username 
@@ -84,10 +92,13 @@ if ($currentShift) {
         $photosByAct = [];
         foreach ($allPhotos as $p) {
             $photosByAct[$p['activity_id']][] = $p;
+            $totalPhotos++;
         }
 
         foreach ($activities as &$act) {
             $act['photos'] = $photosByAct[$act['id']] ?? [];
+            $c = $act['category'];
+            $catSummary[$c] = ($catSummary[$c] ?? 0) + 1;
         }
         unset($act);
     }
@@ -103,7 +114,7 @@ try {
             LEFT JOIN daily_activities a ON s.id = a.shift_id
             GROUP BY s.id
             ORDER BY s.shift_date DESC, s.shift_type ASC, s.id DESC
-            LIMIT 20
+            LIMIT 15
         ");
         $historyShifts = $stmtHist->fetchAll();
     } else {
@@ -114,12 +125,65 @@ try {
             WHERE s.user_id = ?
             GROUP BY s.id
             ORDER BY s.shift_date DESC, s.shift_type ASC, s.id DESC
-            LIMIT 20
+            LIMIT 15
         ");
         $stmtHist->execute([$filterUserId]);
         $historyShifts = $stmtHist->fetchAll();
     }
 } catch (Exception $e) {}
+
+// Construct WhatsApp Report Message
+$techName = $currentShift['technician_name'] ?? ($currentUser['full_name'] ?? $currentUser['username']);
+$shiftNameLabel = ($filterShiftType === 'pagi') ? 'Shift Pagi (08:00 - 20:00 WIB)' : 'Shift Malam (20:00 - 08:00 WIB)';
+$formattedDateIndo = date('d F Y', strtotime($filterDate));
+
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$pdfUrl = $protocol . $host . '/apsd/print_shift?shift_id=' . ($currentShift['id'] ?? 0);
+
+$waMessageLines = [];
+$waMessageLines[] = "*LAPORAN LOGBOOK HARIAN SHIFT NOC*";
+$waMessageLines[] = "*IASS SBU ICT KNO - PT ANGKASA PURA SARANA DIGITAL*";
+$waMessageLines[] = "=====================================";
+$waMessageLines[] = "📅 *Tanggal*: " . $formattedDateIndo;
+$waMessageLines[] = "⏱️ *Shift*: " . $shiftNameLabel;
+$waMessageLines[] = "👤 *Teknisi Jaga*: " . $techName;
+$waMessageLines[] = "👔 *Supervisor*: " . $defaultLeader;
+$waMessageLines[] = "📊 *Status*: " . (($currentShift && $currentShift['status'] === 'completed') ? 'Selesai & Diserahkan' : 'Sedang Berjalan');
+$waMessageLines[] = "📝 *Total Kegiatan*: " . count($activities) . " Catatan";
+$waMessageLines[] = "📸 *Total Foto*: " . $totalPhotos . " Foto Terlampir";
+$waMessageLines[] = "=====================================";
+$waMessageLines[] = "";
+$waMessageLines[] = "*DAFTAR KEGIATAN SHIFT:*";
+
+if (empty($activities)) {
+    $waMessageLines[] = "-(Belum ada catatan kegiatan)-";
+} else {
+    $num = 1;
+    foreach ($activities as $act) {
+        $waMessageLines[] = $num . ". [" . $act['activity_time'] . "] *" . strtoupper($act['category']) . "*";
+        $waMessageLines[] = "   *Judul*: " . $act['title'];
+        if (!empty($act['location'])) {
+            $waMessageLines[] = "   *Lokasi*: " . $act['location'];
+        }
+        $waMessageLines[] = "   *Detail*: " . trim($act['description']);
+        $num++;
+    }
+}
+
+if ($currentShift && !empty($currentShift['notes'])) {
+    $waMessageLines[] = "";
+    $waMessageLines[] = "📌 *Catatan Serah Terima*:";
+    $waMessageLines[] = $currentShift['notes'];
+}
+
+$waMessageLines[] = "";
+$waMessageLines[] = "📄 *Unduh / Tinjau Dokumen PDF Resmi Shift*:";
+$waMessageLines[] = $pdfUrl;
+$waMessageLines[] = "=====================================";
+$waMessageLines[] = "_Dikirim otomatis melalui Sistem PM & NOC IASS SBU ICT KNO_";
+
+$fullWaMessage = implode("\n", $waMessageLines);
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -127,21 +191,24 @@ include __DIR__ . '/includes/header.php';
 <div class="container py-4">
 
   <!-- Breadcrumb & Top Bar -->
-  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
     <div>
       <div style="font-size: 0.8rem; color: var(--text-subtle); display: flex; align-items: center; gap: 6px;">
         <a href="./" style="color: inherit; text-decoration: none;">Dashboard</a>
         <span>/</span>
         <span style="color: var(--primary); font-weight: 600;">Daily Activity NOC</span>
       </div>
-      <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-top: 0.25rem; letter-spacing: -0.02em;">
+      <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem; letter-spacing: -0.02em;">
         Logbook Kegiatan Harian Shift
       </h2>
     </div>
 
-    <!-- Right Actions -->
-    <div style="display: flex; align-items: center; gap: 8px;">
+    <!-- Top Right Actions -->
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <?php if ($currentShift): ?>
+        <button type="button" class="btn btn-whatsapp btn-sm" id="btn_open_wa_modal" title="Kirim dokumen dan informasi PDF ke WhatsApp">
+          <span>📲</span> Kirim ke WhatsApp
+        </button>
         <a href="print_shift?shift_id=<?= (int)$currentShift['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
           <span>📄</span> Unduh PDF Shift
         </a>
@@ -153,11 +220,11 @@ include __DIR__ . '/includes/header.php';
   </div>
 
   <!-- Filter & Shift Selector Card -->
-  <div class="card p-3 mb-4" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);">
-    <form method="GET" action="daily_activity" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
+  <div class="daily-filter-card">
+    <form method="GET" action="daily_activity" class="daily-filter-form">
       
       <!-- Date Picker -->
-      <div style="flex: 1; min-width: 150px;">
+      <div>
         <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-subtle); display: block; margin-bottom: 4px;">
           Tanggal Shift
         </label>
@@ -165,7 +232,7 @@ include __DIR__ . '/includes/header.php';
       </div>
 
       <!-- Shift Type -->
-      <div style="flex: 1; min-width: 150px;">
+      <div>
         <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-subtle); display: block; margin-bottom: 4px;">
           Jenis Shift
         </label>
@@ -177,7 +244,7 @@ include __DIR__ . '/includes/header.php';
 
       <!-- Technician Filter (Admin / Superadmin only) -->
       <?php if ($isAdmin): ?>
-      <div style="flex: 1.2; min-width: 180px;">
+      <div>
         <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-subtle); display: block; margin-bottom: 4px;">
           Teknisi NOC
         </label>
@@ -191,49 +258,53 @@ include __DIR__ . '/includes/header.php';
       </div>
       <?php endif; ?>
 
-      <div style="display: flex; gap: 6px;">
-        <button type="submit" class="btn btn-secondary btn-sm" style="min-height: 40px; padding: 0 1.25rem;">
+      <div>
+        <button type="submit" class="btn btn-secondary btn-sm" style="min-height: 40px; padding: 0 1.25rem; width: 100%;">
           Pilih Shift
         </button>
       </div>
     </form>
   </div>
 
-  <div class="row g-4">
-    <!-- Main Left Column: Current Shift Banner & Activity Timeline -->
-    <div class="col-lg-8">
+  <!-- Main Grid: Left Column (Timeline) & Right Column (Widgets) Side-by-Side -->
+  <div class="daily-main-grid">
+    
+    <!-- Left Column: Shift Banner & Activity Timeline -->
+    <div class="daily-content-col">
       
       <!-- Shift Header Banner -->
-      <div class="daily-shift-card">
+      <div class="daily-shift-card" style="border-left: 4px solid var(--primary);">
         <div class="daily-shift-header">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 46px; height: 46px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
               <?= ($filterShiftType === 'pagi') ? '☀️' : '🌙' ?>
             </div>
             <div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-main);">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main);">
                   Shift <?= ($filterShiftType === 'pagi') ? 'Pagi (08:00 - 20:00)' : 'Malam (20:00 - 08:00)' ?>
                 </h4>
                 <span class="shift-badge <?= ($filterShiftType === 'pagi') ? 'shift-badge-pagi' : 'shift-badge-malam' ?>">
                   <?= strtoupper($filterShiftType) ?>
                 </span>
                 <?php if ($currentShift && $currentShift['status'] === 'completed'): ?>
-                  <span class="sla-status-pill sla-normal">Selesai &amp; Terkunci</span>
+                  <span class="sla-status-pill sla-normal">✓ Selesai &amp; Terkunci</span>
                 <?php else: ?>
-                  <span class="sla-status-pill sla-warning">Sedang Berjalan</span>
+                  <span class="sla-status-pill sla-warning">● Sedang Berjalan</span>
                 <?php endif; ?>
               </div>
-              <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 2px;">
+              <div style="font-size: 0.82rem; color: var(--text-subtle); margin-top: 4px;">
                 <span>📅 <?= date('d F Y', strtotime($filterDate)) ?></span>
                 &bull;
-                <span>👤 Teknisi: <strong><?= htmlspecialchars($currentShift['technician_name'] ?? $currentUser['full_name'] ?? $currentUser['username']) ?></strong></span>
+                <span>👤 Teknisi: <strong><?= htmlspecialchars($techName) ?></strong></span>
+                &bull;
+                <span>👔 Supervisor: <strong><?= htmlspecialchars($defaultLeader) ?></strong></span>
               </div>
             </div>
           </div>
 
-          <!-- Shift Actions -->
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Shift Action Buttons -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <?php if ($currentShift && $currentShift['status'] === 'active'): ?>
               <button type="button" class="btn btn-outline-danger btn-sm" id="btn_complete_shift" data-shift-id="<?= (int)$currentShift['id'] ?>" title="Selesaikan shift dan kirim laporan logbook">
                 Selesaikan Shift
@@ -252,9 +323,9 @@ include __DIR__ . '/includes/header.php';
         <?php endif; ?>
       </div>
 
-      <!-- Activities Timeline List -->
+      <!-- Activities Timeline Section -->
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-        <h5 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">
+        <h5 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0;">
           Daftar Kegiatan Shift Ini (<?= count($activities) ?>)
         </h5>
         <span style="font-size: 0.78rem; color: var(--text-subtle);">Urut berdasarkan waktu kegiatan</span>
@@ -334,63 +405,81 @@ include __DIR__ . '/includes/header.php';
 
     </div>
 
-    <!-- Right Sidebar Column: Shift History & Quick Links -->
-    <div class="col-lg-4">
+    <!-- Right Sidebar Column: Sticky Widgets & Recent Shifts -->
+    <div class="daily-sidebar-col" style="display: flex; flex-direction: column; gap: 1.25rem;">
       
       <!-- Shift Summary Card -->
-      <div class="card p-3 mb-4" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);">
-        <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
-          <span>Ringkasan Shift Ini</span>
+      <div class="card p-3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+          <h5 style="font-size: 0.92rem; font-weight: 800; color: var(--text-main); margin: 0;">
+            Ringkasan Shift Ini
+          </h5>
           <?php if ($currentShift): ?>
             <a href="print_shift?shift_id=<?= (int)$currentShift['id'] ?>" target="_blank" class="btn btn-sm btn-primary-soft" style="font-size: 0.72rem; padding: 2px 8px;">
-              Cetak PDF
+              PDF
             </a>
           <?php endif; ?>
-        </h5>
+        </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem;">
-          <div style="background: var(--bg-alt); padding: 0.75rem; border-radius: var(--radius-sm); text-align: center;">
-            <div style="font-size: 1.35rem; font-weight: 800; color: var(--primary);">
+          <div style="background: var(--bg-alt); padding: 0.75rem; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border);">
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">
               <?= count($activities) ?>
             </div>
-            <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 600;">
+            <div style="font-size: 0.68rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">
               Total Kegiatan
             </div>
           </div>
 
-          <div style="background: var(--bg-alt); padding: 0.75rem; border-radius: var(--radius-sm); text-align: center;">
-            <div style="font-size: 1.35rem; font-weight: 800; color: var(--secondary);">
-              <?php 
-                $photoSum = 0;
-                foreach ($activities as $a) { $photoSum += count($a['photos'] ?? []); }
-                echo $photoSum;
-              ?>
+          <div style="background: var(--bg-alt); padding: 0.75rem; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border);">
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--secondary);">
+              <?= $totalPhotos ?>
             </div>
-            <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 600;">
+            <div style="font-size: 0.68rem; color: var(--text-subtle); text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">
               Foto Terlampir
             </div>
           </div>
         </div>
 
-        <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+        <?php if (!empty($catSummary)): ?>
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 6px;">Kategori:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <?php foreach ($catSummary as $cName => $cCount): ?>
+                <span class="cat-badge cat-lainnya" style="font-size: 0.68rem;">
+                  <?= htmlspecialchars($cName) ?>: <strong><?= $cCount ?></strong>
+                </span>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- Quick WhatsApp Button inside widget -->
+        <?php if ($currentShift): ?>
+          <button type="button" class="btn btn-whatsapp btn-sm w-100 mb-3" style="width: 100%; justify-content: center; padding: 0.5rem;" onclick="document.getElementById('btn_open_wa_modal').click()">
+            <span>📲</span> Bagikan ke WhatsApp
+          </button>
+        <?php endif; ?>
+
+        <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 0.75rem;">
           <div>&bull; Jam Shift Pagi: <strong>08:00 - 20:00 WIB</strong></div>
           <div>&bull; Jam Shift Malam: <strong>20:00 - 08:00 WIB</strong></div>
           <div style="margin-top: 6px; color: var(--text-subtle); font-size: 0.72rem;">
-            * Setelah shift selesai, tekan tombol "Selesaikan Shift" untuk mengunci dan mengirimkan rekapan resmi ke Admin.
+            * Selesaikan shift untuk mengunci catatan dan otomatis membagikan dokumen PDF ke WhatsApp.
           </div>
         </div>
       </div>
 
       <!-- Recent Shifts History -->
-      <div class="card p-3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);">
-        <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem;">
+      <div class="card p-3" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 0;">
+        <h5 style="font-size: 0.92rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.85rem;">
           Riwayat Shift Terkini
         </h5>
 
         <?php if (empty($historyShifts)): ?>
           <p style="font-size: 0.8rem; color: var(--text-subtle); margin: 0;">Belum ada riwayat shift terdahulu.</p>
         <?php else: ?>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
             <?php foreach ($historyShifts as $hs): 
               $isSel = ($currentShift && (int)$hs['id'] === (int)$currentShift['id']);
             ?>
@@ -494,7 +583,7 @@ include __DIR__ . '/includes/header.php';
               <span style="font-size: 0.72rem; color: var(--text-subtle);">Bisa 1 atau banyak foto</span>
             </label>
             
-            <div style="display: flex; gap: 8px; margin-bottom: 0.75rem;">
+            <div style="display: flex; gap: 8px; margin-bottom: 0.75rem; flex-wrap: wrap;">
               <label for="input_daily_photos" class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                 <span>📁</span> Pilih dari Galeri / File
               </label>
@@ -516,6 +605,69 @@ include __DIR__ . '/includes/header.php';
           <button type="submit" class="btn btn-primary btn-sm" id="btn_submit_activity">Simpan Kegiatan</button>
         </div>
       </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Kirim Laporan & Info PDF ke WhatsApp -->
+<div id="wa_share_modal" class="modal-backdrop-custom" style="display: none;">
+  <div class="modal-dialog-custom" style="max-width: 650px;">
+    <div class="modal-content-custom">
+      
+      <div class="modal-header-custom" style="background: #f0fdf4; border-bottom: 1px solid #bbf7d0;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">📲</span>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #166534;">Kirim Laporan Shift ke WhatsApp</h4>
+            <div style="font-size: 0.74rem; color: #15803d;">Bagikan ringkasan kegiatan dan tautan PDF dokumen resmi ke WhatsApp Leader / Grup</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn_close_wa_modal">&times;</button>
+      </div>
+
+      <div class="modal-body-custom">
+        <!-- Target Phone Input -->
+        <div class="mb-3">
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: flex; justify-content: space-between;">
+            <span>Nomor WhatsApp Tujuan (Opsional)</span>
+            <span style="font-size: 0.72rem; color: var(--text-subtle);">Kosongkan untuk memilih kontak/grup di WA</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="input_wa_phone" class="form-control" value="<?= htmlspecialchars($defaultWaPhone) ?>" placeholder="Contoh: 6281234567890 (awali 62)">
+          </div>
+        </div>
+
+        <!-- Message Preview -->
+        <div class="mb-3">
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: flex; justify-content: space-between;">
+            <span>Teks Informasi &amp; Ringkasan Laporan</span>
+            <span style="font-size: 0.72rem; color: var(--primary); cursor: pointer;" id="btn_copy_wa_text">📋 Salin Teks</span>
+          </label>
+          <textarea id="textarea_wa_message" class="form-control whatsapp-preview-box" rows="10"><?= htmlspecialchars($fullWaMessage) ?></textarea>
+        </div>
+
+        <div style="background: var(--bg-alt); padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong>File Dokumen PDF Resmi:</strong> Siap diunduh untuk dilampirkan pada chat WA.
+          </div>
+          <a href="<?= htmlspecialchars($pdfUrl) ?>" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.74rem; padding: 3px 8px;">
+            📄 Unduh File PDF
+          </a>
+        </div>
+      </div>
+
+      <div class="modal-footer-custom" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn_cancel_wa">Tutup</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn_copy_wa_modal">
+            📋 Salin Pesan
+          </button>
+          <button type="button" class="btn btn-whatsapp btn-sm" id="btn_send_whatsapp">
+            <span>📲</span> Buka WhatsApp &amp; Kirim
+          </button>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -754,7 +906,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Complete Shift Action
+  // Complete Shift Action with WhatsApp prompt
   var btnComplete = document.getElementById('btn_complete_shift');
   if (btnComplete) {
     btnComplete.addEventListener('click', function() {
@@ -762,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var notes = prompt('Masukkan catatan serah terima atau ringkasan penutupan shift (opsional):', '');
       if (notes === null) return; // User cancelled
 
-      if (!confirm('Apakah Anda yakin ingin menyelesaikan shift ini? Logbook akan dikunci dan dilaporkan ke pimpinan/admin.')) {
+      if (!confirm('Apakah Anda yakin ingin menyelesaikan shift ini? Logbook akan dikunci dan Anda akan diarahkan untuk membagikan laporan ke WhatsApp.')) {
         return;
       }
 
@@ -778,6 +930,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(function(data) {
         if (data.success) {
           alert(data.message);
+          // Open WhatsApp modal directly or reload
           window.location.reload();
         } else {
           alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
@@ -786,6 +939,60 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(function(err) {
         alert('Error: ' + err.message);
       });
+    });
+  }
+
+  // WhatsApp Modal Handlers
+  var waModal = document.getElementById('wa_share_modal');
+  var btnOpenWa = document.getElementById('btn_open_wa_modal');
+  var btnCloseWa = document.getElementById('btn_close_wa_modal');
+  var btnCancelWa = document.getElementById('btn_cancel_wa');
+  var btnSendWa = document.getElementById('btn_send_whatsapp');
+  var btnCopyWa = document.getElementById('btn_copy_wa_modal');
+  var btnCopyText = document.getElementById('btn_copy_wa_text');
+  var textareaMsg = document.getElementById('textarea_wa_message');
+  var inputWaPhone = document.getElementById('input_wa_phone');
+
+  function openWaModal() {
+    if (waModal) waModal.style.display = 'flex';
+  }
+  function closeWaModal() {
+    if (waModal) waModal.style.display = 'none';
+  }
+
+  if (btnOpenWa) btnOpenWa.addEventListener('click', openWaModal);
+  if (btnCloseWa) btnCloseWa.addEventListener('click', closeWaModal);
+  if (btnCancelWa) btnCancelWa.addEventListener('click', closeWaModal);
+
+  function copyTextToClipboard() {
+    if (textareaMsg) {
+      textareaMsg.select();
+      navigator.clipboard.writeText(textareaMsg.value).then(function() {
+        alert('Teks laporan shift berhasil disalin ke clipboard!');
+      }).catch(function() {
+        document.execCommand('copy');
+        alert('Teks laporan shift berhasil disalin!');
+      });
+    }
+  }
+
+  if (btnCopyWa) btnCopyWa.addEventListener('click', copyTextToClipboard);
+  if (btnCopyText) btnCopyText.addEventListener('click', copyTextToClipboard);
+
+  if (btnSendWa) {
+    btnSendWa.addEventListener('click', function() {
+      var phone = inputWaPhone ? inputWaPhone.value.trim().replace(/[^0-9]/g, '') : '';
+      if (phone.startsWith('0')) {
+        phone = '62' + phone.substring(1);
+      }
+      var text = textareaMsg ? textareaMsg.value : '';
+      var waUrl = '';
+      if (phone) {
+        waUrl = 'https://api.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(text);
+      } else {
+        waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+      }
+      window.open(waUrl, '_blank');
     });
   }
 });

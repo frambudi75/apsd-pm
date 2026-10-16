@@ -541,10 +541,10 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
         </td>
         <td>
           <div>Mengetahui &amp; Menyetujui,</div>
-          <div style="font-weight: 700; margin-top: 2px;">Supervisor / Team Leader NOC</div>
+          <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars(get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO')) ?></div>
           <div class="sign-space"></div>
-          <div class="sign-name">Supervisor NOC KNO</div>
-          <div class="sign-role">IASS SBU ICT KNO</div>
+          <div class="sign-name"><?= htmlspecialchars(get_system_setting('default_team_leader', 'Eko Sulistyo')) ?></div>
+          <div class="sign-role"><?= htmlspecialchars(get_system_setting('unit_name', 'IASS SBU ICT KNO')) ?></div>
         </td>
       </tr>
     </table>

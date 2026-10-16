@@ -198,6 +198,14 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
             </a>
           </li>
           <?php endif; ?>
+          <?php if (has_role('superadmin')): ?>
+          <li>
+            <a href="settings" class="sidebar-nav-item <?= ($curPage === 'settings.php') ? 'active' : '' ?>">
+              <span class="sidebar-nav-icon">⚙️</span>
+              <span>Pengaturan Sistem</span>
+            </a>
+          </li>
+          <?php endif; ?>
         </ul>
       </div>
     </div>

@@ -135,7 +135,7 @@ include __DIR__ . '/includes/header.php';
 
           <div class="form-group">
             <label class="form-label">Team Leader</label>
-            <input type="text" name="team_leader" class="form-control" placeholder="Nama leader jika ada">
+            <input type="text" name="team_leader" class="form-control" placeholder="Nama leader jika ada" value="<?= htmlspecialchars(get_system_setting('default_team_leader', 'Eko Sulistyo')) ?>">
           </div>
 
           <div class="form-group">

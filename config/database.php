@@ -241,6 +241,57 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 8. Table daily_shifts (NOC Shift Logbook Sessions)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_shifts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            technician_name VARCHAR(100) NOT NULL,
+            shift_date DATE NOT NULL,
+            shift_type VARCHAR(20) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            notes TEXT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            completed_at DATETIME NULL,
+            INDEX idx_shift_user (user_id),
+            INDEX idx_shift_date (shift_date),
+            INDEX idx_shift_type (shift_type),
+            INDEX idx_shift_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // 9. Table daily_activities (Individual activities within a shift)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_activities (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            shift_id INT NOT NULL,
+            user_id INT NOT NULL,
+            activity_time VARCHAR(20) NOT NULL,
+            category VARCHAR(50) NOT NULL,
+            location VARCHAR(150) NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_act_shift (shift_id),
+            INDEX idx_act_user (user_id),
+            INDEX idx_act_cat (category),
+            FOREIGN KEY (shift_id) REFERENCES daily_shifts(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // 10. Table daily_activity_photos (Dynamic photo attachments per activity)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_activity_photos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            activity_id INT NOT NULL,
+            photo_path VARCHAR(255) NOT NULL,
+            caption VARCHAR(255) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_actphoto_act (activity_id),
+            FOREIGN KEY (activity_id) REFERENCES daily_activities(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
@@ -390,6 +441,57 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         );
         CREATE INDEX IF NOT EXISTS idx_op_code ON operators(operator_code);
         CREATE INDEX IF NOT EXISTS idx_op_active ON operators(is_active);
+    ");
+
+    // 9. Table daily_shifts (NOC Shift Logbook Sessions)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_shifts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            technician_name VARCHAR(100) NOT NULL,
+            shift_date DATE NOT NULL,
+            shift_type VARCHAR(20) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            notes TEXT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            completed_at DATETIME NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_shift_user ON daily_shifts(user_id);
+        CREATE INDEX IF NOT EXISTS idx_shift_date ON daily_shifts(shift_date);
+        CREATE INDEX IF NOT EXISTS idx_shift_type ON daily_shifts(shift_type);
+        CREATE INDEX IF NOT EXISTS idx_shift_status ON daily_shifts(status);
+    ");
+
+    // 10. Table daily_activities (Individual activities within a shift)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_activities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shift_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            activity_time VARCHAR(20) NOT NULL,
+            category VARCHAR(50) NOT NULL,
+            location VARCHAR(150) NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (shift_id) REFERENCES daily_shifts(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_act_shift ON daily_activities(shift_id);
+        CREATE INDEX IF NOT EXISTS idx_act_user ON daily_activities(user_id);
+        CREATE INDEX IF NOT EXISTS idx_act_cat ON daily_activities(category);
+    ");
+
+    // 11. Table daily_activity_photos (Dynamic photo attachments per activity)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS daily_activity_photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            activity_id INTEGER NOT NULL,
+            photo_path VARCHAR(255) NOT NULL,
+            caption VARCHAR(255) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (activity_id) REFERENCES daily_activities(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_actphoto_act ON daily_activity_photos(activity_id);
     ");
 
     seed_default_sites_if_empty($pdo);

@@ -4,6 +4,37 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.6.0] - 2026-10-17
+
+#### Ditambahkan
+* **Dashboard Terpisah Berdasarkan Role**:
+  - Tampilan dashboard adaptif: teknisi/operator lapangan mendapatkan ringkasan giliran shift aktif, quick check-in logbook & daily activity, serta riwayat tugas mereka.
+  - Supervisor dan Admin mendapatkan ringkasan metrik eksekutif, status equipment breakdown, serta log approval.
+* **Sidebar Collapsible (Minimize Sidebar Desktop)**:
+  - Tombol toggle untuk memperkecil sidebar dari 260px menjadi 72px mode icon-only dengan tooltip label cepat.
+  - Status tersimpan otomatis di localStorage sehingga tidak berkedip saat refresh atau navigasi halaman.
+* **Pembersihan Topbar Header**:
+  - Menghapus tombol aksi dan avatar duplikat di sudut kanan atas header untuk tampilan kerja yang bersih dan fokus.
+* **Manajemen Profil Mandiri (Self-Service Profile & Password)**:
+  - Halaman `profile.php` bagi semua pengguna untuk mengubah nama profil, username, email, dan reset password mandiri.
+* **Konfigurasi Identitas & Logo Sistem (Branding Management)**:
+  - Pemisahan Logo Aplikasi (`app_logo_path`) dan Logo Kop Resmi Laporan PDF Kiri (`report_left_logo_path`) di `settings.php`.
+  - Pengaturan Nama Aplikasi (`app_title`) dan Subtitle (`app_subtitle`) terpusat yang diterapkan ke navbar, title bar, footer, dan login.
+* **Perbaikan Modul Kamera Daily Activity**:
+  - Penambahan input native environment capture untuk memastikan pengambilan gambar kamera di perangkat mobile dan tablet berjalan tanpa kendala.
+
+---
+
+### [Versi 2.5.0] - 2026-10-16
+
+#### Ditambahkan
+* **Modul Master Operator & Dynamic Provider Sync**:
+  - Pengelolaan data operator tenant seluler dan sinkronisasi dinamis ke formulir checklist dan laporan.
+* **Modul Daily Activity & Shift Handover**:
+  - Pencatatan aktivitas harian teknisi NOC dengan upload dokumentasi foto, kategori fleksibel, dan log handover shift.
+
+---
+
 ### [Versi 2.1.0] - 2026-10-15
 
 #### Ditambahkan

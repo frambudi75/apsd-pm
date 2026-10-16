@@ -3,7 +3,7 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v2.5.0';
+const CACHE_NAME = 'iass-pm-v2.6.0';
 const STATIC_ASSETS = [
   './',
   'reports',

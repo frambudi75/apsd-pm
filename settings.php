@@ -522,6 +522,32 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
+    <!-- Informasi Versi & Rilis Sistem -->
+    <div class="settings-card" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0, 128, 128, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <?= app_icon('info', 20) ?>
+          </div>
+          <div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Informasi Versi & Rilis Sistem</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;"><?= htmlspecialchars(APP_RELEASE_TITLE) ?></div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span class="badge" style="background: var(--primary); color: #fff; font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 6px;">
+            <?= htmlspecialchars(APP_VERSION) ?>
+          </span>
+          <span class="badge" style="background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border); font-size: 0.76rem; padding: 4px 10px; border-radius: 6px;">
+            Build <?= htmlspecialchars(APP_BUILD_DATE) ?>
+          </span>
+          <span class="badge" style="background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border); font-size: 0.76rem; padding: 4px 10px; border-radius: 6px;">
+            PHP <?= PHP_VERSION ?> (<?= strtoupper($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)) ?>)
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 1rem; margin-bottom: 2rem;">
       <a href="./" class="btn btn-secondary" style="padding: 0.6rem 1.4rem;">Batal</a>

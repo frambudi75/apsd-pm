@@ -6,13 +6,13 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.5.0');
+    define('APP_VERSION', 'v2.6.0');
 }
 
 if (!defined('APP_BUILD_DATE')) {
-    define('APP_BUILD_DATE', '16 Okt 2026');
+    define('APP_BUILD_DATE', '17 Okt 2026');
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Master Operator & Dynamic Provider Sync');
+    define('APP_RELEASE_TITLE', 'Role Dashboard, Collapsible Sidebar & Branding Management');
 }

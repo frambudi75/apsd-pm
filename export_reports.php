@@ -100,7 +100,7 @@ fputcsv($output, [
 $no = 1;
 foreach ($filtered as $row) {
     $rType = ($row['report_type'] === 'indoor') ? 'PM Indoor IBC (7 Hal)' : 'PM Outdoor Pole/Tower (13 Hal)';
-    $op = !empty($row['operator_name']) ? $row['operator_name'] : 'Telkomsel';
+    $op = !empty($row['operator']) ? $row['operator'] : (!empty($row['operator_name']) ? $row['operator_name'] : 'Telkomsel');
     $statusText = $row['findings']['has_nok'] ? 'Ada Temuan (NOK)' : 'Normal (OK)';
     $nokItems = !empty($row['findings']['nok_items']) ? implode(', ', $row['findings']['nok_items']) : 'Tidak ada anomali';
 

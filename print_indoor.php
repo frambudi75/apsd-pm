@@ -48,6 +48,11 @@ $dateMonthYear = date('d F Y', strtotime($report['report_date']));
 $rightLogoPath = $report['custom_logo_path'] ?? 'assets/img/logo_telkomsel.png';
 $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_exists(__DIR__ . '/' . $rightLogoPath));
 
+$leftLogoPath = get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png');
+if (!file_exists(__DIR__ . '/' . $leftLogoPath)) {
+    $leftLogoPath = 'assets/img/logo_ias.png';
+}
+
 // Compact Mode: Only print filled photos, skipping empty N/A slots
 $isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
 
@@ -219,7 +224,7 @@ $totalPages = 3 + $totalPhotoPages;
       <table class="table-bordered" style="margin-bottom: 0;">
         <tr>
           <td style="width: 28%; text-align: center; vertical-align: middle; padding: 6px;">
-            <img src="assets/img/logo_ias.png?v=2" alt="IAS Support" style="height: 38px; width: auto; max-width: 100%;">
+            <img src="<?= htmlspecialchars($leftLogoPath) ?>?v=<?= filemtime(__DIR__ . '/' . $leftLogoPath) ?>" alt="Kop Logo" style="height: 38px; width: auto; max-width: 100%;">
           </td>
           <td style="width: 44%; text-align: center; vertical-align: middle;">
             <div style="font-size: 11pt; font-weight: bold;">Daily Check List</div>
@@ -497,7 +502,7 @@ $totalPages = 3 + $totalPhotoPages;
         <table class="photo-page-header">
           <tr>
             <td style="width: 22%; text-align: center; vertical-align: middle; padding: 4px;">
-              <img src="assets/img/logo_ias.png?v=2" alt="IAS Support" style="height: 32px; width: auto; max-width: 100%;">
+              <img src="<?= htmlspecialchars($leftLogoPath) ?>?v=<?= filemtime(__DIR__ . '/' . $leftLogoPath) ?>" alt="Kop Logo" style="height: 32px; width: auto; max-width: 100%;">
             </td>
             <td style="width: 56%; text-align: center; vertical-align: middle; padding: 2px;">
               <div style="font-size: 8pt; font-weight: bold;">IASS SBU ICT KNO</div>

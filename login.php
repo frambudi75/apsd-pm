@@ -18,6 +18,10 @@ if (is_logged_in()) {
 $errorMessage = '';
 $infoMessage = '';
 
+$sysAppTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+$sysAppSubtitle = get_system_setting('app_subtitle', 'Sistem Checklist & Laporan Preventive Maintenance');
+$sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
+
 if (isset($_GET['expired'])) {
     $infoMessage = 'Sesi Anda telah berakhir setelah 12 jam. Silakan login kembali untuk melanjutkan.';
 } elseif (isset($_GET['logout'])) {
@@ -54,11 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Login - IASS SBU ICT KNO</title>
+  <title>Login - <?= htmlspecialchars($sysAppTitle) ?></title>
   
   <link rel="manifest" href="manifest.json?v=3">
   <meta name="theme-color" content="#008080">
-  <link rel="icon" type="image/png" href="assets/img/logo_ias.png?v=3">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/assets/css/app.css') ?>">
 
   <script>
@@ -207,12 +211,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
       </div>
 
-      <img src="assets/img/logo_ias.png?v=3" alt="IAS Support Logo" class="login-logo">
+      <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="Logo Aplikasi" class="login-logo">
       <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 0.25rem;">
-        <h1 class="login-title">IASS SBU ICT KNO</h1>
+        <h1 class="login-title"><?= htmlspecialchars($sysAppTitle) ?></h1>
         <span class="app-version-badge" title="Versi Rilis Aplikasi"><?= APP_VERSION ?></span>
       </div>
-      <p class="login-subtitle">Sistem Checklist & Laporan Preventive Maintenance</p>
+      <p class="login-subtitle"><?= htmlspecialchars($sysAppSubtitle) ?></p>
     </div>
 
     <div class="login-body">

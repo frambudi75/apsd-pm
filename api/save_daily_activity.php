@@ -80,22 +80,11 @@ try {
                 exit;
             }
         } else {
-            // Create new active shift session
-            $stmt = $pdo->prepare("
-                INSERT INTO daily_shifts (user_id, technician_name, shift_date, shift_type, status, notes, created_at)
-                VALUES (?, ?, ?, ?, 'active', '', datetime('now', 'localtime'))
-            ");
-            // If MySQL, datetime function fallback
-            try {
-                $stmt->execute([$userId, $technicianName, $shiftDate, $shiftType]);
-            } catch (Exception $ex) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO daily_shifts (user_id, technician_name, shift_date, shift_type, status, notes, created_at)
-                    VALUES (?, ?, ?, ?, 'active', '', NOW())
-                ");
-                $stmt->execute([$userId, $technicianName, $shiftDate, $shiftType]);
-            }
-            $shiftId = (int)$pdo->lastInsertId();
+            echo json_encode([
+                'success' => false,
+                'message' => 'Sesi shift belum dibuka. Silakan pilih dan mulai sesi shift terlebih dahulu sebelum mencatat kegiatan.'
+            ]);
+            exit;
         }
     }
 

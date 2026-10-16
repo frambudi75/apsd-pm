@@ -214,6 +214,8 @@ function init_mysql_schema(PDO $pdo) {
             username VARCHAR(50) NOT NULL UNIQUE,
             password_hash VARCHAR(255) NOT NULL,
             full_name VARCHAR(100) NOT NULL,
+            email VARCHAR(100) NULL,
+            phone VARCHAR(50) NULL,
             role VARCHAR(20) NOT NULL DEFAULT 'user',
             is_active INT NOT NULL DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -223,6 +225,8 @@ function init_mysql_schema(PDO $pdo) {
             INDEX idx_users_role (role)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
 
     // 7. Table operators (Master Operator / Tenant)
     $pdo->exec("
@@ -428,6 +432,8 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
             username VARCHAR(50) NOT NULL UNIQUE,
             password_hash VARCHAR(255) NOT NULL,
             full_name VARCHAR(100) NOT NULL,
+            email VARCHAR(100) NULL,
+            phone VARCHAR(50) NULL,
             role VARCHAR(20) NOT NULL DEFAULT 'user',
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -437,6 +443,8 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
         CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     ");
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
 
     // 8. Table operators (Master Operator / Tenant)
     $pdo->exec("
@@ -675,23 +683,81 @@ function get_all_active_operators(PDO $pdo): array {
  */
 function seed_default_settings_if_empty(PDO $pdo) {
     try {
-        $count = $pdo->query("SELECT COUNT(*) FROM system_settings")->fetchColumn();
-        if ($count == 0) {
-            $defaults = [
-                ['default_team_leader', 'Eko Sulistyo', 'Nama Default Team Leader / Supervisor', 'leader'],
-                ['default_leader_role', 'Supervisor / Team Leader NOC KNO', 'Jabatan / Posisi Leader', 'leader'],
-                ['default_om_vendor', 'PT. Naer Tunas Indonesia', 'Default Vendor O&M', 'general'],
-                ['whatsapp_target_phone', '', 'Nomor WhatsApp Tujuan Laporan (opsional)', 'notification'],
-                ['company_name', 'PT Angkasa Pura Sarana Digital', 'Nama Perusahaan', 'general'],
-                ['unit_name', 'IASS SBU ICT KNO', 'Unit Kerja / Wilayah', 'general'],
-            ];
-            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, setting_label, setting_group) VALUES (?, ?, ?, ?)");
-            foreach ($defaults as $row) {
-                $stmt->execute($row);
-            }
+        $defaults = [
+            ['default_team_leader', 'Eko Sulistyo', 'Nama Default Team Leader / Supervisor', 'leader'],
+            ['default_leader_role', 'Supervisor / Team Leader NOC KNO', 'Jabatan / Posisi Leader', 'leader'],
+            ['default_om_vendor', 'PT. Naer Tunas Indonesia', 'Default Vendor O&M', 'general'],
+            ['whatsapp_target_phone', '', 'Nomor WhatsApp Tujuan Laporan (opsional)', 'notification'],
+            ['company_name', 'IASS SBU ICT KNO', 'Nama Perusahaan', 'general'],
+            ['unit_name', 'IASS SBU ICT KNO', 'Unit Kerja / Wilayah', 'general'],
+            ['shift_oh_time', '08:00 - 17:00 WIB', 'Jam Kerja Office Hour (OH)', 'shift'],
+            ['shift_pagi_time', '08:00 - 20:00 WIB', 'Jam Kerja Operasional Shift Pagi', 'shift'],
+            ['shift_malam_time', '20:00 - 08:00 WIB', 'Jam Kerja Operasional Shift Malam', 'shift'],
+            ['activity_categories', 'Monitoring, Patroli, Troubleshooting, Maintenance, Administrasi, Lainnya', 'Daftar Kategori Kegiatan Harian NOC', 'shift'],
+            ['app_title', 'IASS SBU ICT KNO', 'Nama / Judul Aplikasi (Sidebar & Navigasi)', 'branding'],
+            ['app_subtitle', 'Sistem PM & NOC', 'Sub-judul / Tagline Aplikasi', 'branding'],
+            ['app_logo_path', 'assets/img/logo_ias.png?v=3', 'File Logo Aplikasi (Sidebar & Header)', 'branding'],
+            ['report_left_logo_path', 'assets/img/logo_ias.png', 'File Logo PDF Laporan (Kop Sebelah Kiri)', 'branding'],
+        ];
+
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->prepare("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, setting_label, setting_group) VALUES (?, ?, ?, ?)");
+        } else {
+            $stmt = $pdo->prepare("INSERT IGNORE INTO system_settings (setting_key, setting_value, setting_label, setting_group) VALUES (?, ?, ?, ?)");
+        }
+
+        foreach ($defaults as $row) {
+            $stmt->execute($row);
         }
     } catch (Exception $e) {
         // Table not ready or initialized
+    }
+}
+
+require_once __DIR__ . '/../includes/icons.php';
+
+/**
+ * Get shift metadata helper
+ */
+function get_shift_info(string $type): array {
+    $ohTime = get_system_setting('shift_oh_time', '08:00 - 17:00 WIB');
+    $pagiTime = get_system_setting('shift_pagi_time', '08:00 - 20:00 WIB');
+    $malamTime = get_system_setting('shift_malam_time', '20:00 - 08:00 WIB');
+
+    switch (strtolower($type)) {
+        case 'oh':
+        case 'office_hour':
+            return [
+                'code' => 'oh',
+                'name' => 'Office Hour (OH)',
+                'time' => $ohTime,
+                'icon' => '🏢',
+                'svg_icon' => app_icon('building', 14),
+                'badge_class' => 'shift-badge-oh',
+                'category' => 'Office Hour'
+            ];
+        case 'malam':
+            return [
+                'code' => 'malam',
+                'name' => 'Operasional Shift Malam',
+                'time' => $malamTime,
+                'icon' => '🌙',
+                'svg_icon' => app_icon('moon', 14),
+                'badge_class' => 'shift-badge-malam',
+                'category' => 'Operasional'
+            ];
+        case 'pagi':
+        default:
+            return [
+                'code' => 'pagi',
+                'name' => 'Operasional Shift Pagi',
+                'time' => $pagiTime,
+                'icon' => '☀️',
+                'svg_icon' => app_icon('sun', 14),
+                'badge_class' => 'shift-badge-pagi',
+                'category' => 'Operasional'
+            ];
     }
 }
 

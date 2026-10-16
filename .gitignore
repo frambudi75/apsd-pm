@@ -10,6 +10,10 @@ Desktop.ini
 # Temporary & Test Files
 test.db
 uploads/temp/
+uploads/daily/*
+!uploads/daily/.gitkeep
+uploads/branding/*
+!uploads/branding/.gitkeep
 scratch/
 *.tmp
 *.log

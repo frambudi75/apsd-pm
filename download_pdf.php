@@ -10,36 +10,58 @@ require_once __DIR__ . '/includes/auth.php';
 require_login();
 $pdo = get_db_connection();
 
+$shift_id = intval($_GET['shift_id'] ?? 0);
+$month = trim($_GET['month'] ?? '');
 $report_id = intval($_GET['id'] ?? 0);
-if ($report_id <= 0) {
-    die("ID Laporan tidak valid.");
+
+if ($shift_id > 0) {
+    $stmtShift = $pdo->prepare("SELECT * FROM daily_shifts WHERE id = ?");
+    $stmtShift->execute([$shift_id]);
+    $shiftData = $stmtShift->fetch();
+    if (!$shiftData) {
+        die("Shift tidak ditemukan.");
+    }
+    $printFile = 'print_shift.php';
+    $pdfFilename = 'Logbook_NOC_' . ucfirst($shiftData['shift_type']) . '_' . $shiftData['shift_date'] . '.pdf';
+    $idParam = "shift_id={$shift_id}";
+    $targetId = (string)$shift_id;
+    $targetPrintUrl = "print_shift.php?shift_id={$shift_id}";
+} elseif (!empty($month) && preg_match('/^\d{4}-\d{2}$/', $month)) {
+    $printFile = 'print_monthly_logbook.php';
+    $pdfFilename = 'Rekap_Logbook_NOC_' . $month . '.pdf';
+    $idParam = "month=" . urlencode($month);
+    $targetId = $month;
+    $targetPrintUrl = "print_monthly_logbook.php?month=" . urlencode($month);
+} elseif ($report_id > 0) {
+    $stmt = $pdo->prepare("SELECT r.*, s.site_name FROM pm_reports r LEFT JOIN sites s ON r.site_id = s.id WHERE r.id = ?");
+    $stmt->execute([$report_id]);
+    $report = $stmt->fetch();
+    if (!$report) {
+        die("Laporan tidak ditemukan.");
+    }
+    $isIndoor = ($report['report_type'] === 'indoor');
+    $printFile = $isIndoor ? 'print_indoor.php' : 'print_outdoor.php';
+    $isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
+    $pdfFilename = ($isIndoor ? 'PM_Indoor_' : 'PM_Outdoor_') . preg_replace('/[^A-Za-z0-9_\-]/', '_', $report['site_name'] ?: 'Site') . '_' . date('Ymd_His', strtotime($report['report_date'])) . '.pdf';
+    $idParam = "id={$report_id}" . ($isCompact ? '&compact=1' : '');
+    $targetId = (string)$report_id;
+    $targetPrintUrl = "{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : '');
+} else {
+    die("Parameter laporan tidak valid.");
 }
 
-$stmt = $pdo->prepare("SELECT r.*, s.site_name FROM pm_reports r LEFT JOIN sites s ON r.site_id = s.id WHERE r.id = ?");
-$stmt->execute([$report_id]);
-$report = $stmt->fetch();
-if (!$report) {
-    die("Laporan tidak ditemukan.");
-}
-
-$isIndoor = ($report['report_type'] === 'indoor');
-$printFile = $isIndoor ? 'print_indoor.php' : 'print_outdoor.php';
-$isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
-
-$pdfFilename = ($isIndoor ? 'PM_Indoor_' : 'PM_Outdoor_') . preg_replace('/[^A-Za-z0-9_\-]/', '_', $report['site_name'] ?: 'Site') . '_' . date('Ymd_His', strtotime($report['report_date'])) . '.pdf';
-
-// Candidate headless browser binary paths
+// Candidate headless browser binary paths (Chrome prioritized on Windows)
 $browserCandidates = [
-    // Linux / Debian / Docker
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    // Windows
+    // Windows 64-bit Google Chrome (verified high performance)
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+    // Linux / Debian / Docker
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser'
 ];
 
 $browserBin = null;
@@ -62,8 +84,8 @@ if ($browserBin) {
     $localPort = $_SERVER['SERVER_PORT'] ?? '80';
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
-    $pdfToken = hash_hmac('sha256', (string)$report_id, 'apsd_internal_secret_2026');
-    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$report_id}&pdf_token={$pdfToken}" . ($isCompact ? '&compact=1' : '');
+    $pdfToken = hash_hmac('sha256', $targetId, 'apsd_internal_secret_2026');
+    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?{$idParam}&pdf_token={$pdfToken}";
 
     $cmd = sprintf(
         '"%s" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
@@ -74,19 +96,19 @@ if ($browserBin) {
 
     @exec($cmd, $output, $returnCode);
 
-    // Wait up to 6 seconds for headless browser to finish writing the PDF file (> 30KB)
+    // Wait up to 6 seconds for headless browser to finish writing the PDF file (> 5KB)
     $maxWait = 6.0;
     $waited = 0.0;
     while ($waited < $maxWait) {
         clearstatcache(true, $pdfPath);
-        if (file_exists($pdfPath) && filesize($pdfPath) > 30000) {
+        if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {
             break;
         }
         usleep(300000); // 300ms
         $waited += 0.3;
     }
 
-    if (file_exists($pdfPath) && filesize($pdfPath) > 30000) {
+    if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $pdfFilename . '"');
         header('Content-Length: ' . filesize($pdfPath));
@@ -190,7 +212,7 @@ $targetPrintUrl = "{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : 
       setTimeout(function () {
         try {
           const frameDoc = iframe.contentDocument || iframe.contentWindow.document;
-          const container = frameDoc.querySelector('.preview-container');
+          const container = frameDoc.querySelector('.preview-container') || frameDoc.querySelector('#printable_content') || frameDoc.querySelector('.a4-sheet');
           
           if (!container || !window.html2pdf) {
             throw new Error('Elemen pratinjau tidak ditemukan');
@@ -207,7 +229,7 @@ $targetPrintUrl = "{$printFile}?id={$report_id}" . ($isCompact ? '&compact=1' : 
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'], before: '.print-page' }
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.print-page' }
           };
 
           window.html2pdf().set(opt).from(container).save().then(function () {

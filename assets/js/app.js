@@ -898,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    if (pwaInstallBanner && !sessionStorage.getItem('pwa_prompt_dismissed')) {
+    if (pwaInstallBanner && !localStorage.getItem('pwa_prompt_dismissed')) {
       pwaInstallBanner.style.display = 'flex';
     }
   });
@@ -918,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (btnDismissPwa) {
     btnDismissPwa.addEventListener('click', function () {
       if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
-      sessionStorage.setItem('pwa_prompt_dismissed', '1');
+      localStorage.setItem('pwa_prompt_dismissed', '1');
     });
   }
 

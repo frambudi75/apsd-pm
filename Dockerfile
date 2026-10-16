@@ -49,7 +49,7 @@ RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
 COPY . /var/www/html/
 
 # Set initial permissions for database and uploads directories
-RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports \
+RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/temp \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 777 /var/www/html/database /var/www/html/uploads
 

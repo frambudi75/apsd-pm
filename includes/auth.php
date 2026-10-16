@@ -152,10 +152,13 @@ function can_assign_role(string $role_to_assign): bool {
  */
 function require_login(): void {
     // Allow internal CLI / headless browser PDF generator with signed token
-    if (!empty($_GET['pdf_token']) && !empty($_GET['id'])) {
-        $expectedToken = hash_hmac('sha256', (string)$_GET['id'], 'apsd_internal_secret_2026');
-        if (hash_equals($expectedToken, (string)$_GET['pdf_token'])) {
-            return;
+    if (!empty($_GET['pdf_token'])) {
+        $targetId = (string)($_GET['id'] ?? $_GET['shift_id'] ?? $_GET['month'] ?? '');
+        if ($targetId !== '') {
+            $expectedToken = hash_hmac('sha256', $targetId, 'apsd_internal_secret_2026');
+            if (hash_equals($expectedToken, (string)$_GET['pdf_token'])) {
+                return;
+            }
         }
     }
 

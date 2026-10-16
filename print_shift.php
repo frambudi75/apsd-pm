@@ -55,7 +55,8 @@ if (!empty($actIds)) {
 }
 
 $techName = $shift['technician_name'] ?: ($shift['user_full_name'] ?: $shift['username']);
-$shiftTypeLabel = ($shift['shift_type'] === 'pagi') ? 'Shift Pagi (08:00 - 20:00 WIB)' : 'Shift Malam (20:00 - 08:00 WIB)';
+$shiftInfo = get_shift_info($shift['shift_type']);
+$shiftTypeLabel = $shiftInfo['name'] . ' (' . $shiftInfo['time'] . ')';
 $formattedDate = date('d F Y', strtotime($shift['shift_date']));
 $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['shift_date'] . '.pdf';
 ?>
@@ -280,41 +281,115 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     .cat-tag-administrasi { background: #f3e8ff; color: #6b21a8; }
     .cat-tag-lainnya { background: #f1f5f9; color: #475569; }
 
-    /* Photo Attachments Grid */
-    .photo-section-item {
-      margin-bottom: 16px;
+    /* Reference Photo Badges in Chronological Table */
+    .ref-photo-badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #bae6fd;
+      white-space: nowrap;
+    }
+
+    .status-ok-badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #047857;
+      background: #ecfdf5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* Activity Photo Group in Section II (Like PM Format) */
+    .photo-act-group {
+      margin-bottom: 14px;
       page-break-inside: avoid;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
 
-    .photo-grid-doc {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+    .photo-act-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 6px 10px;
+    }
+
+    .photo-act-badge {
+      display: inline-block;
+      background: #008080;
+      color: #ffffff;
+      font-size: 7.5pt;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.02em;
+    }
+
+    .photo-doc-grid {
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 6px;
+      padding: 10px;
+      background: #ffffff;
     }
 
-    .photo-card-doc {
+    .photo-doc-card {
+      flex: 1 1 calc(33.333% - 10px);
+      max-width: calc(33.333% - 7px);
       border: 1px solid #cbd5e1;
       border-radius: 4px;
       overflow: hidden;
       background: #ffffff;
-      padding: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
-    .photo-card-doc img {
+    .photo-doc-grid-2 .photo-doc-card {
+      flex: 1 1 calc(50% - 10px);
+      max-width: calc(50% - 5px);
+    }
+
+    .photo-doc-tag {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-size: 7.5pt;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .photo-doc-img-wrap {
       width: 100%;
-      height: 120px;
+      height: 145px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .photo-doc-img-wrap img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       display: block;
-      border-radius: 2px;
     }
 
-    .photo-caption-doc {
+    .photo-doc-caption {
       font-size: 7.5pt;
       color: #475569;
-      padding: 4px 2px 2px 2px;
-      line-height: 1.25;
-      font-weight: 600;
+      padding: 5px 8px;
+      line-height: 1.3;
+      border-top: 1px solid #f1f5f9;
+      background: #fafafa;
+      min-height: 26px;
     }
 
     /* Signature Sign-Off Box */
@@ -379,10 +454,10 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     </div>
 
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button type="button" class="btn-action btn-pdf" id="btn_export_pdf">
+      <a href="download_pdf?shift_id=<?= (int)$shift['id'] ?>" class="btn-action btn-pdf" id="btn_export_pdf" title="Unduh langsung file PDF resmi berkualitas tinggi">
         📥 Unduh File PDF
-      </button>
-      <button type="button" class="btn-action btn-print" onclick="window.print()">
+      </a>
+      <button type="button" class="btn-action btn-print" onclick="window.print()" title="Cetak dokumen atau Simpan sebagai PDF via browser">
         🖨️ Cetak Dokumen
       </button>
     </div>
@@ -395,11 +470,11 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     <table class="doc-header-table">
       <tr>
         <td style="width: 80px;">
-          <img src="assets/img/logo_ias.png?v=3" alt="IAS Support Logo" style="height: 48px; object-fit: contain;">
+          <img src="<?= htmlspecialchars(get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png')) ?>" alt="Logo Kop" style="height: 48px; object-fit: contain;">
         </td>
         <td style="padding-left: 12px;">
-          <div class="doc-title-main">PT Angkasa Pura Sarana Digital</div>
-          <div class="doc-title-sub">IASS SBU ICT KNO &bull; LOGBOOK HARIAN SHIFT NOC</div>
+          <div class="doc-title-main"><?= htmlspecialchars(get_system_setting('company_name', 'IASS SBU ICT KNO')) ?></div>
+          <div class="doc-title-sub"><?= htmlspecialchars(get_system_setting('unit_name', 'IASS SBU ICT KNO')) ?> &bull; LOGBOOK HARIAN SHIFT NOC</div>
           <div class="doc-title-location">Bandara Internasional Kualanamu, Deli Serdang, Sumatera Utara</div>
         </td>
         <td style="width: 120px; text-align: right;">
@@ -458,32 +533,52 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
         <thead>
           <tr>
             <th style="width: 25px; text-align: center;">No</th>
-            <th style="width: 75px;">Waktu</th>
-            <th style="width: 100px;">Kategori</th>
-            <th style="width: 130px;">Lokasi / Site</th>
-            <th>Uraian Kegiatan &amp; Penanganan</th>
+            <th style="width: 70px;">Waktu</th>
+            <th style="width: 85px;">Kategori</th>
+            <th style="width: 110px;">Lokasi / Site</th>
+            <th>Pekerjaan &amp; Uraian Penanganan</th>
+            <th style="width: 105px; text-align: center;">Dokumentasi</th>
+            <th style="width: 65px; text-align: center;">Keterangan</th>
           </tr>
         </thead>
         <tbody>
           <?php $no = 1; foreach ($activities as $act): 
+            $curNo = $no++;
             $cat = strtolower($act['category']);
             $tagClass = 'cat-tag-' . $cat;
             if (!in_array($cat, ['monitoring', 'patroli', 'troubleshooting', 'maintenance', 'administrasi'])) {
                 $tagClass = 'cat-tag-lainnya';
             }
+            $actPhotos = $photosByAct[$act['id']] ?? [];
           ?>
-            <tr>
-              <td style="text-align: center; font-weight: 700;"><?= $no++ ?></td>
+            <tr style="page-break-inside: avoid;">
+              <td style="text-align: center; font-weight: 700;"><?= $curNo ?></td>
               <td style="font-weight: 700; color: #008080; white-space: nowrap;"><?= htmlspecialchars($act['activity_time']) ?></td>
               <td><span class="cat-tag <?= $tagClass ?>"><?= htmlspecialchars($act['category']) ?></span></td>
-              <td style="font-weight: 600; color: #334155;"><?= htmlspecialchars($act['location'] ?: '-') ?></td>
+              <td style="font-weight: 600; color: #334155; font-size: 8.5pt;">
+                <?= htmlspecialchars($act['location'] ?: '-') ?>
+              </td>
               <td>
-                <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">
+                <div style="font-weight: 700; color: #0f172a; margin-bottom: 3px; font-size: 9pt;">
                   <?= htmlspecialchars($act['title']) ?>
                 </div>
-                <div style="color: #475569; font-size: 8.5pt;">
+                <div style="color: #475569; font-size: 8.5pt; line-height: 1.45;">
                   <?= nl2br(htmlspecialchars($act['description'])) ?>
                 </div>
+              </td>
+              <td style="text-align: center; vertical-align: middle;">
+                <?php if (!empty($actPhotos)): ?>
+                  <?php if (count($actPhotos) === 1): ?>
+                    <span class="ref-photo-badge">📷 Foto <?= $curNo ?>.1</span>
+                  <?php else: ?>
+                    <span class="ref-photo-badge">📷 <?= count($actPhotos) ?> Foto (<?= $curNo ?>.1 - <?= $curNo ?>.<?= count($actPhotos) ?>)</span>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <span style="color: #94a3b8; font-size: 7.5pt; font-style: italic;">(Tanpa foto)</span>
+                <?php endif; ?>
+              </td>
+              <td style="text-align: center; vertical-align: middle;">
+                <span class="status-ok-badge">Normal</span>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -491,42 +586,75 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
       </table>
     <?php endif; ?>
 
-    <!-- Section 2: Catatan Khusus & Serah Terima Shift -->
-    <?php if (!empty($shift['notes'])): ?>
-      <div class="section-title-bar">II. Catatan Khusus &amp; Serah Terima Shift</div>
-      <div style="border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 4px; padding: 10px; font-size: 9pt; color: #334155; margin-bottom: 18px; line-height: 1.5;">
-        <?= nl2br(htmlspecialchars($shift['notes'])) ?>
-      </div>
-    <?php endif; ?>
-
-    <!-- Section 3: Lampiran Foto Dokumentasi Kegiatan -->
+    <!-- Section II: Lampiran Dokumentasi Foto Kegiatan (Format PM Terstruktur) -->
     <?php if ($totalDocPhotos > 0): ?>
-      <div class="section-title-bar" style="page-break-before: auto;">
-        <?= empty($shift['notes']) ? 'II' : 'III' ?>. Lampiran Dokumentasi Foto Kegiatan
-      </div>
+      <div class="section-title-bar" style="margin-top: 20px;">II. Lampiran Dokumentasi Foto Kegiatan</div>
+      <p style="font-size: 8pt; color: #64748b; margin-top: -5px; margin-bottom: 12px;">
+        Dokumentasi visual hasil pekerjaan dan patroli shift sesuai nomor urut kegiatan pada Tabel Kronologis di atas.
+      </p>
 
-      <?php foreach ($activities as $act): 
+      <?php $actNum = 1; foreach ($activities as $act): 
+        $curActNum = $actNum++;
         $actPhotos = $photosByAct[$act['id']] ?? [];
-        if (empty($actPhotos)) continue;
+        if (empty($actPhotos)) {
+            continue;
+        }
+        $cat = strtolower($act['category']);
+        $tagClass = 'cat-tag-' . $cat;
+        if (!in_array($cat, ['monitoring', 'patroli', 'troubleshooting', 'maintenance', 'administrasi'])) {
+            $tagClass = 'cat-tag-lainnya';
+        }
       ?>
-        <div class="photo-section-item">
-          <div style="font-size: 8.5pt; font-weight: 700; color: #008080; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
-            <span>[<?= htmlspecialchars($act['activity_time']) ?>] <?= htmlspecialchars($act['category']) ?>: <?= htmlspecialchars($act['title']) ?></span>
-            <span style="color: #64748b; font-size: 7.5pt;"><?= count($actPhotos) ?> foto</span>
+        <div class="photo-act-group">
+          <div class="photo-act-header">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="photo-act-badge">Kegiatan #<?= $curActNum ?></span>
+                <span style="font-size: 8pt; font-weight: 700; color: #008080;">⏰ <?= htmlspecialchars($act['activity_time']) ?></span>
+                <span class="cat-tag <?= $tagClass ?>"><?= htmlspecialchars($act['category']) ?></span>
+                <strong style="color: #0f172a; font-size: 8.5pt;"><?= htmlspecialchars($act['title']) ?></strong>
+              </div>
+              <span style="font-size: 7.5pt; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 3px;">
+                <?= count($actPhotos) ?> Foto Dokumentasi
+              </span>
+            </div>
+            <?php if (!empty($act['location'])): ?>
+              <div style="font-size: 7.5pt; color: #64748b; margin-top: 3px;">
+                📍 Lokasi: <strong><?= htmlspecialchars($act['location']) ?></strong>
+              </div>
+            <?php endif; ?>
           </div>
 
-          <div class="photo-grid-doc">
-            <?php foreach ($actPhotos as $p): ?>
-              <div class="photo-card-doc">
-                <img src="<?= htmlspecialchars($p['photo_path']) ?>" alt="Foto Kegiatan">
-                <div class="photo-caption-doc">
-                  <?= htmlspecialchars($p['caption'] ?: $act['title']) ?>
+          <div class="photo-doc-grid <?= (count($actPhotos) <= 2) ? 'photo-doc-grid-2' : '' ?>">
+            <?php $pNum = 1; foreach ($actPhotos as $p): 
+              $curPNum = $pNum++;
+            ?>
+              <div class="photo-doc-card">
+                <div class="photo-doc-tag">
+                  <span>📷 Dokumentasi <?= $curActNum ?>.<?= $curPNum ?></span>
+                  <?php if (!empty($p['created_at'])): ?>
+                    <span style="float: right; color: #64748b; font-weight: 400;"><?= date('H:i', strtotime($p['created_at'])) ?> WIB</span>
+                  <?php endif; ?>
+                </div>
+                <div class="photo-doc-img-wrap">
+                  <img src="<?= htmlspecialchars($p['photo_path']) ?>" alt="Foto Dokumentasi <?= $curActNum ?>.<?= $curPNum ?>">
+                </div>
+                <div class="photo-doc-caption">
+                  <?= htmlspecialchars(!empty($p['caption']) ? $p['caption'] : $act['title']) ?>
                 </div>
               </div>
             <?php endforeach; ?>
           </div>
         </div>
       <?php endforeach; ?>
+    <?php endif; ?>
+
+    <!-- Section III: Catatan Khusus & Serah Terima Shift -->
+    <?php if (!empty($shift['notes'])): ?>
+      <div class="section-title-bar"><?= ($totalDocPhotos > 0) ? 'III' : 'II' ?>. Catatan Khusus &amp; Serah Terima Shift</div>
+      <div style="border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 4px; padding: 10px; font-size: 9pt; color: #334155; margin-bottom: 18px; line-height: 1.5;">
+        <?= nl2br(htmlspecialchars($shift['notes'])) ?>
+      </div>
     <?php endif; ?>
 
     <!-- Sign-off Verification Section -->

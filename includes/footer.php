@@ -9,7 +9,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     </div><!-- /.app-content-body -->
     <footer class="no-print desktop-footer">
       <div class="container" style="max-width: 100%;">
-        <p>&copy; <?= date('Y') ?> IASS SBU ICT KNO. All rights reserved. &bull; <span class="footer-version-tag">Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>)</span></p>
+        <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'))) ?>. All rights reserved. &bull; <span class="footer-version-tag">Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>)</span></p>
         <p style="font-size: 0.75rem; margin-top: 0.25rem;">Sistem Laporan Pemeliharaan Berkala (Preventive Maintenance) &amp; Daily Activity NOC Standar Resmi</p>
       </div>
     </footer>
@@ -34,15 +34,20 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
     <span>+ PM</span>
   </a>
-  <?php if (function_exists('has_role') && has_role(['superadmin', 'admin'])): ?>
+  <?php if (function_exists('has_role') && has_role('superadmin')): ?>
+    <a href="settings" class="mobile-nav-item <?= ($curPage === 'settings.php') ? 'active' : '' ?>">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Setting</span>
+    </a>
+  <?php elseif (function_exists('has_role') && has_role('admin')): ?>
     <a href="users" class="mobile-nav-item <?= ($curPage === 'users.php') ? 'active' : '' ?>">
       <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
       <span>Pengguna</span>
     </a>
   <?php else: ?>
-    <a href="sites" class="mobile-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-      <span>Sites</span>
+    <a href="form_indoor" class="mobile-nav-item <?= ($curPage === 'form_indoor.php') ? 'active' : '' ?>">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <span>Indoor</span>
     </a>
   <?php endif; ?>
 </nav>
@@ -82,7 +87,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 
       <!-- Live Watermark Overlay (Realtime HUD over camera stream) -->
       <div id="live_watermark_hud" class="live-watermark-hud">
-        <div class="hud-brand">IASS SBU ICT KNO</div>
+        <div class="hud-brand"><?= htmlspecialchars(get_system_setting('app_title', 'IASS SBU ICT KNO')) ?></div>
         <div id="hud_time" class="hud-line">WAKTU: -</div>
         <div id="hud_site_name" class="hud-line">SITE : -</div>
         <div id="hud_coords" class="hud-line">GPS  : Mendeteksi koordinat...</div>

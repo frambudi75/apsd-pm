@@ -48,6 +48,92 @@ if ($cachedStats !== null && is_array($cachedStats)) {
         'site_count' => $siteCount
     ], 60);
 }
+
+// Compute 6-Month PM Trend & Operator Breakdown
+$indoMonths = [
+    '01' => 'Jan', '02' => 'Feb', '03' => 'Mar', '04' => 'Apr',
+    '05' => 'Mei', '06' => 'Jun', '07' => 'Jul', '08' => 'Agu',
+    '09' => 'Sep', '10' => 'Okt', '11' => 'Nov', '12' => 'Des'
+];
+
+$monthlyTrend = [];
+$now = new DateTime();
+for ($i = 5; $i >= 0; $i--) {
+    $dt = (clone $now)->modify("-{$i} month");
+    $k = $dt->format('Y-m');
+    $mNum = $dt->format('m');
+    $monthlyTrend[$k] = [
+        'key' => $k,
+        'label' => ($indoMonths[$mNum] ?? $dt->format('M')) . ' ' . $dt->format('y'),
+        'total' => 0,
+        'indoor' => 0,
+        'outdoor' => 0
+    ];
+}
+
+$operatorShare = [];
+foreach ($reports as $r) {
+    $rKey = date('Y-m', strtotime($r['report_date']));
+    if (isset($monthlyTrend[$rKey])) {
+        $monthlyTrend[$rKey]['total']++;
+        if ($r['report_type'] === 'indoor') $monthlyTrend[$rKey]['indoor']++;
+        if ($r['report_type'] === 'outdoor') $monthlyTrend[$rKey]['outdoor']++;
+    }
+    $op = !empty($r['operator_name']) ? strtoupper($r['operator_name']) : 'TELKOMSEL';
+    if ($op === '-') $op = 'UMUM';
+    $operatorShare[$op] = ($operatorShare[$op] ?? 0) + 1;
+}
+arsort($operatorShare);
+$maxTrend = 1;
+foreach ($monthlyTrend as $t) {
+    if ($t['total'] > $maxTrend) $maxTrend = $t['total'];
+}
+
+// Compute Site PM Health & SLA (Days since last PM)
+$allSites = $pdo->query("SELECT id, site_name, location_detail FROM sites ORDER BY site_name ASC")->fetchAll();
+$latestReportPerSite = [];
+$latestReportByName = [];
+foreach ($reports as $r) {
+    $sid = intval($r['site_id'] ?? 0);
+    if ($sid > 0 && !isset($latestReportPerSite[$sid])) {
+        $latestReportPerSite[$sid] = $r['report_date'];
+    }
+    if (!empty($r['site_name'])) {
+        $norm = strtolower(trim($r['site_name']));
+        if (!isset($latestReportByName[$norm])) {
+            $latestReportByName[$norm] = $r['report_date'];
+        }
+    }
+}
+
+$siteHealth = [
+    'normal' => [],
+    'warning' => [],
+    'overdue' => []
+];
+$todayTime = time();
+
+foreach ($allSites as $s) {
+    $sid = intval($s['id']);
+    $norm = strtolower(trim($s['site_name']));
+    $lastDate = $latestReportPerSite[$sid] ?? ($latestReportByName[$norm] ?? null);
+    if ($lastDate) {
+        $diffDays = max(0, floor(($todayTime - strtotime($lastDate)) / 86400));
+        $s['days_ago'] = $diffDays;
+        $s['last_date'] = $lastDate;
+        if ($diffDays <= 30) {
+            $siteHealth['normal'][] = $s;
+        } elseif ($diffDays <= 60) {
+            $siteHealth['warning'][] = $s;
+        } else {
+            $siteHealth['overdue'][] = $s;
+        }
+    } else {
+        $s['days_ago'] = 999;
+        $s['last_date'] = null;
+        $siteHealth['overdue'][] = $s;
+    }
+}
 ?>
 
 <main class="container">
@@ -179,6 +265,104 @@ if ($cachedStats !== null && is_array($cachedStats)) {
         </div>
       </div>
     </a>
+  </div>
+
+  <!-- Executive Dashboard Analytics & Site PM SLA Section -->
+  <div class="analytics-grid">
+    <!-- Card 1: Monthly PM Trend & Operator Breakdown -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-main);">Tren Pemeliharaan (6 Bulan Terakhir)</h4>
+          <span style="font-size: 0.72rem; color: var(--text-subtle);">Distribusi penyelesaian inspeksi per bulan</span>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">Total: <?= $totalReports ?></span>
+      </div>
+      <div class="card-body">
+        <div class="chart-bar-container">
+          <?php foreach ($monthlyTrend as $t): ?>
+            <?php 
+              $heightPct = $maxTrend > 0 ? max(8, round(($t['total'] / $maxTrend) * 95)) : 8;
+            ?>
+            <div class="chart-bar-col" title="<?= htmlspecialchars($t['label']) ?>: <?= $t['total'] ?> laporan (<?= $t['indoor'] ?> indoor, <?= $t['outdoor'] ?> outdoor)">
+              <span class="chart-bar-count"><?= $t['total'] ?></span>
+              <div class="chart-bar-pill" style="height: <?= $heightPct ?>px;"></div>
+              <span class="chart-bar-label"><?= htmlspecialchars($t['label']) ?></span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 0.4rem;">Porsi Operator Seluler / Tenant</div>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <?php if (!empty($operatorShare)): ?>
+              <?php foreach (array_slice($operatorShare, 0, 5, true) as $opName => $opCnt): ?>
+                <div class="operator-share-badge">
+                  <span>🏢</span>
+                  <span><?= htmlspecialchars($opName) ?>:</span>
+                  <strong style="color: var(--primary);"><?= $opCnt ?></strong>
+                </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <span style="font-size: 0.75rem; color: var(--text-subtle);">Belum ada data operator.</span>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Site PM Health & SLA Status -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-main);">Kepatuhan Siklus PM Site (SLA)</h4>
+          <span style="font-size: 0.72rem; color: var(--text-subtle);">Status jadwal pemeriksaan rutin tiang & shelter</span>
+        </div>
+        <a href="sites" class="btn btn-sm btn-secondary" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">Lihat Semua Site</a>
+      </div>
+      <div class="card-body">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+          <div class="sla-status-pill sla-normal" title="Site telah diperiksa dalam 30 hari terakhir">
+            <span>✓</span> <?= count($siteHealth['normal']) ?> Site Aman (&lt;30 hr)
+          </div>
+          <div class="sla-status-pill sla-warning" title="Site perlu dijadwalkan inspeksi baru">
+            <span>⚠️</span> <?= count($siteHealth['warning']) ?> Perlu Jadwal (30-60 hr)
+          </div>
+          <div class="sla-status-pill sla-overdue" title="Site telah lewat batas waktu rutin inspeksi">
+            <span>🔴</span> <?= count($siteHealth['overdue']) ?> Jatuh Tempo (&gt;60 hr)
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 0.4rem;">Site Perlu Perhatian / Kunjungan Segera</div>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <?php 
+              $prioritySites = array_merge($siteHealth['overdue'], $siteHealth['warning']);
+              $prioritySites = array_slice($prioritySites, 0, 3);
+            ?>
+            <?php if (!empty($prioritySites)): ?>
+              <?php foreach ($prioritySites as $ps): ?>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.65rem; background: var(--bg-alt); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                  <div style="min-width: 0; flex: 1;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($ps['site_name']) ?></div>
+                    <div style="font-size: 0.7rem; color: var(--text-subtle);">
+                      <?= $ps['last_date'] ? ('PM Terakhir: ' . date('d M Y', strtotime($ps['last_date'])) . ' (' . $ps['days_ago'] . ' hari lalu)') : 'Belum pernah diinspeksi' ?>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-left: 8px;">
+                    <a href="form_outdoor" class="btn btn-sm btn-primary" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; text-decoration: none;">+ PM</a>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div style="text-align: center; padding: 1rem; color: var(--text-subtle); font-size: 0.8rem;">
+                ✓ Semua site dalam status aman dan telah dipelihara berkala.
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Reports Section with Live Filter & Search Toolbar -->

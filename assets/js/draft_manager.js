@@ -241,6 +241,10 @@
           window.updatePhotoFilterCounts();
         }
 
+        if (typeof window.updateAllSlotStatuses === 'function') {
+          window.updateAllSlotStatuses();
+        }
+
         // Hide restore banner
         const banner = document.getElementById('draft_restore_banner');
         if (banner) {

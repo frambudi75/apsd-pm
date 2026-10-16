@@ -54,6 +54,9 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
         <span id="camera_slot_badge">Foto</span>
       </div>
       <div style="display: flex; gap: 8px;">
+        <button type="button" id="btn_toggle_grid" class="camera-ctrl-btn" title="Garis Bantu Simetris (Grid 3x3)">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 10h16M4 16h16M10 4v16M16 4v16"/></svg>
+        </button>
         <button type="button" id="btn_switch_camera" class="camera-ctrl-btn" title="Ganti Kamera Depan/Belakang">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         </button>
@@ -65,6 +68,14 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <div class="camera-viewfinder-wrapper">
       <video id="camera_video" autoplay playsinline muted></video>
       <canvas id="camera_canvas" style="display: none;"></canvas>
+
+      <!-- Optional Rule-of-Thirds Grid Overlay -->
+      <div id="camera_grid_overlay" class="camera-grid-overlay" style="display: none;">
+        <div class="grid-line-v grid-line-v1"></div>
+        <div class="grid-line-v grid-line-v2"></div>
+        <div class="grid-line-h grid-line-h1"></div>
+        <div class="grid-line-h grid-line-h2"></div>
+      </div>
 
       <!-- Live Watermark Overlay (Realtime HUD over camera stream) -->
       <div id="live_watermark_hud" class="live-watermark-hud">

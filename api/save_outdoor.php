@@ -21,6 +21,21 @@ try {
     $site_id = !empty($_POST['site_id']) ? intval($_POST['site_id']) : null;
     $site_id_str = trim($_POST['site_id_str'] ?? '0');
     $site_name = trim($_POST['site_name'] ?? '');
+
+    // Auto-resolve site_id if not selected from dropdown
+    if (empty($site_id) && (!empty($site_name) || !empty($site_id_str))) {
+        $sFind = $pdo->prepare("SELECT id FROM sites WHERE LOWER(site_name) = LOWER(?) OR LOWER(site_id_str) = LOWER(?) LIMIT 1");
+        $sFind->execute([$site_name, $site_id_str]);
+        $foundId = $sFind->fetchColumn();
+        if ($foundId) {
+            $site_id = (int)$foundId;
+        } else {
+            $sFind2 = $pdo->prepare("SELECT id FROM sites WHERE LOWER(site_name) LIKE LOWER(?) LIMIT 1");
+            $sFind2->execute(['%' . $site_name . '%']);
+            $foundId2 = $sFind2->fetchColumn();
+            if ($foundId2) $site_id = (int)$foundId2;
+        }
+    }
     $location_detail = trim($_POST['location_detail'] ?? $_POST['address'] ?? $_POST['city'] ?? '');
     $report_date = $_POST['report_date'] ?? date('Y-m-d');
     $inspection_time = trim($_POST['inspection_time'] ?? '10.25');
@@ -235,6 +250,7 @@ try {
     require_once __DIR__ . '/../config/redis.php';
     AppRedis::flushPrefix('dashboard:');
     AppRedis::del('reports:all');
+    AppRedis::del('reports:all_v2');
 
     // Redirect to the outdoor print/preview page
     $compactParam = (!empty($_POST['compact_pdf'])) ? '&compact=1' : '';

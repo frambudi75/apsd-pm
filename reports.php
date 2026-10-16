@@ -84,8 +84,11 @@ ksort($uniqueMonths);
       </p>
     </div>
 
-    <!-- Quick Action New Reports -->
+    <!-- Quick Action New Reports & Export -->
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button type="button" id="btn_export_excel" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px; color: var(--text-main);">
+        <span>📊</span> Ekspor Excel (.csv)
+      </button>
       <a href="form_indoor" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px;">
         <span>+</span> Buat PM Indoor
       </a>
@@ -261,7 +264,10 @@ ksort($uniqueMonths);
           <table class="checklist-table" id="reports_table">
             <thead>
               <tr>
-                <th style="width: 50px;">No</th>
+                <th style="width: 38px; text-align: center;">
+                  <input type="checkbox" id="check_all_reports" title="Pilih Semua Laporan">
+                </th>
+                <th style="width: 45px;">No</th>
                 <th>Tipe PM</th>
                 <th>Nama Site & Lokasi</th>
                 <th>Tanggal & Waktu</th>
@@ -303,6 +309,9 @@ ksort($uniqueMonths);
                     data-site="<?= htmlspecialchars($siteDisplayName) ?>"
                     data-month="<?= htmlspecialchars($monthVal) ?>"
                     data-anomaly="<?= htmlspecialchars($anomalyVal) ?>">
+                  <td style="text-align: center;">
+                    <input type="checkbox" class="report-select-chk" value="<?= $rep['id'] ?>" title="Pilih Laporan #<?= $rep['id'] ?>">
+                  </td>
                   <td style="font-weight: 700; color: var(--text-subtle);"><?= $index + 1 ?></td>
                   <td>
                     <?php if ($rep['report_type'] === 'indoor'): ?>
@@ -415,6 +424,7 @@ ksort($uniqueMonths);
                  data-anomaly="<?= htmlspecialchars($anomalyVal) ?>">
               <div class="mobile-card-top">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <input type="checkbox" class="report-select-chk" value="<?= $rep['id'] ?>" style="width: 18px; height: 18px; cursor: pointer;" title="Pilih Laporan #<?= $rep['id'] ?>">
                   <?php if ($rep['report_type'] === 'indoor'): ?>
                     <span class="mobile-badge mobile-badge-indoor">PM INDOOR (7 HAL)</span>
                   <?php else: ?>
@@ -637,7 +647,111 @@ ksort($uniqueMonths);
         btn.style.color = 'var(--text-subtle)';
       }
     });
+
+    // Excel CSV Export Trigger
+    const exportBtn = document.getElementById('btn_export_excel');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function () {
+        const url = 'export_reports?type=' + encodeURIComponent(currentType) +
+                    '&site=' + encodeURIComponent(currentSite) +
+                    '&month=' + encodeURIComponent(currentMonth) +
+                    '&status=' + encodeURIComponent(currentStatus);
+        window.location.href = url;
+      });
+    }
+
+    // Batch Selection Logic
+    const checkAll = document.getElementById('check_all_reports');
+    const batchBar = document.getElementById('batch_action_bar');
+    const batchCount = document.getElementById('batch_selected_count');
+    const btnBatchZip = document.getElementById('btn_batch_download_zip');
+    const btnBatchCancel = document.getElementById('btn_batch_cancel');
+
+    function updateBatchBar() {
+      const checkedBoxes = document.querySelectorAll('.report-select-chk:checked');
+      const count = checkedBoxes.length;
+      if (batchCount) batchCount.textContent = count;
+      if (batchBar) batchBar.style.display = count > 0 ? 'flex' : 'none';
+      if (checkAll) {
+        const visibleBoxes = document.querySelectorAll('.report-row:not([style*="display: none"]) .report-select-chk');
+        checkAll.checked = visibleBoxes.length > 0 && checkedBoxes.length === visibleBoxes.length;
+      }
+    }
+
+    if (checkAll) {
+      checkAll.addEventListener('change', function () {
+        const isChecked = this.checked;
+        const visibleRows = document.querySelectorAll('.report-row:not([style*="display: none"])');
+        visibleRows.forEach(row => {
+          const chk = row.querySelector('.report-select-chk');
+          if (chk) chk.checked = isChecked;
+        });
+        updateBatchBar();
+      });
+    }
+
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.classList.contains('report-select-chk')) {
+        updateBatchBar();
+      }
+    });
+
+    if (btnBatchCancel) {
+      btnBatchCancel.addEventListener('click', function () {
+        document.querySelectorAll('.report-select-chk').forEach(c => c.checked = false);
+        if (checkAll) checkAll.checked = false;
+        updateBatchBar();
+      });
+    }
+
+    if (btnBatchZip) {
+      btnBatchZip.addEventListener('click', function () {
+        const checkedBoxes = document.querySelectorAll('.report-select-chk:checked');
+        const ids = Array.from(checkedBoxes).map(c => c.value);
+        if (ids.length === 0) {
+          alert('Pilih setidaknya satu laporan terlebih dahulu.');
+          return;
+        }
+
+        btnBatchZip.disabled = true;
+        btnBatchZip.innerHTML = '<span>⏳ Menyiapkan ZIP...</span>';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'batch_download_pdf';
+        ids.forEach(id => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'ids[]';
+          input.value = id;
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
+
+        setTimeout(() => {
+          btnBatchZip.disabled = false;
+          btnBatchZip.innerHTML = '<span>📦</span> Unduh Berkas ZIP PDF';
+        }, 3000);
+      });
+    }
   })();
 </script>
+
+  <!-- Floating Batch Actions Bar -->
+  <div id="batch_action_bar" class="batch-action-bar no-print" style="display: none;">
+    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">
+      Terpilih: <span id="batch_selected_count" style="color: var(--primary);">0</span> Dokumen
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" id="btn_batch_download_zip" class="btn btn-sm btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+        <span>📦</span> Unduh Berkas ZIP PDF
+      </button>
+      <button type="button" id="btn_batch_cancel" class="btn btn-sm btn-secondary" style="color: var(--text-subtle);">
+        Batal
+      </button>
+    </div>
+  </div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -259,7 +259,106 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof window.updatePhotoFilterCounts === 'function') {
       window.updatePhotoFilterCounts();
     }
+
+    if (typeof updateSlotCardStatus === 'function') {
+      updateSlotCardStatus(slotCode);
+    }
+    if (typeof updateFormProgressTracker === 'function') {
+      updateFormProgressTracker();
+    }
   }
+
+  function updateSlotCardStatus(slotCode) {
+    const previewImg = document.getElementById('preview_img_' + slotCode);
+    const isNaCheckbox = document.getElementById('isna_' + slotCode);
+    const box = document.getElementById('preview_box_' + slotCode);
+    const card = box ? box.closest('.photo-slot-card') : null;
+    if (!card) return;
+
+    let badge = card.querySelector('.slot-status-badge');
+    const isFilled = previewImg && previewImg.style.display !== 'none' && previewImg.src && !previewImg.src.endsWith('#');
+    const isNa = isNaCheckbox && isNaCheckbox.checked;
+
+    if (isFilled) {
+      card.classList.add('slot-filled');
+      card.classList.remove('slot-na');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'slot-status-badge badge-ready';
+        const header = card.querySelector('.photo-slot-header');
+        if (header) header.appendChild(badge);
+      }
+      badge.className = 'slot-status-badge badge-ready';
+      badge.innerHTML = '✓ Siap';
+    } else if (isNa) {
+      card.classList.remove('slot-filled');
+      card.classList.add('slot-na');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'slot-status-badge badge-na';
+        const header = card.querySelector('.photo-slot-header');
+        if (header) header.appendChild(badge);
+      }
+      badge.className = 'slot-status-badge badge-na';
+      badge.innerHTML = 'N/A';
+    } else {
+      card.classList.remove('slot-filled', 'slot-na');
+      if (badge) badge.remove();
+    }
+  }
+
+  function updateFormProgressTracker() {
+    const cards = document.querySelectorAll('.photo-slot-card');
+    if (!cards || cards.length === 0) return;
+
+    let total = cards.length;
+    let completed = 0;
+
+    cards.forEach(card => {
+      const box = card.querySelector('.photo-preview-box');
+      const slotCode = box ? box.getAttribute('data-slot') : null;
+      if (slotCode) {
+        const previewImg = document.getElementById('preview_img_' + slotCode);
+        const isNaCheckbox = document.getElementById('isna_' + slotCode);
+        const isFilled = previewImg && previewImg.style.display !== 'none' && previewImg.src && !previewImg.src.endsWith('#');
+        const isNa = isNaCheckbox && isNaCheckbox.checked;
+        if (isFilled || isNa) {
+          completed++;
+        }
+      }
+    });
+
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const countEl = document.getElementById('tracker_photo_count');
+    const barEl = document.getElementById('tracker_photo_bar');
+    const pctEl = document.getElementById('tracker_photo_pct');
+    const jumpBtn = document.getElementById('btn_tracker_jump');
+
+    if (countEl) countEl.textContent = completed + ' / ' + total + ' Foto';
+    if (barEl) barEl.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+
+    if (jumpBtn) {
+      if (completed >= total) {
+        jumpBtn.innerHTML = '<span>✓ Semua Lengkap</span>';
+        jumpBtn.style.background = 'rgba(16, 185, 129, 0.15)';
+        jumpBtn.style.color = '#065f46';
+      } else {
+        jumpBtn.innerHTML = '<span>Lompat ke Slot Kosong &darr;</span>';
+        jumpBtn.style.background = '';
+        jumpBtn.style.color = '';
+      }
+    }
+  }
+
+  window.updateAllSlotStatuses = function () {
+    document.querySelectorAll('.photo-slot-card').forEach(card => {
+      const box = card.querySelector('.photo-preview-box');
+      const slotCode = box ? box.getAttribute('data-slot') : null;
+      if (slotCode) updateSlotCardStatus(slotCode);
+    });
+    updateFormProgressTracker();
+  };
 
   function compressAndWatermarkImage(file, slotCode, callback) {
     if (!file) {
@@ -524,6 +623,16 @@ document.addEventListener('DOMContentLoaded', function () {
     btnCloseCam.addEventListener('click', closeLiveCamera);
   }
 
+  const btnToggleGrid = document.getElementById('btn_toggle_grid');
+  const gridOverlay = document.getElementById('camera_grid_overlay');
+  if (btnToggleGrid && gridOverlay) {
+    btnToggleGrid.addEventListener('click', function () {
+      const isVisible = gridOverlay.style.display !== 'none';
+      gridOverlay.style.display = isVisible ? 'none' : 'block';
+      btnToggleGrid.classList.toggle('active', !isVisible);
+    });
+  }
+
   const btnSwitchCam = document.getElementById('btn_switch_camera');
   if (btnSwitchCam) {
     btnSwitchCam.addEventListener('click', function () {
@@ -611,11 +720,51 @@ document.addEventListener('DOMContentLoaded', function () {
         if (placeholder) placeholder.style.display = 'flex';
       }
 
+      if (typeof updateSlotCardStatus === 'function') {
+        updateSlotCardStatus(slotCode);
+      }
+      if (typeof updateFormProgressTracker === 'function') {
+        updateFormProgressTracker();
+      }
+
       if (typeof window.updatePhotoFilterCounts === 'function') {
         window.updatePhotoFilterCounts();
       }
     });
   });
+
+  // Jump button to next empty photo slot
+  const btnJump = document.getElementById('btn_tracker_jump');
+  if (btnJump) {
+    btnJump.addEventListener('click', function () {
+      const cards = document.querySelectorAll('.photo-slot-card');
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const box = card.querySelector('.photo-preview-box');
+        const slotCode = box ? box.getAttribute('data-slot') : null;
+        if (slotCode) {
+          const previewImg = document.getElementById('preview_img_' + slotCode);
+          const isNaCheckbox = document.getElementById('isna_' + slotCode);
+          const isFilled = previewImg && previewImg.style.display !== 'none' && previewImg.src && !previewImg.src.endsWith('#');
+          const isNa = isNaCheckbox && isNaCheckbox.checked;
+          if (!isFilled && !isNa) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.style.transition = 'box-shadow 0.3s ease';
+            card.style.boxShadow = '0 0 0 3px #008080';
+            setTimeout(() => { card.style.boxShadow = ''; }, 1500);
+            return;
+          }
+        }
+      }
+    });
+  }
+
+  // Initial slot status check
+  setTimeout(function () {
+    if (typeof window.updateAllSlotStatuses === 'function') {
+      window.updateAllSlotStatuses();
+    }
+  }, 300);
 
   // 5. Form Submission Loading State
   const mainForm = document.getElementById('pm_report_form');

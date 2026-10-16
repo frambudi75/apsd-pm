@@ -667,6 +667,25 @@ include __DIR__ . '/includes/header.php';
 
   </form>
 
+  <!-- Floating Live Photo Progress Tracker -->
+  <div id="form_progress_tracker" class="form-progress-tracker no-print">
+    <div class="progress-tracker-content">
+      <div class="progress-tracker-header">
+        <span>Kelengkapan Foto PM Outdoor</span>
+        <span id="tracker_photo_count" style="color: var(--secondary);">0 / 18 Foto</span>
+      </div>
+      <div class="progress-tracker-bar-bg">
+        <div id="tracker_photo_bar" class="progress-tracker-bar-fill" style="width: 0%; background: linear-gradient(90deg, #0284c7 0%, #10b981 100%);"></div>
+      </div>
+      <div class="progress-tracker-footer">
+        <span id="tracker_photo_pct" style="font-weight: 700; color: var(--text-subtle);">0%</span>
+        <button type="button" id="btn_tracker_jump" class="btn-tracker-jump" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; border-color: rgba(2, 132, 199, 0.25);" title="Lompat ke slot foto yang belum diisi">
+          <span>Lompat ke Slot Kosong &darr;</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>

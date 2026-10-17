@@ -4,6 +4,28 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.5] - 2026-10-17
+
+#### Ditambahkan
+* **Fitur Edit Master Site (`sites.php`)**:
+  - Menghadirkan tombol aksi "Edit" pada setiap baris data master site untuk mengubah informasi site yang tersimpan.
+  - Modal dialog interaktif "Edit Data Master Site" yang otomatis memuat seluruh data eksisting (Nama Site, Site ID, Detail Area, Region, Provinsi, Kota, Koordinat, Tinggi Site, Tipe Tower, Tipe Site, Anchor Tenant, Total Tenant, dan Alamat Lengkap).
+  - Sinkronisasi instan ke basis data SQLite, pembersihan otomatis cache Redis (`dashboard:`), dan pencatatan riwayat perubahan ke tabel audit log.
+* **Integrasi Interactive Map Coordinate Picker (Leaflet & OpenStreetMap)**:
+  - Fitur pemilihan koordinat Latitude dan Longitude secara visual melalui peta interaktif Leaflet.js yang disematkan langsung di dalam sistem.
+  - Pengguna dapat mengklik lokasi di peta atau menggeser pin marker merah (draggable pin) secara presisi dengan pembaruan koordinat 6 digit desimal secara langsung.
+  - Tersedia tombol preset area strategis Bandara Internasional Kualanamu (Pusat KNO, Terminal KNO, Tower / SBU ICT).
+  - Tombol pendeteksi otomatis koordinat sensor GPS perangkat ("GPS Saya") baik di dalam peta maupun langsung pada formulir penambahan dan pengeditan site.
+* **Pencarian Cepat Data Master Site**:
+  - Fitur pencarian instan di header tabel daftar master site untuk menyaring data berdasarkan nama site, ID site, area, atau tipe tower tanpa perlu memuat ulang halaman.
+
+#### Diperbaiki
+* **Optimalisasi Penghapusan Laporan & Batch Action Bar (`reports.php` & `api/delete_report.php`)**:
+  - Memperbaiki penundaan penghapusan laporan dengan membersihkan kunci Redis `reports:all_v2` dan seluruh awalan `reports:*` seketika saat penghapusan dilakukan.
+  - Menyempurnakan floating batch action bar agar muncul saat checkbox "Pilih Semua" atau checkbox baris laporan dicentang, lengkap dengan tombol Unduh ZIP Terpilih dan Hapus Terpilih.
+
+---
+
 ### [Versi 2.7.4] - 2026-10-17
 
 #### Diperbaiki

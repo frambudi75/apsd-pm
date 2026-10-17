@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.7.0');
+    define('APP_VERSION', 'v2.7.5');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Pusat Informasi Sistem, Integrasi Discord Operasional & Performa');
+    define('APP_RELEASE_TITLE', 'Edit Master Site, Interactive Map Coordinate Picker & Optimalisasi Cache Laporan');
 }

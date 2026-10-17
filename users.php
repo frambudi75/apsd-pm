@@ -53,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?)
                 ");
                 $stmt->execute([$username, $pwdHash, $fullName, $role, $isActive]);
+                $newUserId = (int)$pdo->lastInsertId();
+                log_audit_event('AUTH', 'USER_CREATE', 'Tambah pengguna baru: ' . $fullName . ' (@' . $username . ', role: ' . $role . ')', 'user', $newUserId);
                 $successMsg = 'Pengguna baru "' . htmlspecialchars($fullName) . '" (' . htmlspecialchars($role) . ') berhasil ditambahkan.';
             }
         }
@@ -78,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
                 $upd = $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
                 $upd->execute([$newHash, $targetId]);
+                log_audit_event('AUTH', 'USER_RESET_PASSWORD', 'Reset password akun pengguna: @' . $targetUser['username'], 'user', $targetId);
                 $successMsg = 'Password untuk pengguna "' . htmlspecialchars($targetUser['full_name']) . '" berhasil direset!';
             }
         }
@@ -113,6 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $upd = $pdo->prepare("UPDATE users SET full_name = ?, role = ?, is_active = ? WHERE id = ?");
             $upd->execute([$fullName, $role, $isActive, $targetId]);
+            log_audit_event('AUTH', 'USER_UPDATE', 'Ubah data pengguna: ' . $fullName . ' (@' . $targetUser['username'] . ', role: ' . $role . ', aktif: ' . $isActive . ')', 'user', $targetId);
             $successMsg = 'Data pengguna "' . htmlspecialchars($fullName) . '" berhasil diperbarui.';
         }
     }
@@ -135,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $del = $pdo->prepare("DELETE FROM users WHERE id = ?");
                 $del->execute([$targetId]);
+                log_audit_event('AUTH', 'USER_DELETE', 'Hapus pengguna: ' . $targetUser['full_name'] . ' (@' . $targetUser['username'] . ')', 'user', $targetId);
                 $successMsg = 'Pengguna "' . htmlspecialchars($targetUser['full_name']) . '" berhasil dihapus.';
             }
         }

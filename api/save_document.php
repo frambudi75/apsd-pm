@@ -177,6 +177,8 @@ try {
             }
         }
 
+        log_audit_event('DOCUMENT', 'DOCUMENT_UPDATE', 'Pembaruan dokumen: ' . $title, 'document', $docId);
+
         echo json_encode([
             'success' => true,
             'message' => 'Dokumen berhasil diperbarui dengan aman.',
@@ -263,6 +265,8 @@ try {
     $savedPct = ($rawSize > 0 && $compressedSize < $rawSize) 
         ? round((1 - ($compressedSize / $rawSize)) * 100, 1) 
         : 0;
+
+    log_audit_event('DOCUMENT', 'DOCUMENT_UPLOAD', 'Unggah dokumen baru: ' . $title . ' (' . $origName . ', hemat ' . $savedPct . '%)', 'document', $newDocId);
 
     echo json_encode([
         'success' => true,

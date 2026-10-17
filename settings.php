@@ -161,6 +161,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         require_once __DIR__ . '/includes/pwa.php';
         sync_pwa_manifest_and_icons();
 
+        log_audit_event('SETTINGS', 'SETTINGS_UPDATE', 'Pembaruan konfigurasi identitas sistem & operasional', 'settings', null);
+
         $successMsg = 'Pengaturan sistem, logo, dan profil PWA aplikasi berhasil diperbarui.';
     } catch (Exception $e) {
         $errorMsg = 'Gagal menyimpan pengaturan: ' . $e->getMessage();

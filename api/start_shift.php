@@ -81,6 +81,8 @@ try {
 
     $shiftInfo = get_shift_info($shiftType);
 
+    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_START', "Mulai sesi shift {$shiftInfo['name']} ({$shiftDate}) untuk {$techName}", 'daily_shift', $newShiftId);
+
     echo json_encode([
         'success' => true,
         'shift_id' => $newShiftId,

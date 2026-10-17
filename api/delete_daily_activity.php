@@ -72,6 +72,9 @@ try {
     $stmtDel = $pdo->prepare("DELETE FROM daily_activities WHERE id = ?");
     $stmtDel->execute([$activityId]);
 
+    $descSnippet = isset($act['description']) ? mb_substr(strip_tags($act['description']), 0, 60) : '';
+    log_audit_event('DAILY_ACTIVITY', 'DAILY_ACTIVITY_DELETE', "Hapus kegiatan logbook ID {$activityId}: {$descSnippet}", 'daily_activity', $activityId);
+
     echo json_encode([
         'success' => true,
         'message' => 'Kegiatan berhasil dihapus.'

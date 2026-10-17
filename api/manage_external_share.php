@@ -251,6 +251,8 @@ try {
         $shareUrl = build_external_share_url($shareToken);
         $expInfo = format_share_expiry($expiresAt);
 
+        log_audit_event('EXTERNAL_SHARE', 'SHARE_EXTERNAL_SAVE', 'Konfigurasi tautan eksternal dokumen: ' . $doc['title'] . ($usePin ? ' (dengan PIN)' : ' (tanpa PIN)'), 'document', $documentId);
+
         echo json_encode([
             'success' => true,
             'message' => $msg,
@@ -269,6 +271,8 @@ try {
             WHERE document_id = ? AND is_active = 1
         ");
         $stmtRevoke->execute([$documentId]);
+
+        log_audit_event('EXTERNAL_SHARE', 'SHARE_EXTERNAL_REVOKE', 'Cabut tautan eksternal dokumen: ' . $doc['title'], 'document', $documentId);
 
         echo json_encode([
             'success' => true,

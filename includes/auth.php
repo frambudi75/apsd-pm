@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/audit.php';
 
 const SESSION_LIFETIME = 43200; // 12 jam (12 * 3600 detik)
 
@@ -30,6 +31,9 @@ function get_app_base_url(): string {
  * Start or resume a secure session with 12-hour lifetime
  */
 function start_secure_session(): void {
+    if (php_sapi_name() === 'cli') {
+        return;
+    }
     if (session_status() === PHP_SESSION_NONE) {
         // Enforce cookie lifetime & security settings
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
@@ -202,14 +206,17 @@ function authenticate_user(string $username, string $password): array {
     $user = $stmt->fetch();
 
     if (!$user) {
+        log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: username tidak ditemukan (' . $username . ')', 'user', null, null, $username, 'guest');
         return ['success' => false, 'message' => 'Username atau password salah.'];
     }
 
     if (empty($user['is_active'])) {
+        log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: akun dinonaktifkan (' . $username . ')', 'user', $user['id'], $user['id'], $user['username'], $user['role']);
         return ['success' => false, 'message' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.'];
     }
 
     if (!password_verify($password, $user['password_hash'])) {
+        log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: password salah untuk user ' . $username, 'user', $user['id'], $user['id'], $user['username'], $user['role']);
         return ['success' => false, 'message' => 'Username atau password salah.'];
     }
 
@@ -223,6 +230,9 @@ function authenticate_user(string $username, string $password): array {
     $_SESSION['user_role'] = $user['role'];
     $_SESSION['login_time'] = time();
     $_SESSION['last_activity'] = time();
+
+    // Log successful authentication
+    log_audit_event('AUTH', 'LOGIN_SUCCESS', 'Pengguna berhasil masuk ke sistem (' . $user['username'] . ')', 'user', $user['id'], $user['id'], $user['username'], $user['role']);
 
     // Update last_login in DB
     try {
@@ -239,6 +249,10 @@ function authenticate_user(string $username, string $password): array {
 function logout_user(string $reason = ''): void {
     if (session_status() === PHP_SESSION_NONE) {
         @session_start();
+    }
+    $curr = current_user();
+    if ($curr) {
+        log_audit_event('AUTH', 'LOGOUT', 'Pengguna keluar dari sistem' . ($reason ? ' (alasan: ' . $reason . ')' : ''));
     }
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {

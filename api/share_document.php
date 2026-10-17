@@ -88,6 +88,8 @@ try {
         $msg = 'Dokumen berhasil dibagikan ke ' . count($shareUserIds) . ' rekan kerja yang dipilih.';
     }
 
+    log_audit_event('DOCUMENT', 'DOCUMENT_SHARE_INTERNAL', 'Ubah hak akses dokumen ' . $doc['title'] . ' menjadi ' . $privacyType, 'document', $docId);
+
     echo json_encode([
         'success' => true,
         'message' => $msg,

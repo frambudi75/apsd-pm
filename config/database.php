@@ -375,6 +375,29 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 15. Table audit_logs (System Security & Activity Trail)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NULL,
+            username VARCHAR(100) NULL,
+            user_role VARCHAR(50) NULL,
+            action_type VARCHAR(50) NOT NULL,
+            action_name VARCHAR(100) NOT NULL,
+            target_type VARCHAR(50) NULL,
+            target_id VARCHAR(100) NULL,
+            description TEXT NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(255) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_audit_created (created_at),
+            INDEX idx_audit_action_type (action_type),
+            INDEX idx_audit_action_name (action_name),
+            INDEX idx_audit_user (user_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
@@ -659,6 +682,29 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_extshare_doc ON user_document_external_shares(document_id);
         CREATE INDEX IF NOT EXISTS idx_extshare_active ON user_document_external_shares(is_active);
         CREATE INDEX IF NOT EXISTS idx_extshare_expires ON user_document_external_shares(expires_at);
+    ");
+
+    // 16. Table audit_logs (System Security & Activity Trail)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NULL,
+            username VARCHAR(100) NULL,
+            user_role VARCHAR(50) NULL,
+            action_type VARCHAR(50) NOT NULL,
+            action_name VARCHAR(100) NOT NULL,
+            target_type VARCHAR(50) NULL,
+            target_id VARCHAR(100) NULL,
+            description TEXT NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(255) NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
+        CREATE INDEX IF NOT EXISTS idx_audit_action_type ON audit_logs(action_type);
+        CREATE INDEX IF NOT EXISTS idx_audit_action_name ON audit_logs(action_name);
+        CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
     ");
 
     seed_default_sites_if_empty($pdo);

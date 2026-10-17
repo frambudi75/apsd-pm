@@ -57,6 +57,8 @@ try {
     $stmtDel = $pdo->prepare("DELETE FROM user_documents WHERE id = ?");
     $stmtDel->execute([$docId]);
 
+    log_audit_event('DOCUMENT', 'DOCUMENT_DELETE', 'Hapus dokumen: ' . $doc['title'] . ' (ID: ' . $docId . ')', 'document', $docId);
+
     echo json_encode([
         'success' => true,
         'message' => 'Dokumen "' . $doc['title'] . '" berhasil dihapus dari sistem.'

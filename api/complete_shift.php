@@ -73,6 +73,8 @@ try {
         $stmtUp->execute([$notes, $shiftId]);
     }
 
+    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
+
     echo json_encode([
         'success' => true,
         'shift_id' => $shiftId,

@@ -79,6 +79,8 @@ try {
     $shiftDateFormatted = date('d/m/Y', strtotime($shift['shift_date']));
     $shiftTypeName = strtoupper($shift['shift_type']);
 
+    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_DELETE', "Hapus laporan shift {$shiftTypeName} tanggal {$shiftDateFormatted} (ID: {$shiftId})", 'daily_shift', $shiftId);
+
     echo json_encode([
         'success' => true,
         'message' => "Laporan shift {$shiftTypeName} tanggal {$shiftDateFormatted} berhasil dihapus permanen beserta seluruh kegiatan dan dokumentasinya."

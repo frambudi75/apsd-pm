@@ -238,6 +238,20 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
               <span>Pengaturan Sistem</span>
             </a>
           </li>
+          <li>
+            <a href="audit_log" class="sidebar-nav-item <?= ($curPage === 'audit_log.php') ? 'active' : '' ?>" title="Audit Log &amp; Rekam Jejak Keamanan">
+              <span class="sidebar-nav-icon"><?= app_icon('shield', 18) ?></span>
+              <span>Audit Log</span>
+              <span class="sidebar-nav-badge" style="background: rgba(220, 38, 38, 0.15); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3);">Security</span>
+            </a>
+          </li>
+          <li>
+            <a href="system_optimize" class="sidebar-nav-item <?= ($curPage === 'system_optimize.php') ? 'active' : '' ?>" title="Auto-Optimise &amp; Pemeliharaan Basis Data">
+              <span class="sidebar-nav-icon"><?= app_icon('refresh', 18) ?></span>
+              <span>Auto-Optimise</span>
+              <span class="sidebar-nav-badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Tune</span>
+            </a>
+          </li>
         </ul>
       </div>
       <?php elseif (has_role('admin')): ?>

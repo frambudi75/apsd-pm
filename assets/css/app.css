@@ -1500,6 +1500,15 @@ body {
   }
 }
 
+/* Standalone Mode: Sembunyikan tombol pasang jika aplikasi sudah berjalan dalam mode PWA */
+@media all and (display-mode: standalone) {
+  #btn_topbar_install_pwa,
+  #sidebar_pwa_item,
+  #pwa_install_banner {
+    display: none !important;
+  }
+}
+
 /* 3. Hero Header & Quick Start Inspection Cards */
 .hero-header {
   background: linear-gradient(135deg, #008080 0%, #0369a1 100%);

@@ -137,6 +137,87 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
       </div>
     </div>
   </div>
+<!-- Modal Bantuan & Panduan Pasang Aplikasi PWA -->
+<div id="pwa_install_modal" class="qr-modal-overlay no-print" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+  <div style="background: var(--bg-card); color: var(--text-main); border-radius: var(--radius-md); max-width: 480px; width: 92%; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border); overflow: hidden; animation: pwaSlideUp 0.25s ease-out;">
+    <div style="padding: 1rem 1.25rem; background: var(--bg-alt); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.25rem;">📱</span>
+        <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: var(--text-main);">Pasang Aplikasi PWA</h4>
+      </div>
+      <button type="button" onclick="closePwaModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 4px 8px;" title="Tutup">&times;</button>
+    </div>
+
+    <div style="padding: 1.25rem; font-size: 0.85rem; line-height: 1.6;">
+      <!-- State 1: Already installed (Standalone) -->
+      <div id="pwa_state_installed" style="display: none;">
+        <div style="padding: 0.85rem 1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); color: #166534; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">✅</span>
+          <div>
+            <strong>Aplikasi Sudah Terpasang!</strong>
+            <div style="font-size: 0.78rem;">Sistem sedang berjalan dalam mode aplikasi mandiri (standalone) tanpa bilah peramban.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State 2: Prompt Ready (Click to Install) -->
+      <div id="pwa_state_prompt_ready" style="display: none; margin-bottom: 1rem;">
+        <p style="margin-bottom: 0.75rem; color: var(--text-main);">
+          Peramban Anda siap memasang aplikasi ke layar beranda atau desktop untuk akses cepat di lapangan.
+        </p>
+        <button type="button" class="btn btn-primary w-100" id="btn_modal_do_install" onclick="executeDeferredPrompt()" style="padding: 0.65rem 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <?= app_icon('download', 16) ?>
+          <span>Pasang Sekarang ke Perangkat</span>
+        </button>
+      </div>
+
+      <!-- State 3: Apple iOS (Safari) -->
+      <div id="pwa_state_ios" style="display: none;">
+        <div style="padding: 0.85rem 1rem; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: var(--radius-sm); color: #0369a1; margin-bottom: 1rem;">
+          <strong style="display: block; margin-bottom: 4px;">Cara Pasang di iPhone / iPad (Safari):</strong>
+          <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">
+            <li>Buka halaman ini menggunakan peramban <strong>Safari</strong>.</li>
+            <li>Ketuk tombol <strong>Bagikan / Share</strong> (ikon kotak dengan panah ke atas di bilah bawah).</li>
+            <li>Gulir ke bawah dan ketuk <strong>Tambah ke Layar Utama (Add to Home Screen)</strong>.</li>
+            <li>Ketuk <strong>Tambah (Add)</strong> di pojok kanan atas.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- State 4: Desktop Chrome / Edge Manual -->
+      <div id="pwa_state_desktop" style="display: none;">
+        <p style="margin-bottom: 0.5rem; color: var(--text-main); font-weight: 600;">
+          Jika notifikasi otomatis tidak muncul di layar Anda:
+        </p>
+        <ul style="margin: 0 0 1rem 0; padding-left: 1.2rem; font-size: 0.8rem; color: var(--text-subtle); display: flex; flex-direction: column; gap: 6px;">
+          <li>
+            <strong>Melalui Kolom URL:</strong> Klik ikon pasang (komputer/panah bawah) di sebelah kanan kolom alamat URL (omnibox) Chrome / Edge.
+          </li>
+          <li>
+            <strong>Melalui Menu Browser:</strong> Klik ikon titik tiga di pojok kanan atas &gt; pilih <strong>Simpan dan bagikan</strong> &gt; pilih <strong>Pasang IASS SBU ICT KNO</strong>.
+          </li>
+        </ul>
+      </div>
+
+      <!-- State 5: Insecure Context / Local IP Notice -->
+      <div id="pwa_state_insecure" style="display: none;">
+        <div style="padding: 0.85rem 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); color: #92400e; margin-bottom: 1rem; font-size: 0.78rem;">
+          <strong>Akses Melalui IP Jaringan Lokal (Non-HTTPS):</strong>
+          <div style="margin-top: 4px;">
+            Kebijakan keamanan Google Chrome dan Android mewajibkan koneksi aman (<strong>HTTPS</strong>) atau <strong>http://localhost</strong> agar banner instalasi otomatis diizinkan. Jika mengakses lewat IP (misal: <code>http://192.168.x.x</code>), pasang sertifikat SSL atau buka langsung di komputer server.
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Dismiss History -->
+      <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.75rem; color: var(--text-subtle);">Pernah menutup banner sebelumnya?</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetPwaBanner()" style="font-size: 0.75rem; padding: 0.3rem 0.7rem;">
+          <?= app_icon('refresh', 13) ?> Reset Notifikasi Banner
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="assets/js/qrious.min.js"></script>

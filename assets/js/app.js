@@ -895,36 +895,127 @@ document.addEventListener('DOMContentLoaded', function () {
   const btnDismissPwa = document.getElementById('btn_dismiss_pwa');
   const offlineNotice = document.getElementById('offline_notice');
 
+  // Periksa apakah aplikasi sudah berjalan dalam mode standalone (sudah terpasang)
+  const isAppStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  if (isAppStandalone) {
+    const topbarPwaBtn = document.getElementById('btn_topbar_install_pwa');
+    const sidebarPwaItem = document.getElementById('sidebar_pwa_item');
+    if (topbarPwaBtn) topbarPwaBtn.style.display = 'none';
+    if (sidebarPwaItem) sidebarPwaItem.style.display = 'none';
+    if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
+  }
+
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    if (pwaInstallBanner && !localStorage.getItem('pwa_prompt_dismissed')) {
+
+    // Tampilkan tombol pasang di sidebar dan topbar jika belum standalone
+    if (!isAppStandalone) {
+      const topbarPwaBtn = document.getElementById('btn_topbar_install_pwa');
+      const sidebarPwaItem = document.getElementById('sidebar_pwa_item');
+      if (topbarPwaBtn) topbarPwaBtn.style.display = 'inline-flex';
+      if (sidebarPwaItem) sidebarPwaItem.style.display = 'block';
+    }
+
+    // Periksa status dismiss (kedaluwarsa setelah 3 hari)
+    const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at');
+    const isDismissedRecent = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 3 * 24 * 60 * 60 * 1000);
+    const legacyDismissed = localStorage.getItem('pwa_prompt_dismissed');
+
+    if (pwaInstallBanner && !isDismissedRecent && !legacyDismissed && !isAppStandalone) {
       pwaInstallBanner.style.display = 'flex';
     }
   });
 
-  if (btnInstallPwa) {
-    btnInstallPwa.addEventListener('click', async function () {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
+  window.triggerPwaInstall = async function () {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try {
         const { outcome } = await deferredPrompt.userChoice;
-        console.log('PWA installation response:', outcome);
-        deferredPrompt = null;
-        if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
-      }
+        console.log('PWA installation choice:', outcome);
+        if (outcome === 'accepted') {
+          deferredPrompt = null;
+          if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
+        }
+      } catch (errChoice) {}
+      return;
+    }
+
+    // Jika prompt belum siap atau perangkat khusus, buka modal panduan
+    const modalEl = document.getElementById('pwa_install_modal');
+    if (!modalEl) return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    const stateInstalled = document.getElementById('pwa_state_installed');
+    const statePromptReady = document.getElementById('pwa_state_prompt_ready');
+    const stateIos = document.getElementById('pwa_state_ios');
+    const stateInsecure = document.getElementById('pwa_state_insecure');
+    const stateDesktop = document.getElementById('pwa_state_desktop');
+
+    if (stateInstalled) stateInstalled.style.display = isStandalone ? 'block' : 'none';
+    if (statePromptReady) statePromptReady.style.display = (!isStandalone && deferredPrompt) ? 'block' : 'none';
+    if (stateIos) stateIos.style.display = (!isStandalone && isIos) ? 'block' : 'none';
+    if (stateInsecure) stateInsecure.style.display = (!isStandalone && !isIos && !isSecure) ? 'block' : 'none';
+    if (stateDesktop) stateDesktop.style.display = (!isStandalone && !isIos && isSecure && !deferredPrompt) ? 'block' : 'none';
+
+    modalEl.style.display = 'flex';
+  };
+
+  window.closePwaModal = function () {
+    const modalEl = document.getElementById('pwa_install_modal');
+    if (modalEl) modalEl.style.display = 'none';
+  };
+
+  window.executeDeferredPrompt = async function () {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try {
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('PWA install outcome:', outcome);
+        if (outcome === 'accepted') {
+          deferredPrompt = null;
+          if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
+          closePwaModal();
+        }
+      } catch (e) {}
+    }
+  };
+
+  window.resetPwaBanner = function () {
+    localStorage.removeItem('pwa_prompt_dismissed');
+    localStorage.removeItem('pwa_prompt_dismissed_at');
+    if (pwaInstallBanner && !isAppStandalone) {
+      pwaInstallBanner.style.display = 'flex';
+    }
+    closePwaModal();
+    alert('Notifikasi banner pasang PWA telah direset dan diaktifkan kembali.');
+  };
+
+  if (btnInstallPwa) {
+    btnInstallPwa.addEventListener('click', function () {
+      window.triggerPwaInstall();
     });
   }
 
   if (btnDismissPwa) {
     btnDismissPwa.addEventListener('click', function () {
       if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
-      localStorage.setItem('pwa_prompt_dismissed', '1');
+      localStorage.setItem('pwa_prompt_dismissed_at', Date.now().toString());
+      localStorage.removeItem('pwa_prompt_dismissed');
     });
   }
 
   window.addEventListener('appinstalled', function () {
     console.log('IASS SBU ICT KNO PWA installed successfully');
     if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
+    const topbarPwaBtn = document.getElementById('btn_topbar_install_pwa');
+    const sidebarPwaItem = document.getElementById('sidebar_pwa_item');
+    if (topbarPwaBtn) topbarPwaBtn.style.display = 'none';
+    if (sidebarPwaItem) sidebarPwaItem.style.display = 'none';
   });
 
   // 8. Photo Slot Filter Toolbar

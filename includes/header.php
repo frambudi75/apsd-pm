@@ -267,6 +267,14 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
         </ul>
       </div>
       <?php endif; ?>
+
+      <!-- PWA Quick Install Sidebar Button -->
+      <div id="sidebar_pwa_item" style="padding: 0.5rem 0.75rem 0.25rem 0.75rem;">
+        <button type="button" class="btn btn-sm w-100" id="btn_sidebar_install_pwa" onclick="triggerPwaInstall()" style="background: rgba(0, 128, 128, 0.08); color: var(--primary); border: 1px dashed var(--primary); border-radius: var(--radius-sm); font-size: 0.76rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0.45rem 0.6rem; cursor: pointer;" title="Pasang aplikasi ke layar utama / desktop">
+          <?= app_icon('smartphone', 15) ?>
+          <span>Pasang Aplikasi (PWA)</span>
+        </button>
+      </div>
     </div>
 
     <!-- Sidebar Bottom User Profile & Preferences -->
@@ -316,6 +324,12 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
           <svg class="icon-expand-sidebar" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><path d="M14 9l-3 3 3 3"/></svg>
         </button>
         <span class="topbar-page-title"><?= htmlspecialchars($page_title) ?></span>
+      </div>
+      <div class="topbar-right" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+        <button type="button" class="btn btn-sm" id="btn_topbar_install_pwa" onclick="triggerPwaInstall()" style="background: rgba(0, 128, 128, 0.1); color: var(--primary); border: 1px solid var(--primary); font-size: 0.74rem; font-weight: 700; border-radius: 20px; padding: 0.25rem 0.75rem; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;" title="Pasang aplikasi ke layar utama / desktop">
+          <?= app_icon('smartphone', 14) ?>
+          <span>Pasang App</span>
+        </button>
       </div>
     </header>
     <div class="app-content-body">

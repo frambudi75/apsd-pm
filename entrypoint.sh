@@ -2,7 +2,7 @@
 set -e
 
 # Ensure database and uploads directory structures exist
-mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/temp
+mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/temp
 
 # Fix permissions for SQLite database and uploads on mounted volumes
 chown -R www-data:www-data /var/www/html/database /var/www/html/uploads 2>/dev/null || true

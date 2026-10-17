@@ -21,6 +21,9 @@ Options -Indexes
     RewriteRule ^(\.env|\.gitignore|Dockerfile|docker-compose.*|entrypoint\.sh)$ - [F,L,NC]
     RewriteRule \.(sqlite|db|log|ini|sql|bak|old|env|yml|yaml|sh|md)$ - [F,L,NC]
 
+    # Block direct access to private documents vault (must go through authenticated download script)
+    RewriteRule ^uploads/documents(/.*)?$ - [F,L,NC]
+
     # Block PHP script execution inside uploads directory (Anti-Webshell)
     RewriteRule ^uploads/.*\.php$ - [F,L,NC]
 

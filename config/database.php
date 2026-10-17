@@ -307,6 +307,50 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 12. Table user_documents (Personal & Shared Document Vault)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_documents (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            category VARCHAR(100) NOT NULL DEFAULT 'Lainnya',
+            description TEXT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            stored_filename VARCHAR(255) NOT NULL,
+            file_size_raw BIGINT NOT NULL,
+            file_size_compressed BIGINT NOT NULL,
+            mime_type VARCHAR(100) NOT NULL,
+            file_ext VARCHAR(20) NOT NULL,
+            is_compressed TINYINT NOT NULL DEFAULT 1,
+            privacy_type VARCHAR(20) NOT NULL DEFAULT 'private',
+            expiry_date DATE NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_doc_user (user_id),
+            INDEX idx_doc_cat (category),
+            INDEX idx_doc_privacy (privacy_type),
+            INDEX idx_doc_expiry (expiry_date),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // 13. Table user_document_shares (Document Sharing Permissions)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_document_shares (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            document_id INT NOT NULL,
+            shared_with_user_id INT NOT NULL,
+            shared_by_user_id INT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_share_doc (document_id),
+            INDEX idx_share_target (shared_with_user_id),
+            INDEX idx_share_owner (shared_by_user_id),
+            UNIQUE KEY uq_doc_shared_user (document_id, shared_with_user_id),
+            FOREIGN KEY (document_id) REFERENCES user_documents(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
@@ -523,6 +567,50 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
             setting_group VARCHAR(50) DEFAULT 'general',
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+    ");
+
+    // 13. Table user_documents (Personal & Shared Document Vault)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            category VARCHAR(100) NOT NULL DEFAULT 'Lainnya',
+            description TEXT NULL,
+            original_filename VARCHAR(255) NOT NULL,
+            stored_filename VARCHAR(255) NOT NULL,
+            file_size_raw INTEGER NOT NULL,
+            file_size_compressed INTEGER NOT NULL,
+            mime_type VARCHAR(100) NOT NULL,
+            file_ext VARCHAR(20) NOT NULL,
+            is_compressed INTEGER NOT NULL DEFAULT 1,
+            privacy_type VARCHAR(20) NOT NULL DEFAULT 'private',
+            expiry_date DATE NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_doc_user ON user_documents(user_id);
+        CREATE INDEX IF NOT EXISTS idx_doc_cat ON user_documents(category);
+        CREATE INDEX IF NOT EXISTS idx_doc_privacy ON user_documents(privacy_type);
+        CREATE INDEX IF NOT EXISTS idx_doc_expiry ON user_documents(expiry_date);
+    ");
+
+    // 14. Table user_document_shares (Document Sharing Permissions)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_document_shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id INTEGER NOT NULL,
+            shared_with_user_id INTEGER NOT NULL,
+            shared_by_user_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (document_id) REFERENCES user_documents(id) ON DELETE CASCADE,
+            FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_share_doc ON user_document_shares(document_id);
+        CREATE INDEX IF NOT EXISTS idx_share_target ON user_document_shares(shared_with_user_id);
+        CREATE INDEX IF NOT EXISTS idx_share_owner ON user_document_shares(shared_by_user_id);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_doc_shared_user ON user_document_shares(document_id, shared_with_user_id);
     ");
 
     seed_default_sites_if_empty($pdo);

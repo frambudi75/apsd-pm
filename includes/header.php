@@ -195,7 +195,21 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
         </ul>
       </div>
 
-      <!-- Section 3: Master Data (Khusus Super Admin) -->
+      <!-- Section 3: Dokumen & Berkas -->
+      <div>
+        <div class="sidebar-group-title">Dokumen &amp; Berkas</div>
+        <ul class="sidebar-nav-list">
+          <li>
+            <a href="documents" class="sidebar-nav-item <?= ($curPage === 'documents.php') ? 'active' : '' ?>" title="Brankas Dokumen Pribadi &amp; Berbagi">
+              <span class="sidebar-nav-icon"><?= app_icon('folder', 18) ?></span>
+              <span>Brankas Dokumen</span>
+              <span class="sidebar-nav-badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Vault</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 4: Master Data (Khusus Super Admin) -->
       <?php if (has_role('superadmin')): ?>
       <div>
         <div class="sidebar-group-title">Master Data</div>

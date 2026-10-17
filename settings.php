@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $shiftPagiTime = trim($_POST['shift_pagi_time'] ?? '08:00 - 20:00 WIB');
         $shiftMalamTime = trim($_POST['shift_malam_time'] ?? '20:00 - 08:00 WIB');
         $activityCategories = trim($_POST['activity_categories'] ?? 'Monitoring, Patroli, Troubleshooting, Maintenance, Administrasi, Lainnya');
+        $documentCategories = trim($_POST['document_categories'] ?? 'Sertifikat & Lisensi, Pass Bandara & Identitas, Surat Tugas & SK, Manual & Dokumen Teknis, Kontrak & Legalitas, Laporan & Notulen, Lainnya');
 
         // Sanitize phone (remove + and spaces if starts with +)
         $waPhone = preg_replace('/[^0-9]/', '', $waPhone);
@@ -46,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_system_setting('shift_pagi_time', $shiftPagiTime);
         set_system_setting('shift_malam_time', $shiftMalamTime);
         set_system_setting('activity_categories', $activityCategories);
+        set_system_setting('document_categories', $documentCategories);
 
         // Handle Branding Directory
         $brandDir = __DIR__ . '/uploads/branding';
@@ -177,6 +179,7 @@ $curShiftOh = get_system_setting('shift_oh_time', '08:00 - 17:00 WIB');
 $curShiftPagi = get_system_setting('shift_pagi_time', '08:00 - 20:00 WIB');
 $curShiftMalam = get_system_setting('shift_malam_time', '20:00 - 08:00 WIB');
 $curCategories = get_system_setting('activity_categories', 'Monitoring, Patroli, Troubleshooting, Maintenance, Administrasi, Lainnya');
+$curDocCategories = get_system_setting('document_categories', 'Sertifikat & Lisensi, Pass Bandara & Identitas, Surat Tugas & SK, Manual & Dokumen Teknis, Kontrak & Legalitas, Laporan & Notulen, Lainnya');
 $curAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
 $curReportLeftLogo = get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png');
 
@@ -587,6 +590,49 @@ include __DIR__ . '/includes/header.php';
             foreach ($previewCats as $pc): 
             ?>
               <span class="btn-cat-badge active" style="font-size: 0.74rem; padding: 3px 10px;"><?= htmlspecialchars($pc) ?></span>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: Master Kategori Brankas Dokumen -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0, 128, 128, 0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <?= app_icon('folder', 20) ?>
+          </div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Master Kategori Brankas Dokumen</h4>
+            <p style="font-size: 0.78rem; color: var(--text-subtle); margin: 2px 0 0 0;">Kelola daftar opsi kategori dokumen (Sertifikat, Lisensi K3, Pass Bandara, SK, dsb) untuk upload dan filter berkas.</p>
+          </div>
+        </div>
+        <span class="user-role-badge role-admin" style="font-size: 0.72rem;">Brankas Dokumen</span>
+      </div>
+
+      <div class="settings-card-body">
+        <div>
+          <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">
+            Daftar Kategori Dokumen (Pisahkan dengan tanda koma)
+          </label>
+          <div class="settings-input-group">
+            <span class="settings-input-icon"><?= app_icon('tag', 16) ?></span>
+            <input type="text" name="document_categories" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDocCategories) ?>" placeholder="Sertifikat &amp; Lisensi, Pass Bandara &amp; Identitas, Surat Tugas &amp; SK, Manual &amp; Dokumen Teknis, Kontrak &amp; Legalitas, Lainnya" required>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+            Setiap kategori akan otomatis tersedia pada menu pilihan saat upload dokumen dan bilah filter kategori di Brankas Dokumen.
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--bg-alt); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.76rem; color: var(--text-main);">
+          <strong style="color: var(--primary);">Pratinjau Kategori Dokumen:</strong>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+            <?php 
+            $previewDocCats = array_filter(array_map('trim', explode(',', $curDocCategories)));
+            foreach ($previewDocCats as $pdc): 
+            ?>
+              <span class="btn-cat-badge active" style="font-size: 0.74rem; padding: 3px 10px; background: rgba(0, 128, 128, 0.1); color: var(--primary); border: 1px solid rgba(0, 128, 128, 0.25); border-radius: 6px;"><?= htmlspecialchars($pdc) ?></span>
             <?php endforeach; ?>
           </div>
         </div>

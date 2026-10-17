@@ -14,6 +14,8 @@ uploads/daily/*
 !uploads/daily/.gitkeep
 uploads/branding/*
 !uploads/branding/.gitkeep
+uploads/documents/*
+!uploads/documents/.gitkeep
 scratch/
 *.tmp
 *.log

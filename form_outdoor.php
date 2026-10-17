@@ -283,7 +283,7 @@ include __DIR__ . '/includes/header.php';
         </div>
 
         <h4 style="font-weight: 700; color: var(--secondary); margin-bottom: 0.75rem;">B. Grounding Status</h4>
-        <table class="checklist-table" style="margin-bottom: 1.5rem;">
+        <table class="checklist-table checklist-form-table" style="margin-bottom: 1.5rem;">
           <thead>
             <tr>
               <th>Item</th>
@@ -302,9 +302,9 @@ include __DIR__ . '/includes/header.php';
               ];
               foreach ($gItems as $k => $label): 
             ?>
-              <tr>
-                <td><strong><?= $label ?></strong></td>
-                <td style="text-align: center;">
+              <tr class="checklist-row">
+                <td class="chk-col-name"><strong class="chk-item-title"><?= $label ?></strong></td>
+                <td class="chk-col-status" style="text-align: center;">
                   <div class="status-pill-group" style="justify-content: center;">
                     <label>
                       <input type="radio" class="status-radio" name="grounding_status[<?= $k ?>][status]" value="OK" checked>
@@ -320,8 +320,11 @@ include __DIR__ . '/includes/header.php';
                     </label>
                   </div>
                 </td>
-                <td>
-                  <input type="text" name="grounding_status[<?= $k ?>][remarks]" class="form-control" style="min-height: 36px;" placeholder="Remarks jika ada">
+                <td class="chk-col-note">
+                  <div class="chk-note-container">
+                    <label class="chk-mobile-note-label">Remarks / Catatan:</label>
+                    <input type="text" name="grounding_status[<?= $k ?>][remarks]" class="form-control chk-note-input" placeholder="Remarks jika ada">
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -329,7 +332,7 @@ include __DIR__ . '/includes/header.php';
         </table>
 
         <h4 style="font-weight: 700; color: var(--secondary); margin-bottom: 0.75rem;">C. Tower, Lighting & Fence Condition</h4>
-        <table class="checklist-table">
+        <table class="checklist-table checklist-form-table">
           <thead>
             <tr>
               <th>Item Pemeriksaan</th>
@@ -361,9 +364,14 @@ include __DIR__ . '/includes/header.php';
               ];
               foreach ($siteItems as $k => $info):
             ?>
-              <tr>
-                <td><strong><?= htmlspecialchars($info[0]) ?></strong></td>
-                <td style="text-align: center;">
+              <tr class="checklist-row">
+                <td class="chk-col-name">
+                  <strong class="chk-item-title"><?= htmlspecialchars($info[0]) ?></strong>
+                  <?php if (!empty($info[1])): ?>
+                    <div class="chk-sub-desc" style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 2px;"><?= htmlspecialchars($info[1]) ?></div>
+                  <?php endif; ?>
+                </td>
+                <td class="chk-col-status" style="text-align: center;">
                   <div class="status-pill-group" style="justify-content: center;">
                     <label>
                       <input type="radio" class="status-radio" name="site_condition[<?= $k ?>][status]" value="OK" checked>
@@ -379,8 +387,11 @@ include __DIR__ . '/includes/header.php';
                     </label>
                   </div>
                 </td>
-                <td>
-                  <input type="text" name="site_condition[<?= $k ?>][remarks]" class="form-control" style="min-height: 36px;" placeholder="<?= htmlspecialchars($info[1] ? "Contoh: {$info[1]}" : "Remarks") ?>">
+                <td class="chk-col-note">
+                  <div class="chk-note-container">
+                    <label class="chk-mobile-note-label">Remarks / Keterangan:</label>
+                    <input type="text" name="site_condition[<?= $k ?>][remarks]" class="form-control chk-note-input" placeholder="<?= htmlspecialchars($info[1] ? "Contoh: {$info[1]}" : "Remarks") ?>">
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -397,7 +408,7 @@ include __DIR__ . '/includes/header.php';
       </div>
       <div class="card-body">
         
-        <table class="checklist-table">
+        <table class="checklist-table checklist-form-table">
           <thead>
             <tr>
               <th>Komponen Struktur</th>
@@ -407,79 +418,108 @@ include __DIR__ . '/includes/header.php';
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>Members Completeness</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Members Completeness</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[members][val]" class="form-control">
                   <option value="Complete/lengkap" selected>Complete / Lengkap</option>
                   <option value="Not complete/tidak lengkap">Not Complete / Tidak Lengkap</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[members][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[members][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[members][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
 
-            <tr>
-              <td><strong>Tower Corrosion (Korosi)</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Tower Corrosion (Korosi)</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[corrosion][val]" class="form-control">
                   <option value="No" selected>No (Tidak Ada Korosi)</option>
                   <option value="Yes,minor">Yes, Minor</option>
                   <option value="Yes,major">Yes, Major</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[corrosion][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[corrosion][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[corrosion][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
 
-            <tr>
-              <td><strong>Tower Alignment (Ketegakan)</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Tower Alignment (Ketegakan)</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[alignment][val]" class="form-control">
                   <option value="Align and vertical/simetris & tegak lurus" selected>Align & Vertical (Simetris & Tegak)</option>
                   <option value="Not Align & not vertical/tidak tegak lurus">Not Align & Not Vertical</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[alignment][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[alignment][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[alignment][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
 
-            <tr>
-              <td><strong>Pedestal & Baseplate</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Pedestal & Baseplate</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[pedestal][val]" class="form-control">
                   <option value="Good/bagus" selected>Good / Bagus</option>
                   <option value="Cracked/retak">Cracked / Retak</option>
                   <option value="Corrosion/Baseplate berkarat">Corrosion / Berkarat</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[pedestal][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[pedestal][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[pedestal][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
 
-            <tr>
-              <td><strong>Soil & Gravel Condition</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Soil & Gravel Condition</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[soil][val]" class="form-control">
                   <option value="Normal" selected>Normal</option>
                   <option value="Landslide/penurunan">Landslide / Penurunan</option>
@@ -487,18 +527,25 @@ include __DIR__ . '/includes/header.php';
                   <option value="Washed away/tergerus">Washed Away / Tergerus</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[soil][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[soil][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[soil][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
 
-            <tr>
-              <td><strong>Building Existing Condition</strong></td>
-              <td>
+            <tr class="checklist-row">
+              <td class="chk-col-name"><strong class="chk-item-title">Building Existing Condition</strong></td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Pilihan Kondisi:</label>
                 <select name="structural[building][val]" class="form-control">
                   <option value="Normal">Normal</option>
                   <option value="Cracked/retak">Cracked / Retak</option>
@@ -506,13 +553,19 @@ include __DIR__ . '/includes/header.php';
                   <option value="Other/lainya : Site GF" selected>Other: Site GF</option>
                 </select>
               </td>
-              <td>
+              <td class="chk-col-field">
+                <label class="chk-mobile-note-label">Butuh Investigasi Lanjut?:</label>
                 <select name="structural[building][need_inv]" class="form-control">
                   <option value="No" selected>No (Tidak)</option>
                   <option value="Yes">Yes (Ya)</option>
                 </select>
               </td>
-              <td><input type="text" name="structural[building][remarks]" class="form-control" placeholder="Remarks"></td>
+              <td class="chk-col-note">
+                <div class="chk-note-container">
+                  <label class="chk-mobile-note-label">Keterangan Tambahan:</label>
+                  <input type="text" name="structural[building][remarks]" class="form-control chk-note-input" placeholder="Remarks">
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>

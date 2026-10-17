@@ -482,6 +482,13 @@ body {
   padding: 0.65rem 0.75rem;
 }
 
+/* Mobile-only helpers hidden by default on desktop */
+.chk-mobile-no,
+.chk-mobile-ref-label,
+.chk-mobile-note-label {
+  display: none;
+}
+
 /* Photo Upload Grid */
 .photo-upload-grid {
   display: grid;
@@ -970,10 +977,152 @@ body {
     font-size: 0.85rem;
   }
 
-  /* Hide Standar Referensi column on phone screens so Checklist fits cleanly */
-  .checklist-table th:nth-child(4),
-  .checklist-table td:nth-child(4) {
-    display: none;
+  /* ========================================================
+     Checklist Form Tables Mobile Card Reflow (PM Forms)
+     Transforms cramped table rows into clean, accessible cards
+     with full-width room for notes, remarks, and touch controls.
+     ======================================================== */
+  .checklist-form-table {
+    display: block !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+  }
+
+  .checklist-form-table thead {
+    display: none !important;
+  }
+
+  .checklist-form-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .checklist-form-table tr.checklist-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+    padding: 0.85rem 0.75rem !important;
+    border-bottom: 1px solid var(--border) !important;
+    background: var(--bg-card) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  .checklist-form-table tbody tr.checklist-row:nth-child(even) {
+    background: rgba(0, 0, 0, 0.015) !important;
+  }
+
+  [data-theme="dark"] .checklist-form-table tbody tr.checklist-row:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02) !important;
+  }
+
+  .checklist-form-table td {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+    width: 100% !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide separate number column in mobile card */
+  .checklist-form-table td.chk-col-no {
+    display: none !important;
+  }
+
+  .chk-mobile-no {
+    display: inline-block !important;
+    font-weight: 800 !important;
+    color: var(--primary) !important;
+    font-size: 0.95rem !important;
+    margin-right: 4px !important;
+  }
+
+  .chk-col-name {
+    font-size: 0.92rem !important;
+    line-height: 1.4 !important;
+    color: var(--text-main) !important;
+  }
+
+  .chk-item-title {
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    color: var(--text-main) !important;
+  }
+
+  .chk-col-ref {
+    display: block !important;
+    font-size: 0.775rem !important;
+    color: var(--text-muted) !important;
+    line-height: 1.35 !important;
+    background: var(--bg-alt) !important;
+    padding: 0.4rem 0.6rem !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px dashed var(--border) !important;
+  }
+
+  .chk-mobile-ref-label {
+    display: inline !important;
+    font-weight: 700 !important;
+    color: var(--text-subtle) !important;
+  }
+
+  .chk-col-status {
+    width: 100% !important;
+  }
+
+  .chk-col-status .status-pill-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 0.4rem !important;
+    justify-content: stretch !important;
+  }
+
+  .chk-col-status .status-pill-group label {
+    flex: 1 !important;
+    margin: 0 !important;
+  }
+
+  .chk-col-status .status-label {
+    width: 100% !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    border-radius: var(--radius-sm) !important;
+    box-sizing: border-box !important;
+  }
+
+  .chk-col-note,
+  .chk-col-field {
+    width: 100% !important;
+  }
+
+  .chk-mobile-note-label {
+    display: block !important;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    color: var(--text-subtle) !important;
+    margin-bottom: 4px !important;
+  }
+
+  .chk-note-container {
+    width: 100% !important;
+  }
+
+  .chk-note-input,
+  .chk-col-note input.form-control,
+  .chk-col-field select.form-control,
+  .chk-col-field input.form-control {
+    width: 100% !important;
+    min-height: 42px !important;
+    font-size: 0.85rem !important;
+    padding: 0.45rem 0.65rem !important;
+    box-sizing: border-box !important;
+    border-radius: var(--radius-sm) !important;
   }
 
   .photo-upload-grid {
@@ -1057,13 +1206,13 @@ body {
     padding: 0.45rem 0.65rem !important;
   }
 
-  .checklist-table th,
-  .checklist-table td {
+  .checklist-table:not(.checklist-form-table) th,
+  .checklist-table:not(.checklist-form-table) td {
     padding: 0.45rem 0.5rem !important;
     font-size: 0.8rem !important;
   }
 
-  .checklist-table td strong {
+  .checklist-table:not(.checklist-form-table) td strong {
     font-size: 0.82rem !important;
   }
 

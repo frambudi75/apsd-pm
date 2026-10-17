@@ -295,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Register Service Worker for PWA installation on login screen
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js?v=16')
+      navigator.serviceWorker.register('sw.js?v=17')
         .then(function (reg) {
           console.log('PWA ServiceWorker registered with scope:', reg.scope);
         })

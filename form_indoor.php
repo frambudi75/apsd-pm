@@ -250,7 +250,7 @@ include __DIR__ . '/includes/header.php';
             Bagian <?= $secKey ?>. <?= htmlspecialchars($section['name']) ?>
           </div>
 
-          <table class="checklist-table">
+          <table class="checklist-table checklist-form-table">
             <thead>
               <tr>
                 <th style="width: 45px; text-align: center;">No</th>
@@ -263,12 +263,13 @@ include __DIR__ . '/includes/header.php';
             <tbody>
               <?php foreach ($section['items'] as $itemNo => $item): ?>
                 <?php $fieldKey = "chk_{$secKey}_{$itemNo}"; ?>
-                <tr>
-                  <td style="text-align: center; font-weight: bold;"><?= $itemNo ?></td>
-                  <td>
-                    <strong><?= htmlspecialchars($item['name']) ?></strong>
+                <tr class="checklist-row">
+                  <td class="chk-col-no" style="text-align: center; font-weight: bold;"><?= $itemNo ?></td>
+                  <td class="chk-col-name">
+                    <span class="chk-mobile-no"><?= $itemNo ?>. </span>
+                    <strong class="chk-item-title"><?= htmlspecialchars($item['name']) ?></strong>
                   </td>
-                  <td style="text-align: center;">
+                  <td class="chk-col-status" style="text-align: center;">
                     <div class="status-pill-group" style="justify-content: center;">
                       <label>
                         <input type="radio" class="status-radio" name="checklist[<?= $fieldKey ?>][status]" value="OK" checked>
@@ -284,13 +285,18 @@ include __DIR__ . '/includes/header.php';
                       </label>
                     </div>
                   </td>
-                  <td style="font-size: 0.825rem; color: var(--text-muted);">
-                    <?= htmlspecialchars($item['ref']) ?>
+                  <td class="chk-col-ref" style="font-size: 0.825rem; color: var(--text-muted);">
+                    <div class="chk-ref-content">
+                      <span class="chk-mobile-ref-label">Standar: </span><?= htmlspecialchars($item['ref']) ?>
+                    </div>
                     <input type="hidden" name="checklist[<?= $fieldKey ?>][ref]" value="<?= htmlspecialchars($item['ref']) ?>">
                     <input type="hidden" name="checklist[<?= $fieldKey ?>][name]" value="<?= htmlspecialchars($item['name']) ?>">
                   </td>
-                  <td>
-                    <input type="text" name="checklist[<?= $fieldKey ?>][note]" class="form-control" style="min-height: 36px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" placeholder="Catatan bila ada">
+                  <td class="chk-col-note">
+                    <div class="chk-note-container">
+                      <label class="chk-mobile-note-label">Keterangan / Catatan:</label>
+                      <input type="text" name="checklist[<?= $fieldKey ?>][note]" class="form-control chk-note-input" placeholder="Tulis catatan jika ada...">
+                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>

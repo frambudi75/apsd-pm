@@ -18,6 +18,11 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
   - Tombol pendeteksi otomatis koordinat sensor GPS perangkat ("GPS Saya") baik di dalam peta maupun langsung pada formulir penambahan dan pengeditan site.
 * **Pencarian Cepat Data Master Site**:
   - Fitur pencarian instan di header tabel daftar master site untuk menyaring data berdasarkan nama site, ID site, area, atau tipe tower tanpa perlu memuat ulang halaman.
+* **Redesain Halaman Login & Optimalisasi Responsif Mobile (`login.php`)**:
+  - Tampilan split-screen modern enterprise untuk desktop: panel kiri menampilkan showcase operasional bandara (fitur inspeksi, logbook shift 24/7, audit trail) dan panel kanan formulir otentikasi.
+  - Penyesuaian tata letak khusus layar seluler (< 992px) yang ringkas tanpa banner ganda, menghilangkan duplikasi logo, dan memastikan form login langsung tampak tanpa perlu scroll.
+  - Penerapan standar Anti-Slop AI dengan mengganti seluruh emoji menjadi ikon inline SVG profesional, serta meniadakan animasi ornamen berlebihan.
+  - Sinkronisasi dinamis identitas aplikasi dan footer hak cipta dengan konfigurasi basis data (`get_system_setting`).
 
 #### Diperbaiki
 * **Optimalisasi Penghapusan Laporan & Batch Action Bar (`reports.php` & `api/delete_report.php`)**:

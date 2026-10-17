@@ -155,7 +155,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $successMsg = 'Pengaturan sistem dan logo berhasil diperbarui.';
+        // Synchronize PWA Web App Manifest & App Icons
+        require_once __DIR__ . '/includes/pwa.php';
+        sync_pwa_manifest_and_icons();
+
+        $successMsg = 'Pengaturan sistem, logo, dan profil PWA aplikasi berhasil diperbarui.';
     } catch (Exception $e) {
         $errorMsg = 'Gagal menyimpan pengaturan: ' . $e->getMessage();
     }

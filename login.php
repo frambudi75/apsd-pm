@@ -60,9 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Login - <?= htmlspecialchars($sysAppTitle) ?></title>
   
-  <link rel="manifest" href="manifest.json?v=3">
+  <link rel="manifest" href="manifest.json?v=<?= file_exists(__DIR__ . '/manifest.json') ? filemtime(__DIR__ . '/manifest.json') : time() ?>">
   <meta name="theme-color" content="#008080">
-  <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($sysAppTitle) ?>">
+  <?php 
+    $pwaTouchIcon = file_exists(__DIR__ . '/uploads/branding/pwa-icon-192.png') 
+      ? 'uploads/branding/pwa-icon-192.png?v=' . filemtime(__DIR__ . '/uploads/branding/pwa-icon-192.png') 
+      : $sysAppLogo;
+  ?>
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/assets/css/app.css') ?>">
 
   <script>

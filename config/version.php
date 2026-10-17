@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.6.0');
+    define('APP_VERSION', 'v2.6.1');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Role Dashboard, Collapsible Sidebar & Branding Management');
+    define('APP_RELEASE_TITLE', 'Mobile Modal Scroll Fix & Dynamic PWA Branding');
 }

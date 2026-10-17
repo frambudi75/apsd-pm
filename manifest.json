@@ -1,49 +1,80 @@
 {
-  "name": "IASS SBU ICT KNO PM System",
-  "short_name": "IASS SBU ICT KNO",
-  "description": "Sistem Checklist Pemeliharaan Berkala & Generator Laporan PDF Standar Resmi IASS SBU ICT KNO",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "any",
-  "background_color": "#f8fafc",
-  "theme_color": "#008080",
-  "categories": ["business", "productivity", "utilities"],
-  "icons": [
-    {
-      "src": "assets/img/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/img/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Buat PM Indoor",
-      "short_name": "PM Indoor",
-      "description": "Formulir Checklist & Dokumentasi PM Indoor (7 Halaman)",
-      "url": "form_indoor",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Buat PM Outdoor",
-      "short_name": "PM Outdoor",
-      "description": "Formulir Checklist & Dokumentasi PM Outdoor Pole (13 Halaman)",
-      "url": "form_outdoor",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Master Site Bandara",
-      "short_name": "Master Site",
-      "description": "Kelola data master site dan koordinat bandara",
-      "url": "sites",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    }
-  ]
+    "name": "IASS SBU ICT KNO - Sistem PM & NOC",
+    "short_name": "IASS SBU ICT KNO",
+    "description": "Sistem PM & NOC",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#f8fafc",
+    "theme_color": "#008080",
+    "categories": [
+        "business",
+        "productivity",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "uploads/branding/pwa-icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "uploads/branding/pwa-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Buat PM Indoor",
+            "short_name": "PM Indoor",
+            "description": "Formulir Checklist & Dokumentasi PM Indoor (7 Halaman)",
+            "url": "form_indoor",
+            "icons": [
+                {
+                    "src": "uploads/branding/pwa-icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Buat PM Outdoor",
+            "short_name": "PM Outdoor",
+            "description": "Formulir Checklist & Dokumentasi PM Outdoor Pole (13 Halaman)",
+            "url": "form_outdoor",
+            "icons": [
+                {
+                    "src": "uploads/branding/pwa-icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Catat Daily Activity",
+            "short_name": "Daily Activity",
+            "description": "Logbook Kegiatan Harian Shift NOC",
+            "url": "daily_activity",
+            "icons": [
+                {
+                    "src": "uploads/branding/pwa-icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Master Site Bandara",
+            "short_name": "Master Site",
+            "description": "Kelola data master site dan koordinat bandara",
+            "url": "sites",
+            "icons": [
+                {
+                    "src": "uploads/branding/pwa-icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
 }

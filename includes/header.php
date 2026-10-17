@@ -25,15 +25,20 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
   <title><?= htmlspecialchars($page_title) ?> - <?= htmlspecialchars($sysAppTitle) ?></title>
   
   <!-- PWA Meta Tags -->
-  <link rel="manifest" href="manifest.json?v=3">
+  <link rel="manifest" href="manifest.json?v=<?= file_exists(__DIR__ . '/../manifest.json') ? filemtime(__DIR__ . '/../manifest.json') : time() ?>">
   <meta name="theme-color" content="#008080">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($sysAppTitle) ?>">
-  <link rel="apple-touch-icon" href="<?= htmlspecialchars($sysAppLogo) ?>">
+  <?php 
+    $pwaTouchIcon = file_exists(__DIR__ . '/../uploads/branding/pwa-icon-192.png') 
+      ? 'uploads/branding/pwa-icon-192.png?v=' . filemtime(__DIR__ . '/../uploads/branding/pwa-icon-192.png') 
+      : $sysAppLogo;
+  ?>
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
   
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
-  <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
 
   <script>
     (function() {

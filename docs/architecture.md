@@ -1,50 +1,72 @@
 # Arsitektur Sistem & Alur Kerja (Workflow)
 
-Dokumen ini menjelaskan struktur arsitektur teknis sistem Preventive Maintenance (PM) Checklist & Laporan PDF PT Angkasa Pura Sarana Digital.
+Dokumen ini menjelaskan struktur arsitektur teknis, alur data, dan komponen modul sistem Preventive Maintenance (PM) Checklist & Laporan PDF PT Angkasa Pura Sarana Digital.
 
 ---
 
 ### 1. Diagram Komponen Arsitektur
 
 ```
-[ Client Browser / PWA ]
+[ Client Browser / PWA (Android, iOS, Desktop) ]
        │
-       ├─ Offline Cache (Service Worker 'sw.js' & 'manifest.json')
-       ├─ Client-Side Image Compressor (HTML5 Canvas Bicubic)
+       ├─ Offline Cache (Service Worker 'sw.js' v2.7.4 & 'manifest.json')
+       ├─ LocalStorage Draft Auto-Save Engine ('assets/js/draft_manager.js')
+       ├─ Client-Side Image Pre-Compressor (HTML5 Canvas 1600px)
+       ├─ Mobile Card Reflow Layout Engine (Responsive Media Queries)
        │
        ▼ (HTTP / HTTPS Port 80 atau Port 2022 di Docker)
 [ Apache Web Server / PHP 8.2 ]
        │
-       ├─ Routing & Views (index.php, form_indoor.php, form_outdoor.php, sites.php)
-       ├─ Print Engine (print_indoor.php, print_outdoor.php, download_pdf.php)
+       ├── Authentication & RBAC Layer (Admin, Supervisor, Teknisi)
+       │     └─ Session tracking, password hash bcrypt, profile self-service
        │
-       ├── Cache Layer (Redis via AppRedis config/redis.php)
-       │     └─ Cache report list, dashboard statistics (TTL 60s)
+       ├── Core Operational Modules:
+       │     ├─ PM Generator (form_indoor.php, form_outdoor.php, reports.php)
+       │     ├─ Daily Activity NOC (daily_activity.php, daily_reports.php)
+       │     ├─ Technical Document Repository (documents.php, download_document.php)
+       │     ├─ Master Data (sites.php, operators.php, users.php)
+       │     └─ System Diagnostics & Maintenance (system_optimize.php, audit_log.php)
+       │
+       ├── PDF Engine:
+       │     ├─ Browser Media Print (@media print presisi A4)
+       │     ├─ Headless Chromium/Edge Direct Engine (download_pdf.php)
+       │     ├─ Batch Exporter ZIP (batch_download_pdf.php)
+       │     └─ Public Share Token Engine (share.php)
+       │
+       ├── Image Processing Engine (includes/image_compressor.php):
+       │     └─ EXIF auto-rotation, Bicubic GD downscaling, JPEG 82%
+       │
+       ├── Cache Layer (Redis via AppRedis config/redis.php):
+       │     ├─ Caching report list, daily activity, dashboard stats (TTL 60s)
        │     └─ Non-blocking fallback jika Redis offline
        │
-       ├── Server Compressor (includes/image_compressor.php)
-       │     └─ EXIF auto-rotation, downscale max 1600px, JPEG 82%
+       ├── Database Layer (SQLite PDO database/apsd.sqlite):
+       │     ├─ 13 Relational Tables (WAL Mode, Busy Timeout 5000ms)
+       │     └─ B-Tree Performance Indexes
        │
-       ├── Database Layer (SQLite PDO database/apsd.sqlite)
-       │     └─ 8 B-Tree Performance Indexes
-       │
-       └─ File Storage (uploads/reports/{report_id}/)
-             └─ Foto dokumentasi slot terkompresi
+       └── File Storage Engine:
+             ├─ uploads/reports/{report_id}/ (Foto dokumentasi slot PM)
+             ├─ uploads/daily/{activity_id}/ (Foto dokumentasi shift)
+             ├─ uploads/documents/ (File SOP, IK, dan SLA)
+             └─ uploads/branding/ (Logo resmi kop dan icon PWA)
 ```
 
 ---
 
-### 2. Arsitektur Progressive Web App (PWA)
+### 2. Arsitektur Progressive Web App (PWA) & Mobile-First
 
 * **Web App Manifest (`manifest.json`)**:
-  - Konfigurasi nama aplikasi, ikon beresolusi 192x192 dan 512x512, tema warna brand IAS Teal (`#008080`), mode display `standalone`, dan orientasi responsif.
-  - Menyediakan app shortcuts untuk akses instan ke formulir PM Indoor, PM Outdoor, dan Master Site langsung dari launcher Android atau desktop.
-* **Service Worker (`sw.js`)**:
-  - Mengimplementasikan strategi Network-First dengan fallback dinamis ke cache lokal.
-  - Memungkinkan teknisi tetap membuka formulir dan melihat data arsip saat berada di basement, shelter terpencil, atau area apron tanpa koneksi internet aktif.
-* **PWA Install Banner & Offline Monitor**:
-  - Menangkap event `beforeinstallprompt` untuk memberikan tombol pasang aplikasi satu sentuhan.
-  - Mendeteksi status online/offline browser dan menampilkan notifikasi status koneksi.
+  - Konfigurasi nama aplikasi, tema warna IAS Teal (`#008080`), mode display `standalone`, dan background `#0f172a`.
+  - Icon launcher 192x192 dan 512x512 dengan pemisahan purpose `any` dan `maskable` untuk kompatibilitas penuh Android 13+.
+  - App shortcuts untuk formulir PM Indoor, PM Outdoor, Daily Activity, dan Master Site.
+* **Service Worker (`sw.js` v2.7.4)**:
+  - Mengimplementasikan strategi Network-First dengan dynamic caching untuk aset statis dan offline fallback.
+  - Membantu teknisi tetap dapat mengakses formulir dan mereview data riwayat saat berada di area basement, shelter terpencil, atau garbarata tanpa koneksi internet.
+* **Mobile Card Reflow Engine**:
+  - Pada layar smartphone (< 768px), struktur tabel desktop otomatis bertransformasi menjadi kartu inspeksi independen.
+  - Setiap kartu menyediakan ruang 100% untuk input catatan teknisi, kontrol tombol status radio berukuran sentuh jari 42px, dan indikator standar referensi yang terintegrasi.
+* **Floating Collapsible Photo Tracker**:
+  - Pelacak progres kelengkapan foto PM ditampilkan sebagai badge pill mengambang non-intrusif di sudut kanan bawah layar, dilengkapi kontrol ciutkan dan buka.
 
 ---
 
@@ -62,7 +84,7 @@ Dokumen ini menjelaskan struktur arsitektur teknis sistem Preventive Maintenance
 
 ### 4. Skema Database & Pengindeksan Performa
 
-Database SQLite (`database/apsd.sqlite`) memiliki 8 indeks B-Tree aktif untuk mempercepat waktu query:
+Database SQLite (`database/apsd.sqlite`) dikonfigurasi dengan Write-Ahead Logging (`PRAGMA journal_mode = WAL;`) dan memiliki 8 indeks B-Tree aktif untuk mempercepat waktu query:
 
 1. `idx_pm_reports_type` pada kolom `pm_reports(report_type)`
 2. `idx_pm_reports_date` pada kolom `pm_reports(report_date)`
@@ -93,4 +115,5 @@ Database SQLite (`database/apsd.sqlite`) memiliki 8 indeks B-Tree aktif untuk me
 * **File `docker-compose.yml`**:
   - Service `web`: Port mapping `"2022:80"`.
   - Service `redis`: Image `redis:7-alpine` pada port `6379`.
+  - Restart policy `always` untuk seluruh container sehingga otomatis aktif kembali setelah server reboot.
   - Volume mounting untuk data SQLite dan upload foto agar data tetap aman saat container di-restart.

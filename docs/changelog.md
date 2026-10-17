@@ -4,6 +4,74 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.4] - 2026-10-17
+
+#### Diperbaiki
+* **Mobile Card Reflow untuk Formulir PM Indoor & Outdoor**:
+  - Mengubah tata letak tabel checklist inspeksi pada layar smartphone (< 768px) dari tabel horizontal yang sempit menjadi kartu vertikal mandiri (`checklist-row`).
+  - Nomor dan nama item pemeriksaan tampil leluasa di bagian atas kartu bersama referensi standar tanpa terhimpit.
+  - Tombol pilihan status (OK / NOK / N/A) tersusun merata dengan ukuran sentuhan jari yang nyaman (tinggi min 42px).
+  - Kolom **Keterangan / Catatan** kini mendapatkan baris khusus selebar 100% layar di bagian bawah kartu dengan label jelas, sehingga teknisi dapat membaca dan mengetik temuan inspeksi dengan leluasa tanpa terpotong.
+* **Pembaruan Service Worker (v2.7.4)**:
+  - Cache Service Worker dinaikkan ke versi `iass-pm-v2.7.4` dengan query `sw.js?v=17` untuk memastikan seluruh perangkat mobile langsung memperbarui cache CSS dan script terbaru.
+
+---
+
+### [Versi 2.7.3] - 2026-10-17
+
+#### Ditambahkan
+* **Tampilan Kartu Mobile untuk User Manager (`users.php`)**:
+  - Menghadirkan antarmuka kartu mobile (`.mobile-user-card`) di bawah breakpoint 768px dengan inisial avatar, nama lengkap, username, badge peran, status aktif, tanggal login terakhir, dan tombol aksi (Reset Password, Edit, Hapus).
+  - Fitur pencarian dan filter peran otomatis menyaring kartu mobile secara real time.
+* **Floating Collapsible Progress Tracker Foto PM**:
+  - Mendesain ulang indikator progres foto formulir PM di layar HP menjadi badge pill mengambang ringkas di sudut kanan bawah (`📷 0/18 Foto (0%) ▲ ×`).
+  - Fitur tap-to-expand untuk melihat detail progres bar dan tombol lompat ke foto kosong, serta kontrol ciutkan dan tutup agar tidak menghalangi tombol simpan formulir.
+
+#### Diperbaiki
+* **Skala Tipografi Responsif Mobile**:
+  - Mengganti ukuran font inline pada formulir PM dan Daily Activity dengan class CSS terstandarisasi (`.module-page-title`, `.daily-page-title`, `.daily-shift-title`, dll.) agar judul dan teks proporsional di layar HP.
+
+---
+
+### [Versi 2.7.2] - 2026-10-17
+
+#### Diperbaiki
+* **Pemecahan Isu PWA Installation di Android & Server Cloudflare**:
+  - Memisahkan definisi tujuan icon manifest menjadi slot tersendiri untuk `purpose: "any"` dan `purpose: "maskable"` sesuai standar PWA W3C.
+  - Menambahkan hash timestamp dan cache-busting query (`?v=2`) pada endpoint icon manifest untuk menembus cache Cloudflare CDN.
+  - Memastikan kanvas icon launcher PWA berdimensi persegi presisi (192x192 dan 512x512) dengan background transparan/putih.
+  - Menghilangkan redirect halaman login pada `start_url` agar lolos audit instalasi Google Chrome dan Microsoft Edge.
+  - Mendaftarkan Service Worker pada layar login (`login.php`) agar notifikasi instalasi PWA langsung muncul sebelum login.
+
+---
+
+### [Versi 2.7.1] - 2026-10-17
+
+#### Ditambahkan
+* **Kotak Informasi Pengembang di Halaman About (`about.php`)**:
+  - Menghadirkan kotak profil khusus pengembang (Developer: Habib Frambudi) lengkap dengan tautan interaktif ke profil GitHub dan portofolio.
+* **Perapian Urutan Menu Master Data**:
+  - Mengurutkan submenu Master Data pada sidebar desktop dan drawer mobile secara alfabetis (A-Z: Dokumen Teknis, Master Operator, Master Site, User Manager).
+
+---
+
+### [Versi 2.7.0] - 2026-10-17
+
+#### Ditambahkan
+* **Modul Repositori Dokumen Teknis (`documents.php`)**:
+  - Pengelolaan dokumen standar operasional: SOP Pemeliharaan, Instruksi Kerja (IK), Service Level Agreement (SLA), Drawing/Topologi, dan Manual Pengguna.
+  - Fitur upload file PDF/dokumen, pencarian, filter kategori, preview dokumen interaktif, dan tracking unduhan.
+* **Modul Audit Log Terpusat (`audit_log.php`)**:
+  - Rekam jejak aktivitas operasional, login/logout, dan modifikasi data dengan IP address dan browser tracking.
+* **Fitur Berbagi Laporan Publik (`share.php`)**:
+  - Pembuatan token tautan publik dengan masa berlaku fleksibel untuk akses pihak eksternal tanpa perlu login.
+* **Fitur Unduh Batch Laporan (`batch_download_pdf.php`)**:
+  - Fitur ekspor seluruh arsip laporan PDF bulanan ke dalam format ZIP terkompresi.
+* **Modul Pemeliharaan & System Optimizer (`system_optimize.php`, `cron_optimize.php`)**:
+  - Fitur pembersihan database SQLite VACUUM, rotasi log lawas, dan penjadwalan otomatis via CLI cron.
+
+---
+
 ### [Versi 2.6.0] - 2026-10-17
 
 #### Ditambahkan
@@ -32,6 +100,7 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
   - Pengelolaan data operator tenant seluler dan sinkronisasi dinamis ke formulir checklist dan laporan.
 * **Modul Daily Activity & Shift Handover**:
   - Pencatatan aktivitas harian teknisi NOC dengan upload dokumentasi foto, kategori fleksibel, dan log handover shift.
+  - Fitur cetak laporan shift dan Monthly Logbook PDF.
 
 ---
 

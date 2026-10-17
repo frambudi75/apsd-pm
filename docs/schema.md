@@ -25,7 +25,7 @@ Menyimpan referensi data lokasi site agar tidak perlu diinput berulang kali.
 
 ---
 
-### 2. Tabel `pm_reports` (Master Laporan)
+### 2. Tabel `pm_reports` (Master Laporan PM)
 Mencatat metadata setiap inspeksi yang dibuat.
 * `id` INTEGER PRIMARY KEY AUTOINCREMENT
 * `report_type` VARCHAR(20) NOT NULL (`indoor` atau `outdoor`)
@@ -50,7 +50,7 @@ Menyimpan seluruh parameter dan item checklist laporan Indoor (Halaman 1 s/d 3).
 * `id` INTEGER PRIMARY KEY AUTOINCREMENT
 * `report_id` INTEGER NOT NULL (Foreign Key ke `pm_reports.id`)
 * `site_info_json` TEXT (Snapshot data site saat inspeksi)
-* `checklist_json` TEXT (Array JSON berisi status OK/NOK, referensi, dan keterangan untuk Bagian A s/d Bagian K)
+* `checklist_json` TEXT (Array JSON berisi status OK/NOK/NA, referensi, dan keterangan untuk Bagian A s/d Bagian K)
 * `measurements_json` TEXT (Nilai suhu AC, suhu ruangan, tegangan phase jika diinput dalam teks)
 
 ---
@@ -69,7 +69,7 @@ Menyimpan seluruh parameter laporan Outdoor 13 halaman.
 
 ---
 
-### 5. Tabel `pm_photos` (Foto Dokumentasi)
+### 5. Tabel `pm_photos` (Foto Dokumentasi PM)
 Menyimpan file foto dan nilai pengukuran pendukung untuk setiap slot foto.
 * `id` INTEGER PRIMARY KEY AUTOINCREMENT
 * `report_id` INTEGER NOT NULL (Foreign Key ke `pm_reports.id`)
@@ -79,3 +79,107 @@ Menyimpan file foto dan nilai pengukuran pendukung untuk setiap slot foto.
 * `measurement_value` VARCHAR(100) NULL (Contoh: `0.26`, `402.6`, `230.8`)
 * `is_na` INTEGER DEFAULT 0 (1 jika N/A, 0 jika ada foto)
 * `uploaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 6. Tabel `users` (Manajemen Pengguna & Autentikasi)
+Menyimpan kredensial dan hak akses akun aplikasi.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `username` VARCHAR(50) NOT NULL UNIQUE
+* `password` VARCHAR(255) NOT NULL (Password hash bcrypt)
+* `full_name` VARCHAR(100) NOT NULL
+* `email` VARCHAR(100) NULL
+* `role` VARCHAR(20) NOT NULL DEFAULT 'teknisi' (`admin`, `supervisor`, `teknisi`)
+* `status` VARCHAR(20) NOT NULL DEFAULT 'active' (`active`, `inactive`)
+* `last_login` DATETIME NULL
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+* `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 7. Tabel `daily_activities` (Logbook Shift Harian NOC)
+Mencatat informasi shift kerja harian dan serah terima tugas.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `activity_date` DATE NOT NULL
+* `shift` VARCHAR(20) NOT NULL (`pagi`, `siang`, `malam`)
+* `team_leader` VARCHAR(100) NOT NULL
+* `technician_names` TEXT NOT NULL (Daftar nama personil shift)
+* `notes` TEXT NULL (Catatan umum kegiatan shift)
+* `handover_notes` TEXT NULL (Catatan khusus serah terima ke shift berikutnya)
+* `handover_checklist_json` TEXT NULL (Status verifikasi inventaris dan perangkat serah terima)
+* `created_by` INTEGER NULL (Foreign Key ke `users.id`)
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+* `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 8. Tabel `daily_activity_items` (Rincian Item Kegiatan Shift)
+Menyimpan rincian tiap pekerjaan yang dilakukan selama jam dinas shift.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `daily_activity_id` INTEGER NOT NULL (Foreign Key ke `daily_activities.id`)
+* `time_start` VARCHAR(10) NOT NULL (Contoh: `08:00`)
+* `time_end` VARCHAR(10) NULL (Contoh: `09:30`)
+* `category` VARCHAR(50) NOT NULL (`preventive`, `corrective`, `handling_complain`, `monitoring`, `project`, `lainnya`)
+* `description` TEXT NOT NULL
+* `status` VARCHAR(20) NOT NULL DEFAULT 'done' (`done`, `pending`, `in_progress`)
+* `photo_path` VARCHAR(255) NULL
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 9. Tabel `operators` (Master Data Provider / Tenant)
+Menyimpan referensi operator telekomunikasi seluler dan logo tenant.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `operator_code` VARCHAR(50) NOT NULL UNIQUE (Contoh: `telkomsel`, `indosat`, `xl`, `smartfren`)
+* `operator_name` VARCHAR(100) NOT NULL (Contoh: `PT Telekomunikasi Selular`)
+* `brand_name` VARCHAR(50) NOT NULL (Contoh: `Telkomsel`)
+* `logo_path` VARCHAR(255) NOT NULL
+* `is_active` INTEGER DEFAULT 1
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 10. Tabel `technical_documents` (Repositori Dokumen Teknis)
+Menyimpan dokumen referensi SOP, IK, dan SLA.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `doc_title` VARCHAR(255) NOT NULL
+* `doc_category` VARCHAR(50) NOT NULL (`sop`, `ik`, `sla`, `drawing`, `manual`, `lainnya`)
+* `doc_number` VARCHAR(100) NULL (Nomor dokumen resmi perusahaan)
+* `file_path` VARCHAR(255) NOT NULL
+* `file_size` INTEGER DEFAULT 0
+* `uploaded_by` INTEGER NULL (Foreign Key ke `users.id`)
+* `download_count` INTEGER DEFAULT 0
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 11. Tabel `audit_logs` (Rekam Jejak Keamanan & Aktivitas)
+Mencatat setiap aksi penting pengguna untuk kebutuhan audit kepatuhan.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `user_id` INTEGER NULL (Foreign Key ke `users.id`)
+* `username` VARCHAR(50) NULL
+* `action` VARCHAR(50) NOT NULL (Contoh: `login`, `create`, `update`, `delete`, `download`, `optimize`)
+* `module` VARCHAR(50) NOT NULL (Contoh: `auth`, `pm_indoor`, `pm_outdoor`, `daily_activity`, `users`, `system`)
+* `details` TEXT NULL
+* `ip_address` VARCHAR(50) NULL
+* `user_agent` TEXT NULL
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 12. Tabel `app_settings` (Konfigurasi & Identitas Sistem)
+Menyimpan preferensi konfigurasi aplikasi dan branding yang dapat diubah via UI.
+* `setting_key` VARCHAR(100) PRIMARY KEY
+* `setting_value` TEXT NULL
+* `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+
+---
+
+### 13. Tabel `report_shares` (Token Akses Laporan Publik)
+Menyimpan token unik dan validitas kedaluwarsa untuk berbagi laporan ke pihak luar.
+* `id` INTEGER PRIMARY KEY AUTOINCREMENT
+* `report_id` INTEGER NOT NULL (Foreign Key ke `pm_reports.id`)
+* `report_type` VARCHAR(20) NOT NULL (`indoor`, `outdoor`)
+* `share_token` VARCHAR(64) NOT NULL UNIQUE
+* `expires_at` DATETIME NULL
+* `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP

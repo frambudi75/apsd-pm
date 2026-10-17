@@ -10,7 +10,11 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/redis.php';
 require_once __DIR__ . '/includes/auth.php';
-require_login();
+
+if (!is_logged_in()) {
+    require __DIR__ . '/login.php';
+    exit;
+}
 
 $pdo = get_db_connection();
 $currentUser = current_user();

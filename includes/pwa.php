@@ -86,8 +86,8 @@ function sync_pwa_manifest_and_icons(): bool {
             @chmod($brandDir, 0777);
         }
 
-        $icon192 = 'assets/img/icon-192.png';
-        $icon512 = 'assets/img/icon-512.png';
+        $icon192 = 'assets/img/pwa-icon-192.png?v=2';
+        $icon512 = 'assets/img/pwa-icon-512.png?v=2';
 
         if (file_exists($logoFull)) {
             $dest192 = $brandDir . '/pwa-icon-192.png';
@@ -97,17 +97,16 @@ function sync_pwa_manifest_and_icons(): bool {
             $gen512 = generate_single_pwa_icon($logoFull, 512, $dest512);
 
             if ($gen192 && file_exists($dest192)) {
-                $icon192 = 'uploads/branding/pwa-icon-192.png';
+                @copy($dest192, __DIR__ . '/../assets/img/pwa-icon-192.png');
                 @copy($dest192, __DIR__ . '/../assets/img/icon-192.png');
             }
             if ($gen512 && file_exists($dest512)) {
-                $icon512 = 'uploads/branding/pwa-icon-512.png';
+                @copy($dest512, __DIR__ . '/../assets/img/pwa-icon-512.png');
                 @copy($dest512, __DIR__ . '/../assets/img/icon-512.png');
             }
         }
 
         $manifestData = [
-            'id' => './',
             'name' => $appTitle . ($appSubtitle !== '' ? ' - ' . $appSubtitle : ''),
             'short_name' => mb_strimwidth($appTitle, 0, 16, ''),
             'description' => $appSubtitle !== '' ? $appSubtitle : 'Sistem Checklist Pemeliharaan Berkala & Logbook NOC',
@@ -120,28 +119,40 @@ function sync_pwa_manifest_and_icons(): bool {
             'categories' => ['business', 'productivity', 'utilities'],
             'icons' => [
                 [
-                    'src' => 'assets/img/icon-192.png',
+                    'src' => 'assets/img/pwa-icon-192.png?v=2',
                     'sizes' => '192x192',
                     'type' => 'image/png',
-                    'purpose' => 'any maskable'
+                    'purpose' => 'any'
                 ],
                 [
-                    'src' => 'assets/img/icon-512.png',
+                    'src' => 'assets/img/pwa-icon-512.png?v=2',
                     'sizes' => '512x512',
                     'type' => 'image/png',
-                    'purpose' => 'any maskable'
+                    'purpose' => 'any'
                 ],
                 [
-                    'src' => 'uploads/branding/pwa-icon-192.png',
+                    'src' => 'assets/img/pwa-icon-192.png?v=2',
                     'sizes' => '192x192',
                     'type' => 'image/png',
-                    'purpose' => 'any maskable'
+                    'purpose' => 'maskable'
                 ],
                 [
-                    'src' => 'uploads/branding/pwa-icon-512.png',
+                    'src' => 'assets/img/pwa-icon-512.png?v=2',
                     'sizes' => '512x512',
                     'type' => 'image/png',
-                    'purpose' => 'any maskable'
+                    'purpose' => 'maskable'
+                ],
+                [
+                    'src' => 'uploads/branding/pwa-icon-192.png?v=2',
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any'
+                ],
+                [
+                    'src' => 'uploads/branding/pwa-icon-512.png?v=2',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any'
                 ]
             ],
             'shortcuts' => [

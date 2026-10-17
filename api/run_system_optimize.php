@@ -178,6 +178,19 @@ try {
     $summaryDesc = "Auto-optimise selesai dalam {$executionTime} ms. Pembersihan {$cleanedFilesCount} temp files, {$expiredSharesCount} tautan expired dinonaktifkan.";
     log_audit_event('SYSTEM', 'SYSTEM_OPTIMIZE', $summaryDesc, 'system', null);
 
+    // Kirim notifikasi hasil pemeliharaan ke Discord Saluran Keamanan & Pemeliharaan
+    try {
+        require_once __DIR__ . '/../includes/discord.php';
+        discord_notify_system_optimize([
+            'cleaned_files' => $cleanedFilesCount,
+            'expired_links' => $expiredSharesCount,
+            'vault_savings' => format_bytes_opt($savedVaultBytes),
+            'vault_savings_pct' => $savedVaultPct
+        ], $executionTime);
+    } catch (Throwable $eDisc) {
+        error_log('Discord system optimize notification warning: ' . $eDisc->getMessage());
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Auto-Optimise sistem selesai dieksekusi dengan sukses!',

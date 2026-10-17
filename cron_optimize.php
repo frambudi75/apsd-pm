@@ -95,6 +95,19 @@ try {
         'system'
     );
 
+    // Kirim notifikasi ke Discord Saluran Keamanan & Pemeliharaan
+    try {
+        require_once __DIR__ . '/includes/discord.php';
+        discord_notify_system_optimize([
+            'cleaned_files' => $cleanedFiles,
+            'expired_links' => $expiredLinks,
+            'vault_savings' => '0 B',
+            'vault_savings_pct' => 0
+        ], $elapsed);
+    } catch (Throwable $eDisc) {
+        // Abaikan jika Discord tidak tersedia saat cron berjalan
+    }
+
     echo "[" . date('Y-m-d H:i:s') . "] Sukses! Waktu eksekusi: {$elapsed} ms. Selesai.\n";
     exit(0);
 

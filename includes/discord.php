@@ -1,0 +1,335 @@
+<?php
+/**
+ * Discord Webhook Notification Helper (Dual-Channel Architecture)
+ * PT Angkasa Pura Sarana Digital - Sistem PM
+ *
+ * Saluran Terpisah:
+ * 1. NOC & Operasional: Shift handover, logbook NOC, dokumen tim.
+ * 2. Keamanan & Sistem: Percobaan login gagal, auto-optimise, akun user.
+ *
+ * Seluruh fungsi berjalan fail-safe dengan timeout pendek (3 detik)
+ * agar tidak pernah menghambat kecepatan atau alur kerja aplikasi web.
+ */
+
+require_once __DIR__ . '/../config/database.php';
+
+/**
+ * Kirim raw payload HTTP POST ke URL Webhook Discord
+ */
+function send_discord_payload(string $webhookUrl, array $payload, ?string $filePath = null, string $fileName = 'attachment.pdf'): array {
+    $webhookUrl = trim($webhookUrl);
+    if (empty($webhookUrl) || !filter_var($webhookUrl, FILTER_VALIDATE_URL)) {
+        return ['success' => false, 'message' => 'URL Webhook Discord tidak valid atau kosong.'];
+    }
+
+    if (!extension_loaded('curl')) {
+        return ['success' => false, 'message' => 'Ekstensi PHP cURL tidak aktif pada server ini.'];
+    }
+
+    try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $webhookUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+        if ($filePath && file_exists($filePath)) {
+            // Multipart upload with attachment
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $filePath) ?: 'application/octet-stream';
+            finfo_close($finfo);
+
+            $cfile = new CURLFile($filePath, $mimeType, $fileName);
+            $postFields = [
+                'payload_json' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                'files[0]' => $cfile
+            ];
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'User-Agent: APSD-PM-NOC-System/2.0'
+            ]);
+        } else {
+            // Standard JSON payload
+            $jsonData = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'User-Agent: APSD-PM-NOC-System/2.0'
+            ]);
+        }
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        // Discord returns 200 or 204 on success
+        if ($httpCode === 200 || $httpCode === 204) {
+            return ['success' => true, 'message' => 'Pesan berhasil terkirim ke Discord.'];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Discord merespons status HTTP ' . $httpCode . ($curlError ? ' (' . $curlError . ')' : '') . ($response ? ': ' . substr($response, 0, 120) : '')
+        ];
+    } catch (\Throwable $e) {
+        return ['success' => false, 'message' => 'Gagal mengirim pesan Discord: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Kirim notifikasi embed ke saluran tertentu ('noc' atau 'security')
+ */
+function send_discord_notification(string $channelType, array $embedData, ?string $attachmentPath = null, string $attachmentName = ''): bool {
+    try {
+        $channelKey = ($channelType === 'security') ? 'discord_webhook_security' : 'discord_webhook_noc';
+        $webhookUrl = get_system_setting($channelKey, '');
+
+        if (empty($webhookUrl)) {
+            return false;
+        }
+
+        $appTitle = get_system_setting('app_title', 'IASS SBU ICT KNO');
+
+        $payload = [
+            'username' => $appTitle . ($channelType === 'security' ? ' [Security]' : ' [NOC Bot]'),
+            'embeds' => [$embedData]
+        ];
+
+        $res = send_discord_payload($webhookUrl, $payload, $attachmentPath, $attachmentName);
+        return !empty($res['success']);
+    } catch (\Throwable $e) {
+        error_log('Discord notification error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Helper: Bangun URL lengkap server untuk tombol/tautan
+ */
+function get_server_base_url(): string {
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443;
+    $protocol = $isSecure ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = dirname($script);
+    if (basename($dir) === 'api' || basename($dir) === 'includes') {
+        $dir = dirname($dir);
+    }
+    $dir = str_replace('\\', '/', $dir);
+    return $protocol . $host . rtrim($dir, '/') . '/';
+}
+
+/**
+ * Notifikasi: Sesi Shift Daily Activity Selesai Dilaporkan
+ */
+function discord_notify_shift_complete(array $shift, array $activities = [], int $photoCount = 0): bool {
+    if (get_system_setting('discord_notify_shift_complete', '1') !== '1') {
+        return false;
+    }
+
+    $baseUrl = get_server_base_url();
+    $shiftId = (int)($shift['id'] ?? 0);
+    $techName = $shift['technician_name'] ?? 'Teknisi NOC';
+    $shiftType = strtoupper($shift['shift_type'] ?? 'PAGI');
+    $shiftDate = !empty($shift['shift_date']) ? date('d/m/Y', strtotime($shift['shift_date'])) : date('d/m/Y');
+    $notes = !empty($shift['notes']) ? trim($shift['notes']) : 'Tidak ada catatan khusus handover.';
+    $actCount = count($activities);
+
+    $fields = [
+        [
+            'name' => '👤 Teknisi Bertugas',
+            'value' => $techName,
+            'inline' => true
+        ],
+        [
+            'name' => '📅 Sesi & Tanggal',
+            'value' => 'Shift ' . $shiftType . ' (' . $shiftDate . ')',
+            'inline' => true
+        ],
+        [
+            'name' => '📊 Total Kegiatan',
+            'value' => $actCount . ' kegiatan tercatat',
+            'inline' => true
+        ],
+        [
+            'name' => '📷 Dokumentasi',
+            'value' => $photoCount . ' foto terverifikasi',
+            'inline' => true
+        ],
+        [
+            'name' => '📝 Catatan Handover Shift',
+            'value' => mb_substr($notes, 0, 400),
+            'inline' => false
+        ]
+    ];
+
+    $embed = [
+        'title' => '📋 Laporan Shift Selesai & Terkunci - ' . $shiftType,
+        'description' => 'Sesi kegiatan harian NOC telah diselesaikan dan dilaporkan ke pimpinan/admin.',
+        'url' => $baseUrl . 'print_shift?id=' . $shiftId,
+        'color' => 0x008080, // Teal
+        'fields' => $fields,
+        'footer' => [
+            'text' => 'PT Angkasa Pura Sarana Digital • Sistem PM & NOC'
+        ],
+        'timestamp' => date('c')
+    ];
+
+    return send_discord_notification('noc', $embed);
+}
+
+/**
+ * Notifikasi: Hasil Pemeliharaan & Auto-Optimise Sistem
+ */
+function discord_notify_system_optimize(array $stats, float $executionTimeMs): bool {
+    if (get_system_setting('discord_notify_system_optimize', '1') !== '1') {
+        return false;
+    }
+
+    $baseUrl = get_server_base_url();
+
+    $fields = [
+        [
+            'name' => '⏱️ Durasi Eksekusi',
+            'value' => $executionTimeMs . ' ms',
+            'inline' => true
+        ],
+        [
+            'name' => '🗑️ File Temp Dihapus',
+            'value' => ($stats['cleaned_files'] ?? 0) . ' file kadaluwarsa',
+            'inline' => true
+        ],
+        [
+            'name' => '🔗 Link Expired Ditutup',
+            'value' => ($stats['expired_links'] ?? 0) . ' tautan dinonaktifkan',
+            'inline' => true
+        ],
+        [
+            'name' => '💾 Hemat Kompresi Vault',
+            'value' => ($stats['vault_savings'] ?? '0 B') . ' (' . ($stats['vault_savings_pct'] ?? 0) . '%)',
+            'inline' => true
+        ]
+    ];
+
+    $embed = [
+        'title' => '⚙️ Auto-Optimise Sistem Selesai Dijalankan',
+        'description' => 'Defragmentasi basis data, pemangkasan WAL log, dan pembersihan file temporary berhasil diselesaikan.',
+        'url' => $baseUrl . 'system_optimize',
+        'color' => 0x059669, // Emerald
+        'fields' => $fields,
+        'footer' => [
+            'text' => 'IASS SBU ICT KNO • System Maintenance'
+        ],
+        'timestamp' => date('c')
+    ];
+
+    return send_discord_notification('security', $embed);
+}
+
+/**
+ * Notifikasi: Peringatan Keamanan (Gagal Login / Security Alert)
+ */
+function discord_notify_security_alert(string $event, string $username, string $ip, string $details = ''): bool {
+    if (get_system_setting('discord_notify_login_failed', '1') !== '1') {
+        return false;
+    }
+
+    $baseUrl = get_server_base_url();
+
+    $fields = [
+        [
+            'name' => '🚨 Peristiwa',
+            'value' => $event,
+            'inline' => true
+        ],
+        [
+            'name' => '👤 Username Sasaran',
+            'value' => '@' . $username,
+            'inline' => true
+        ],
+        [
+            'name' => '🌐 IP Address',
+            'value' => $ip,
+            'inline' => true
+        ]
+    ];
+
+    if (!empty($details)) {
+        $fields[] = [
+            'name' => 'ℹ️ Keterangan Tambahan',
+            'value' => $details,
+            'inline' => false
+        ];
+    }
+
+    $embed = [
+        'title' => '⚠️ Peringatan Keamanan Sistem (Security Alert)',
+        'description' => 'Terdeteksi upaya otentikasi mencurigakan atau peringatan hak akses pada sistem.',
+        'url' => $baseUrl . 'audit_log?action_type=AUTH',
+        'color' => 0xDC2626, // Red
+        'fields' => $fields,
+        'footer' => [
+            'text' => 'IASS SBU ICT KNO • Security & Audit Trail'
+        ],
+        'timestamp' => date('c')
+    ];
+
+    return send_discord_notification('security', $embed);
+}
+
+/**
+ * Notifikasi: Dokumen Baru Diunggah ke Brankas Tim
+ */
+function discord_notify_document_upload(string $title, string $category, string $uploader, string $privacyType): bool {
+    if (get_system_setting('discord_notify_doc_upload', '1') !== '1') {
+        return false;
+    }
+
+    // Hanya kirim jika dokumen dibagikan ke tim atau banyak pengguna
+    if ($privacyType === 'private') {
+        return false;
+    }
+
+    $baseUrl = get_server_base_url();
+
+    $fields = [
+        [
+            'name' => '📄 Judul Dokumen',
+            'value' => $title,
+            'inline' => true
+        ],
+        [
+            'name' => '🏷️ Kategori',
+            'value' => $category,
+            'inline' => true
+        ],
+        [
+            'name' => '👤 Diunggah Oleh',
+            'value' => $uploader,
+            'inline' => true
+        ],
+        [
+            'name' => '👥 Hak Berbagi',
+            'value' => ($privacyType === 'team') ? 'Seluruh Tim' : 'Rekan Dipilih',
+            'inline' => true
+        ]
+    ];
+
+    $embed = [
+        'title' => '📁 Berkas Baru Ditambahkan ke Brankas Dokumen',
+        'description' => 'Dokumen baru telah diunggah dan dapat diakses oleh anggota tim yang memiliki wewenang.',
+        'url' => $baseUrl . 'documents',
+        'color' => 0x0284C7, // Blue
+        'fields' => $fields,
+        'footer' => [
+            'text' => 'PT Angkasa Pura Sarana Digital • Document Vault'
+        ],
+        'timestamp' => date('c')
+    ];
+
+    return send_discord_notification('noc', $embed);
+}

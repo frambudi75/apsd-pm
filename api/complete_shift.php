@@ -75,6 +75,27 @@ try {
 
     log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
 
+    // Kirim notifikasi ringkasan shift ke Discord Saluran Operasional NOC
+    try {
+        require_once __DIR__ . '/../includes/discord.php';
+        $stmtActs = $pdo->prepare("SELECT id, activity_time, category, location, description FROM daily_activities WHERE shift_id = ? ORDER BY activity_time ASC");
+        $stmtActs->execute([$shiftId]);
+        $activities = $stmtActs->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtPhotos = $pdo->prepare("
+            SELECT COUNT(*) FROM daily_activity_photos p 
+            JOIN daily_activities a ON p.activity_id = a.id 
+            WHERE a.shift_id = ?
+        ");
+        $stmtPhotos->execute([$shiftId]);
+        $photoCount = (int)$stmtPhotos->fetchColumn();
+
+        $shift['notes'] = $notes;
+        discord_notify_shift_complete($shift, $activities, $photoCount);
+    } catch (Throwable $eDisc) {
+        error_log('Discord shift complete notification warning: ' . $eDisc->getMessage());
+    }
+
     echo json_encode([
         'success' => true,
         'shift_id' => $shiftId,

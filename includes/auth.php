@@ -205,18 +205,32 @@ function authenticate_user(string $username, string $password): array {
     $stmt->execute([trim($username)]);
     $user = $stmt->fetch();
 
+    $clientIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
     if (!$user) {
         log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: username tidak ditemukan (' . $username . ')', 'user', null, null, $username, 'guest');
+        try {
+            require_once __DIR__ . '/discord.php';
+            discord_notify_security_alert('Percobaan Login Gagal (Username Tidak Terdaftar)', $username, $clientIp, 'Upaya masuk menggunakan username yang tidak terdaftar di sistem.');
+        } catch (Throwable $eDisc) {}
         return ['success' => false, 'message' => 'Username atau password salah.'];
     }
 
     if (empty($user['is_active'])) {
         log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: akun dinonaktifkan (' . $username . ')', 'user', $user['id'], $user['id'], $user['username'], $user['role']);
+        try {
+            require_once __DIR__ . '/discord.php';
+            discord_notify_security_alert('Percobaan Login Akun Dinonaktifkan', $username, $clientIp, 'Upaya masuk menggunakan akun yang telah dinonaktifkan oleh administrator.');
+        } catch (Throwable $eDisc) {}
         return ['success' => false, 'message' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.'];
     }
 
     if (!password_verify($password, $user['password_hash'])) {
         log_audit_event('AUTH', 'LOGIN_FAILED', 'Gagal login: password salah untuk user ' . $username, 'user', $user['id'], $user['id'], $user['username'], $user['role']);
+        try {
+            require_once __DIR__ . '/discord.php';
+            discord_notify_security_alert('Percobaan Login Gagal (Kata Sandi Salah)', $username, $clientIp, 'Upaya masuk gagal karena kombinasi kata sandi tidak cocok.');
+        } catch (Throwable $eDisc) {}
         return ['success' => false, 'message' => 'Username atau password salah.'];
     }
 

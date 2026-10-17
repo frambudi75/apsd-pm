@@ -49,6 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_system_setting('activity_categories', $activityCategories);
         set_system_setting('document_categories', $documentCategories);
 
+        // Discord Dual-Channel Settings
+        $discordNoc = trim($_POST['discord_webhook_noc'] ?? '');
+        $discordSec = trim($_POST['discord_webhook_security'] ?? '');
+        $notifyShift = isset($_POST['discord_notify_shift_complete']) ? '1' : '0';
+        $notifyDoc = isset($_POST['discord_notify_doc_upload']) ? '1' : '0';
+        $notifyOpt = isset($_POST['discord_notify_system_optimize']) ? '1' : '0';
+        $notifyLogin = isset($_POST['discord_notify_login_failed']) ? '1' : '0';
+
+        set_system_setting('discord_webhook_noc', $discordNoc);
+        set_system_setting('discord_webhook_security', $discordSec);
+        set_system_setting('discord_notify_shift_complete', $notifyShift);
+        set_system_setting('discord_notify_doc_upload', $notifyDoc);
+        set_system_setting('discord_notify_system_optimize', $notifyOpt);
+        set_system_setting('discord_notify_login_failed', $notifyLogin);
+
         // Handle Branding Directory
         $brandDir = __DIR__ . '/uploads/branding';
         if (!is_dir($brandDir)) {
@@ -184,6 +199,12 @@ $curCategories = get_system_setting('activity_categories', 'Monitoring, Patroli,
 $curDocCategories = get_system_setting('document_categories', 'Sertifikat & Lisensi, Pass Bandara & Identitas, Surat Tugas & SK, Manual & Dokumen Teknis, Kontrak & Legalitas, Laporan & Notulen, Lainnya');
 $curAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
 $curReportLeftLogo = get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png');
+$curDiscordNoc = get_system_setting('discord_webhook_noc', '');
+$curDiscordSec = get_system_setting('discord_webhook_security', '');
+$curNotifyShift = get_system_setting('discord_notify_shift_complete', '1');
+$curNotifyDoc = get_system_setting('discord_notify_doc_upload', '1');
+$curNotifyOpt = get_system_setting('discord_notify_system_optimize', '1');
+$curNotifyLogin = get_system_setting('discord_notify_login_failed', '1');
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -555,6 +576,126 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
+    <!-- Section 5: Integrasi Notifikasi Discord (Dual-Channel) -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(88, 101, 242, 0.12); color: #5865f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <?= app_icon('message-circle', 20) ?>
+          </div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Integrasi Notifikasi Discord (Saluran Terpisah)</h4>
+            <p style="font-size: 0.78rem; color: var(--text-subtle); margin: 2px 0 0 0;">Kirim notifikasi otomatis ke saluran terpisah agar aktivitas operasional teknisi dan pengawasan keamanan tidak tercampur.</p>
+          </div>
+        </div>
+        <span class="user-role-badge role-admin" style="font-size: 0.72rem; background: rgba(88, 101, 242, 0.12); color: #5865f2; border: 1px solid rgba(88, 101, 242, 0.25);">Discord Webhook</span>
+      </div>
+
+      <div class="settings-card-body">
+        <div class="settings-grid-2">
+          
+          <!-- Channel 1: NOC & Operasional Laporan -->
+          <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+                  <?= app_icon('clock', 15, 'text-primary') ?>
+                  <span>Saluran 1: Operasional NOC &amp; Laporan Tim</span>
+                </label>
+                <span class="badge" style="background: var(--primary-subtle); color: var(--primary); font-size: 0.7rem; font-weight: 700;">NOC Channel</span>
+              </div>
+
+              <div style="font-size: 0.74rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
+                Digunakan untuk mengirim ringkasan pergantian shift, logbook kegiatan, dan dokumen tim baru.
+              </div>
+
+              <div style="margin-bottom: 0.85rem;">
+                <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px; display: block;">
+                  Webhook URL Saluran NOC:
+                </label>
+                <div class="settings-input-group">
+                  <span class="settings-input-icon"><?= app_icon('globe', 16) ?></span>
+                  <input type="url" name="discord_webhook_noc" id="discord_webhook_noc" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDiscordNoc) ?>" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+              </div>
+
+              <!-- Event Toggles -->
+              <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Pemicu Notifikasi Aktif:</div>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem;">
+                <label style="font-size: 0.76rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" name="discord_notify_shift_complete" value="1" <?= $curNotifyShift === '1' ? 'checked' : '' ?>>
+                  <span>Kirim ringkasan otomatis saat sesi shift NOC selesai &amp; dikunci</span>
+                </label>
+                <label style="font-size: 0.76rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" name="discord_notify_doc_upload" value="1" <?= $curNotifyDoc === '1' ? 'checked' : '' ?>>
+                  <span>Kirim pemberitahuan saat dokumen baru dibagikan ke tim di Brankas</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_test_discord_noc" onclick="testDiscordWebhook('noc')">
+                <?= app_icon('refresh', 14) ?> Uji Webhook NOC
+              </button>
+              <div id="status_discord_noc" style="font-size: 0.74rem;"></div>
+            </div>
+          </div>
+
+          <!-- Channel 2: Keamanan & Pemeliharaan Sistem Admin -->
+          <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+                  <?= app_icon('shield', 15, '', '#dc2626') ?>
+                  <span>Saluran 2: Keamanan &amp; Pemeliharaan Admin</span>
+                </label>
+                <span class="badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626; font-size: 0.7rem; font-weight: 700;">Security Channel</span>
+              </div>
+
+              <div style="font-size: 0.74rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
+                Digunakan untuk mengirim alert percobaan login gagal dan hasil Auto-Optimise server.
+              </div>
+
+              <div style="margin-bottom: 0.85rem;">
+                <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px; display: block;">
+                  Webhook URL Saluran Keamanan:
+                </label>
+                <div class="settings-input-group">
+                  <span class="settings-input-icon"><?= app_icon('globe', 16) ?></span>
+                  <input type="url" name="discord_webhook_security" id="discord_webhook_security" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDiscordSec) ?>" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+              </div>
+
+              <!-- Event Toggles -->
+              <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Pemicu Notifikasi Aktif:</div>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem;">
+                <label style="font-size: 0.76rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" name="discord_notify_system_optimize" value="1" <?= $curNotifyOpt === '1' ? 'checked' : '' ?>>
+                  <span>Kirim laporan ringkasan kapasitas setelah Auto-Optimise selesai dijalankan</span>
+                </label>
+                <label style="font-size: 0.76rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" name="discord_notify_login_failed" value="1" <?= $curNotifyLogin === '1' ? 'checked' : '' ?>>
+                  <span>Kirim peringatan keamanan instan saat terjadi kegagalan otentikasi login</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_test_discord_sec" onclick="testDiscordWebhook('security')">
+                <?= app_icon('shield', 14) ?> Uji Webhook Security
+              </button>
+              <div id="status_discord_sec" style="font-size: 0.74rem;"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--bg-alt); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.74rem; color: var(--text-subtle); line-height: 1.5;">
+          <strong style="color: var(--text-main);">Cara Membuat Webhook di Discord:</strong> Buka Discord &gt; Pengaturan Saluran / Edit Channel &gt; Tab <strong>Integrations</strong> &gt; Klik <strong>Webhooks</strong> &gt; <strong>New Webhook</strong> &gt; Salin <strong>Copy Webhook URL</strong> lalu tempelkan pada kolom di atas.
+        </div>
+      </div>
+    </div>
+
     <!-- Section 5: Master Kategori Kegiatan Harian NOC -->
     <div class="settings-card">
       <div class="settings-card-header">
@@ -740,6 +881,52 @@ function previewSelectedImage(input, targetId) {
     };
     reader.readAsDataURL(file);
   }
+}
+
+function testDiscordWebhook(channel) {
+  var urlInput = document.getElementById(channel === 'security' ? 'discord_webhook_security' : 'discord_webhook_noc');
+  var btn = document.getElementById(channel === 'security' ? 'btn_test_discord_sec' : 'btn_test_discord_noc');
+  var statusDiv = document.getElementById(channel === 'security' ? 'status_discord_sec' : 'status_discord_noc');
+
+  if (!urlInput || !btn || !statusDiv) return;
+
+  var webhookUrl = urlInput.value.trim();
+  if (!webhookUrl) {
+    statusDiv.innerHTML = '<span style="color: var(--status-nok, #ef4444); font-weight: 600;">Masukkan URL webhook terlebih dahulu.</span>';
+    urlInput.focus();
+    return;
+  }
+
+  var originalBtnHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Mengirim...';
+  statusDiv.innerHTML = '<span style="color: var(--text-subtle);">Menghubungi Discord...</span>';
+
+  var formData = new FormData();
+  formData.append('webhook_url', webhookUrl);
+  formData.append('channel_type', channel);
+
+  fetch('api/test_discord_webhook.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(res) {
+    return res.json();
+  })
+  .then(function(data) {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHtml;
+    if (data.success) {
+      statusDiv.innerHTML = '<span style="color: var(--status-ok, #10b981); font-weight: 600;">✓ Berhasil! Cek channel Discord Anda.</span>';
+    } else {
+      statusDiv.innerHTML = '<span style="color: var(--status-nok, #ef4444); font-weight: 600;">✗ ' + (data.message || 'Gagal mengirim pesan.') + '</span>';
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHtml;
+    statusDiv.innerHTML = '<span style="color: var(--status-nok, #ef4444); font-weight: 600;">✗ Gagal: ' + err.message + '</span>';
+  });
 }
 </script>
 

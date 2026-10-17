@@ -268,6 +268,17 @@ try {
 
     log_audit_event('DOCUMENT', 'DOCUMENT_UPLOAD', 'Unggah dokumen baru: ' . $title . ' (' . $origName . ', hemat ' . $savedPct . '%)', 'document', $newDocId);
 
+    // Kirim notifikasi berkas baru ke Discord Saluran Operasional NOC (khusus dokumen tim/berbagi)
+    if ($privacyType !== 'private') {
+        try {
+            require_once __DIR__ . '/../includes/discord.php';
+            $uploaderName = $currentUser['full_name'] ?? $currentUser['username'] ?? 'Anggota Tim';
+            discord_notify_document_upload($title, $category, $uploaderName, $privacyType);
+        } catch (Throwable $eDisc) {
+            error_log('Discord doc upload notification warning: ' . $eDisc->getMessage());
+        }
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Dokumen berhasil disimpan dan terkompresi (' . $savedPct . '% hemat ruang).',

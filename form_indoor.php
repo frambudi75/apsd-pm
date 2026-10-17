@@ -29,8 +29,8 @@ include __DIR__ . '/includes/header.php';
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
     <div>
       <span id="module_indoor_tag" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Modul PM Indoor</span>
-      <h2 id="module_indoor_title" style="font-size: 1.4rem; font-weight: 700; color: var(--text-main);">Daily Check List IBC Telkomsel (7 Halaman)</h2>
-      <p style="color: var(--text-subtle); font-size: 0.9rem;">Inspeksi ruang server domestik, perangkat transmisi, daya listrik, dan dokumentasi foto.</p>
+      <h2 id="module_indoor_title" class="module-page-title" style="font-weight: 700; color: var(--text-main); margin: 0 0 4px 0;">Daily Check List IBC Telkomsel (7 Halaman)</h2>
+      <p class="module-page-subtitle" style="color: var(--text-subtle); margin: 0;">Inspeksi ruang server domestik, perangkat transmisi, daya listrik, dan dokumentasi foto.</p>
     </div>
     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
       <span id="autosave_status" class="autosave-badge">💾 Auto-Save Siap</span>
@@ -443,11 +443,34 @@ include __DIR__ . '/includes/header.php';
   </form>
 
   <!-- Floating Live Photo Progress Tracker -->
-  <div id="form_progress_tracker" class="form-progress-tracker no-print">
-    <div class="progress-tracker-content">
+  <div id="form_progress_tracker" class="form-progress-tracker no-print" onclick="handleTrackerClick(event)">
+    <!-- Collapsed State Mini Pill -->
+    <div class="progress-tracker-mini">
+      <span class="progress-tracker-mini-icon">📷</span>
+      <span id="tracker_photo_mini_text">0 / 8 Foto (0%)</span>
+      <button type="button" class="btn-tracker-toggle" title="Perbesar Tracker" aria-label="Toggle Progress Tracker" onclick="toggleTrackerExpanded(event)">
+        ▲
+      </button>
+      <button type="button" class="btn-tracker-close" title="Tutup Tracker" aria-label="Tutup" onclick="closeTracker(event)">
+        &times;
+      </button>
+    </div>
+
+    <!-- Expanded State Body -->
+    <div class="progress-tracker-body">
       <div class="progress-tracker-header">
-        <span>Kelengkapan Foto PM</span>
-        <span id="tracker_photo_count" style="color: var(--primary);">0 / 8 Foto</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span>📷 Foto PM</span>
+          <span id="tracker_photo_count" style="color: var(--primary);">0 / 8 Foto</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <button type="button" class="btn-tracker-toggle" title="Kecilkan Tracker" aria-label="Minimize" onclick="toggleTrackerExpanded(event)">
+            ▼
+          </button>
+          <button type="button" class="btn-tracker-close" title="Tutup Tracker" aria-label="Tutup" onclick="closeTracker(event)">
+            &times;
+          </button>
+        </div>
       </div>
       <div class="progress-tracker-bar-bg">
         <div id="tracker_photo_bar" class="progress-tracker-bar-fill" style="width: 0%;"></div>
@@ -468,6 +491,25 @@ include __DIR__ . '/includes/header.php';
     if (window.DraftManager) {
       window.DraftManager.saveDraft(type);
       alert('✅ Draft tersimpan aman di perangkat! Anda dapat melanjutkan pengisian kapan saja.');
+    }
+  }
+
+  function toggleTrackerExpanded(e) {
+    if (e) e.stopPropagation();
+    const el = document.getElementById('form_progress_tracker');
+    if (el) el.classList.toggle('is-expanded');
+  }
+
+  function closeTracker(e) {
+    if (e) e.stopPropagation();
+    const el = document.getElementById('form_progress_tracker');
+    if (el) el.style.display = 'none';
+  }
+
+  function handleTrackerClick(e) {
+    const el = document.getElementById('form_progress_tracker');
+    if (el && !el.classList.contains('is-expanded') && window.innerWidth <= 768) {
+      el.classList.add('is-expanded');
     }
   }
 

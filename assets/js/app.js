@@ -330,11 +330,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
     const countEl = document.getElementById('tracker_photo_count');
+    const miniEl = document.getElementById('tracker_photo_mini_text');
     const barEl = document.getElementById('tracker_photo_bar');
     const pctEl = document.getElementById('tracker_photo_pct');
     const jumpBtn = document.getElementById('btn_tracker_jump');
 
     if (countEl) countEl.textContent = completed + ' / ' + total + ' Foto';
+    if (miniEl) miniEl.textContent = completed + ' / ' + total + ' Foto (' + pct + '%)';
     if (barEl) barEl.style.width = pct + '%';
     if (pctEl) pctEl.textContent = pct + '%';
 

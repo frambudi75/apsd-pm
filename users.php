@@ -174,7 +174,7 @@ include __DIR__ . '/includes/header.php';
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
           Sistem Hak Akses & Keamanan
         </div>
-        <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin: 0;">
+        <h2 class="page-header-title" style="font-weight: 800; color: var(--text-main); margin: 0;">
           Manajemen Pengguna (User Management)
         </h2>
         <p style="color: var(--text-subtle); font-size: 0.88rem; margin: 4px 0 0 0;">
@@ -322,6 +322,82 @@ include __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Cards Container for Screens <= 768px -->
+      <div class="mobile-cards-container" id="users_mobile_cards">
+        <?php foreach ($users as $idx => $u): ?>
+          <?php 
+            $canManage = can_manage_role($u['role']);
+            $isSelf = ($u['id'] == $currentUser['id']);
+            $roleLabel = ($u['role'] === 'superadmin') ? 'Super Admin' : (($u['role'] === 'admin') ? 'Admin' : 'User Biasa');
+            $roleClass = 'role-' . $u['role'];
+            $lastLoginFormatted = $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Belum pernah login';
+            $searchMeta = strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . $u['role']);
+            $initials = strtoupper(substr(trim($u['full_name'] ?: $u['username']), 0, 2));
+          ?>
+          <div class="mobile-user-card user-row" data-search="<?= htmlspecialchars($searchMeta) ?>" data-role="<?= htmlspecialchars($u['role']) ?>">
+            <div class="mobile-user-card-header">
+              <div class="mobile-user-info">
+                <div class="mobile-user-avatar <?= $roleClass ?>">
+                  <?= htmlspecialchars($initials) ?>
+                </div>
+                <div>
+                  <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span><?= htmlspecialchars($u['full_name']) ?></span>
+                    <?php if ($isSelf): ?>
+                      <span style="font-size: 0.7rem; background: var(--bg-alt); color: var(--text-subtle); padding: 2px 6px; border-radius: 4px;">(Anda)</span>
+                    <?php endif; ?>
+                  </div>
+                  <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 2px;">
+                    @<?= htmlspecialchars($u['username']) ?>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="user-role-pill <?= $roleClass ?>" style="font-size: 0.72rem;"><?= $roleLabel ?></span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 0.4rem 0.6rem; background: var(--bg-alt); border-radius: var(--radius-sm);">
+              <div>
+                <span style="color: var(--text-subtle);">Status: </span>
+                <?php if (!empty($u['is_active'])): ?>
+                  <span style="font-weight: 700; color: var(--status-ok);">Aktif</span>
+                <?php else: ?>
+                  <span style="font-weight: 700; color: var(--status-nok);">Non-Aktif</span>
+                <?php endif; ?>
+              </div>
+              <div style="color: var(--text-subtle); font-size: 0.74rem;">
+                Login: <?= $lastLoginFormatted ?>
+              </div>
+            </div>
+
+            <?php if ($canManage): ?>
+              <div class="mobile-user-card-actions">
+                <button type="button" class="btn btn-sm btn-secondary" onclick='openResetModal(<?= json_encode($u) ?>)' style="flex: 1; min-height: 40px; font-weight: 700;">
+                  🔑 Reset Pwd
+                </button>
+                <button type="button" class="btn btn-sm btn-primary-soft" onclick='openEditModal(<?= json_encode($u) ?>)' style="flex: 1; min-height: 40px; font-weight: 700;">
+                  ✏️ Edit
+                </button>
+                <?php if (!$isSelf): ?>
+                  <form method="POST" action="" style="display: contents;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna <?= htmlspecialchars($u['full_name']) ?>?');">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" style="min-width: 44px; min-height: 40px;" title="Hapus Pengguna">
+                      🗑️
+                    </button>
+                  </form>
+                <?php endif; ?>
+              </div>
+            <?php else: ?>
+              <div style="font-size: 0.74rem; color: var(--text-subtle); font-style: italic; text-align: center; padding-top: 0.25rem;">
+                Hanya dapat dikelola oleh Superadmin
+              </div>
+            <?php endif; ?>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
   </div>

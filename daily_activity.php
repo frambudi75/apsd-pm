@@ -243,7 +243,7 @@ include __DIR__ . '/includes/header.php';
         <span>/</span>
         <span style="color: var(--primary); font-weight: 600;">Daily Activity NOC</span>
       </div>
-      <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
+      <h2 class="daily-page-title" style="font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
         <?= app_icon('clock', 22, 'text-primary') ?>
         <span>Logbook Kegiatan Harian Shift</span>
       </h2>
@@ -339,7 +339,7 @@ include __DIR__ . '/includes/header.php';
               </div>
               <div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main);">
+                  <h4 class="daily-shift-title" style="margin: 0; color: var(--text-main);">
                     <?= htmlspecialchars($shiftInfo['name']) ?> (<?= htmlspecialchars($shiftInfo['time']) ?>)
                   </h4>
                   <span class="shift-badge <?= $shiftInfo['badge_class'] ?>">
@@ -424,7 +424,7 @@ include __DIR__ . '/includes/header.php';
               </div>
               <div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-main);">
+                  <h4 class="daily-shift-title" style="margin: 0; color: var(--text-main);">
                     <?= htmlspecialchars($shiftInfo['name']) ?> (<?= htmlspecialchars($shiftInfo['time']) ?>)
                   </h4>
                   <span class="sla-status-pill sla-warning" style="display: inline-flex; align-items: center; gap: 4px;">
@@ -461,7 +461,7 @@ include __DIR__ . '/includes/header.php';
 
       <!-- Activities Timeline Section -->
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; margin-top: 1.25rem;">
-        <h5 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0;">
+        <h5 class="daily-section-title" style="color: var(--text-main); margin: 0;">
           Daftar Kegiatan Shift Ini (<?= count($activities) ?>)
         </h5>
         <span style="font-size: 0.78rem; color: var(--text-subtle);">Urut berdasarkan waktu kegiatan</span>
@@ -522,7 +522,7 @@ include __DIR__ . '/includes/header.php';
                       </span>
                     <?php endif; ?>
                   </div>
-                  <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                  <h4 class="activity-item-title" style="color: var(--text-main); margin: 0;">
                     <?= htmlspecialchars($act['title']) ?>
                   </h4>
                 </div>
@@ -542,7 +542,7 @@ include __DIR__ . '/includes/header.php';
               </div>
 
               <!-- Activity Detail Description -->
-              <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-top: 0.5rem; white-space: pre-line;">
+              <div class="activity-item-desc" style="color: var(--text-muted); margin-top: 0.5rem; white-space: pre-line;">
                 <?= nl2br(htmlspecialchars($act['description'])) ?>
               </div>
 

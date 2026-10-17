@@ -768,6 +768,82 @@ body {
   border-radius: var(--radius-sm);
 }
 
+/* Mobile User Card for User Management */
+.mobile-user-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mobile-user-card:active {
+  background: var(--bg-alt);
+}
+
+.mobile-user-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.mobile-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-user-avatar.role-superadmin {
+  background: #f3e8ff;
+  color: #6d28d9;
+}
+
+.mobile-user-avatar.role-admin {
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.mobile-user-avatar.role-user {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.mobile-user-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+}
+
+.mobile-user-card-actions .btn {
+  flex: 1;
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .mobile-card-title {
   font-size: 1.05rem;
   font-weight: 700;
@@ -957,6 +1033,100 @@ body {
     background: var(--primary);
     color: #ffffff;
     border-color: var(--primary);
+  }
+
+  /* Mobile Typography Scaling for Daily Activity, PM Forms, and General Pages */
+  .module-page-title,
+  .daily-page-title,
+  .page-header-title {
+    font-size: 1.15rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .module-page-subtitle {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .card-title {
+    font-size: 0.94rem !important;
+  }
+
+  .checklist-section-header {
+    font-size: 0.82rem !important;
+    padding: 0.45rem 0.65rem !important;
+  }
+
+  .checklist-table th,
+  .checklist-table td {
+    padding: 0.45rem 0.5rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .checklist-table td strong {
+    font-size: 0.82rem !important;
+  }
+
+  /* Daily Activity Mobile Typography */
+  .daily-shift-card {
+    padding: 0.85rem !important;
+  }
+
+  .daily-shift-title {
+    font-size: 0.98rem !important;
+    font-weight: 800 !important;
+  }
+
+  .daily-section-title {
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+  }
+
+  .activity-card {
+    padding: 0.75rem 0.85rem !important;
+  }
+
+  .activity-item-title {
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+  }
+
+  .activity-item-desc {
+    font-size: 0.82rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .activity-time-pill {
+    font-size: 0.7rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .cat-badge {
+    font-size: 0.68rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .stat-number {
+    font-size: 1.35rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.65rem !important;
+  }
+
+  /* Photo Slot Card Mobile Typography */
+  .photo-slot-card {
+    padding: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .photo-slot-header h5 {
+    font-size: 0.82rem !important;
+  }
+
+  .photo-code-badge {
+    font-size: 0.68rem !important;
+    padding: 0.15rem 0.4rem !important;
   }
 }
 
@@ -2577,23 +2747,92 @@ body {
   border-radius: var(--radius-lg);
   padding: 0.65rem 1rem;
   max-width: 380px;
-  width: calc(100% - 2.5rem);
   backdrop-filter: blur(8px);
   animation: slideUpFade 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@media (max-width: 768px) {
-  .form-progress-tracker {
-    bottom: 4.5rem;
-    right: 0.75rem;
-    left: 0.75rem;
-    width: auto;
-  }
+
+.progress-tracker-mini {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  white-space: nowrap;
 }
-.progress-tracker-content {
+
+.progress-tracker-mini-icon {
+  font-size: 0.85rem;
+}
+
+.progress-tracker-body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
+
+.btn-tracker-toggle,
+.btn-tracker-close {
+  background: none;
+  border: none;
+  color: var(--text-subtle);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.btn-tracker-close {
+  font-size: 1.15rem;
+}
+
+.btn-tracker-toggle:hover,
+.btn-tracker-close:hover {
+  color: var(--text-main);
+  background: var(--bg-alt);
+}
+
+@media (max-width: 768px) {
+  .form-progress-tracker {
+    bottom: 4.8rem;
+    right: 0.75rem;
+    left: auto;
+    width: auto;
+    max-width: 280px;
+    padding: 0.4rem 0.75rem;
+  }
+
+  /* Default on mobile: compact pill mode so it never blocks the form */
+  .form-progress-tracker:not(.is-expanded) {
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  .form-progress-tracker:not(.is-expanded) .progress-tracker-body {
+    display: none;
+  }
+
+  .form-progress-tracker:not(.is-expanded) .progress-tracker-mini {
+    display: inline-flex;
+  }
+
+  .form-progress-tracker.is-expanded .progress-tracker-mini {
+    display: none;
+  }
+
+  .form-progress-tracker.is-expanded .progress-tracker-body {
+    display: flex;
+  }
+}
+
 .progress-tracker-header {
   display: flex;
   align-items: center;

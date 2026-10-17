@@ -880,6 +880,12 @@ function seed_default_settings_if_empty(PDO $pdo) {
             ['app_subtitle', 'Sistem PM & NOC', 'Sub-judul / Tagline Aplikasi', 'branding'],
             ['app_logo_path', 'assets/img/logo_ias.png?v=3', 'File Logo Aplikasi (Sidebar & Header)', 'branding'],
             ['report_left_logo_path', 'assets/img/logo_ias.png', 'File Logo PDF Laporan (Kop Sebelah Kiri)', 'branding'],
+            ['discord_webhook_noc', '', 'Webhook URL Saluran NOC', 'notification'],
+            ['discord_webhook_security', '', 'Webhook URL Saluran Keamanan', 'notification'],
+            ['discord_notify_shift_complete', '1', 'Notif Discord Shift Selesai', 'notification'],
+            ['discord_notify_doc_upload', '1', 'Notif Discord Upload Dokumen', 'notification'],
+            ['discord_notify_system_optimize', '1', 'Notif Discord Auto Optimise', 'notification'],
+            ['discord_notify_login_failed', '1', 'Notif Discord Login Gagal', 'notification'],
         ];
 
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -944,12 +950,27 @@ function get_shift_info(string $type): array {
 }
 
 /**
+ * Global memory cache for system settings
+ */
+$GLOBALS['_SYSTEM_SETTINGS_CACHE'] = [];
+
+/**
+ * Clear or invalidate system settings cache
+ */
+function clear_system_setting_cache(?string $key = null): void {
+    if ($key === null) {
+        $GLOBALS['_SYSTEM_SETTINGS_CACHE'] = [];
+    } else {
+        unset($GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key]);
+    }
+}
+
+/**
  * Get system setting value by key with optional fallback
  */
-function get_system_setting(string $key, string $default = ''): string {
-    static $cache = [];
-    if (isset($cache[$key])) {
-        return $cache[$key];
+function get_system_setting(string $key, string $default = '', bool $forceRefresh = false): string {
+    if (!$forceRefresh && isset($GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key])) {
+        return $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key];
     }
     try {
         $pdo = get_db_connection();
@@ -957,28 +978,31 @@ function get_system_setting(string $key, string $default = ''): string {
         $stmt->execute([$key]);
         $val = $stmt->fetchColumn();
         if ($val !== false && $val !== null && trim((string)$val) !== '') {
-            $cache[$key] = (string)$val;
-            return $cache[$key];
+            $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key] = (string)$val;
+            return $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key];
         }
     } catch (Exception $e) {}
-    $cache[$key] = $default;
+    $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key] = $default;
     return $default;
 }
 
 /**
- * Update or insert system setting
+ * Update or insert system setting with instant cache update
  */
 function set_system_setting(string $key, string $value): bool {
+    // Invalidate and update global cache immediately
+    $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key] = $value;
     try {
         $pdo = get_db_connection();
-        $stmt = $pdo->prepare("
-            INSERT INTO system_settings (setting_key, setting_value, updated_at) 
-            VALUES (?, ?, datetime('now', 'localtime'))
-            ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now', 'localtime')
-        ");
-        try {
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->prepare("
+                INSERT INTO system_settings (setting_key, setting_value, updated_at) 
+                VALUES (?, ?, datetime('now', 'localtime'))
+                ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now', 'localtime')
+            ");
             return $stmt->execute([$key, $value]);
-        } catch (Exception $ex) {
+        } else {
             $stmt = $pdo->prepare("
                 INSERT INTO system_settings (setting_key, setting_value, updated_at)
                 VALUES (?, ?, NOW())
@@ -989,6 +1013,46 @@ function set_system_setting(string $key, string $value): bool {
     } catch (Exception $e) {
         return false;
     }
+}
+
+/**
+ * Get effective branding logo for reports, PDFs, and print layouts
+ * Prioritizes custom application logo uploaded from settings
+ */
+function get_effective_report_logo(): string {
+    $appLogo = trim(get_system_setting('app_logo_path', ''));
+    $appLogoClean = strtok($appLogo, '?');
+    if (!empty($appLogoClean) && strpos($appLogoClean, 'assets/img/logo_ias.png') === false) {
+        $fullPath = __DIR__ . '/../' . ltrim($appLogoClean, '/\\');
+        if (file_exists($fullPath)) {
+            return $appLogoClean;
+        }
+    }
+
+    $reportLogo = trim(get_system_setting('report_left_logo_path', ''));
+    $reportLogoClean = strtok($reportLogo, '?');
+    if (!empty($reportLogoClean) && strpos($reportLogoClean, 'assets/img/logo_ias.png') === false) {
+        $fullPath = __DIR__ . '/../' . ltrim($reportLogoClean, '/\\');
+        if (file_exists($fullPath)) {
+            return $reportLogoClean;
+        }
+    }
+
+    if (!empty($appLogoClean)) {
+        $fullPath = __DIR__ . '/../' . ltrim($appLogoClean, '/\\');
+        if (file_exists($fullPath)) {
+            return $appLogoClean;
+        }
+    }
+
+    if (!empty($reportLogoClean)) {
+        $fullPath = __DIR__ . '/../' . ltrim($reportLogoClean, '/\\');
+        if (file_exists($fullPath)) {
+            return $reportLogoClean;
+        }
+    }
+
+    return 'assets/img/logo_ias.png';
 }
 
 

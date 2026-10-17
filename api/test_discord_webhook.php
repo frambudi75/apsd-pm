@@ -36,8 +36,10 @@ if (!filter_var($webhookUrl, FILTER_VALIDATE_URL)) {
     exit;
 }
 
-$appTitle = get_system_setting('app_title', 'IASS SBU ICT KNO');
+$appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+$appSubtitle = get_system_setting('app_subtitle', 'Sistem PM & NOC');
 $currentUser = current_user();
+$shouldSave = isset($_POST['save']) ? ($_POST['save'] === '1' || $_POST['save'] === 'true') : true;
 
 if ($channelType === 'security') {
     $payload = [
@@ -65,7 +67,7 @@ if ($channelType === 'security') {
                     ]
                 ],
                 'footer' => [
-                    'text' => 'PT Angkasa Pura Sarana Digital • Sistem PM & NOC'
+                    'text' => $appTitle . ' • ' . $appSubtitle
                 ],
                 'timestamp' => date('c')
             ]
@@ -97,7 +99,7 @@ if ($channelType === 'security') {
                     ]
                 ],
                 'footer' => [
-                    'text' => 'PT Angkasa Pura Sarana Digital • Sistem PM & NOC'
+                    'text' => $appTitle . ' • ' . $appSubtitle
                 ],
                 'timestamp' => date('c')
             ]
@@ -108,9 +110,16 @@ if ($channelType === 'security') {
 $res = send_discord_payload($webhookUrl, $payload);
 
 if (!empty($res['success'])) {
+    // Automatically persist the valid webhook URL to system_settings so it never gets lost
+    if ($shouldSave) {
+        $settingKey = ($channelType === 'security') ? 'discord_webhook_security' : 'discord_webhook_noc';
+        set_system_setting($settingKey, $webhookUrl);
+    }
+
     echo json_encode([
         'success' => true,
-        'message' => 'Pesan uji coba berhasil terkirim ke Discord! Silakan periksa channel Anda.'
+        'saved' => $shouldSave,
+        'message' => 'Pesan uji coba berhasil terkirim ke Discord dan konfigurasi webhook otomatis tersimpan di sistem!'
     ]);
 } else {
     echo json_encode([

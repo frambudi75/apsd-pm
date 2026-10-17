@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_system_setting('activity_categories', $activityCategories);
         set_system_setting('document_categories', $documentCategories);
 
-        // Discord Dual-Channel Settings
+        // Discord Dual-Channel Settings (Safe update: don't wipe out unless explicitly cleared)
         $discordNoc = trim($_POST['discord_webhook_noc'] ?? '');
         $discordSec = trim($_POST['discord_webhook_security'] ?? '');
         $notifyShift = isset($_POST['discord_notify_shift_complete']) ? '1' : '0';
@@ -57,8 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notifyOpt = isset($_POST['discord_notify_system_optimize']) ? '1' : '0';
         $notifyLogin = isset($_POST['discord_notify_login_failed']) ? '1' : '0';
 
-        set_system_setting('discord_webhook_noc', $discordNoc);
-        set_system_setting('discord_webhook_security', $discordSec);
+        if (!empty($_POST['clear_discord_webhook_noc'])) {
+            set_system_setting('discord_webhook_noc', '');
+        } elseif ($discordNoc !== '') {
+            set_system_setting('discord_webhook_noc', $discordNoc);
+        }
+
+        if (!empty($_POST['clear_discord_webhook_security'])) {
+            set_system_setting('discord_webhook_security', '');
+        } elseif ($discordSec !== '') {
+            set_system_setting('discord_webhook_security', $discordSec);
+        }
+
         set_system_setting('discord_notify_shift_complete', $notifyShift);
         set_system_setting('discord_notify_doc_upload', $notifyDoc);
         set_system_setting('discord_notify_system_optimize', $notifyOpt);
@@ -148,6 +158,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     @chmod($dest, 0666);
                     $cropTransparency($dest);
                     set_system_setting('app_logo_path', 'uploads/branding/' . $filename);
+
+                    // Otomatis sinkronkan juga logo kop cetak jika belum di-upload terpisah
+                    if (empty($_FILES['report_left_logo_file']['name'])) {
+                        set_system_setting('report_left_logo_path', 'uploads/branding/' . $filename);
+                    }
                 }
             } else {
                 throw new Exception('Format file logo aplikasi tidak valid. Gunakan format PNG, JPG, SVG, atau WebP.');
@@ -617,6 +632,17 @@ include __DIR__ . '/includes/header.php';
                   <span class="settings-input-icon"><?= app_icon('globe', 16) ?></span>
                   <input type="url" name="discord_webhook_noc" id="discord_webhook_noc" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDiscordNoc) ?>" placeholder="https://discord.com/api/webhooks/...">
                 </div>
+                <?php if (!empty($curDiscordNoc)): ?>
+                  <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.72rem; color: var(--status-ok, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan di server
+                    </span>
+                    <button type="button" class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="clearWebhook('noc')">
+                      Hapus Webhook
+                    </button>
+                    <input type="hidden" name="clear_discord_webhook_noc" id="clear_discord_webhook_noc" value="0">
+                  </div>
+                <?php endif; ?>
               </div>
 
               <!-- Event Toggles -->
@@ -664,6 +690,17 @@ include __DIR__ . '/includes/header.php';
                   <span class="settings-input-icon"><?= app_icon('globe', 16) ?></span>
                   <input type="url" name="discord_webhook_security" id="discord_webhook_security" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDiscordSec) ?>" placeholder="https://discord.com/api/webhooks/...">
                 </div>
+                <?php if (!empty($curDiscordSec)): ?>
+                  <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.72rem; color: var(--status-ok, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan di server
+                    </span>
+                    <button type="button" class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="clearWebhook('security')">
+                      Hapus Webhook
+                    </button>
+                    <input type="hidden" name="clear_discord_webhook_security" id="clear_discord_webhook_security" value="0">
+                  </div>
+                <?php endif; ?>
               </div>
 
               <!-- Event Toggles -->
@@ -905,6 +942,7 @@ function testDiscordWebhook(channel) {
   var formData = new FormData();
   formData.append('webhook_url', webhookUrl);
   formData.append('channel_type', channel);
+  formData.append('save', '1');
 
   fetch('api/test_discord_webhook.php', {
     method: 'POST',
@@ -917,7 +955,7 @@ function testDiscordWebhook(channel) {
     btn.disabled = false;
     btn.innerHTML = originalBtnHtml;
     if (data.success) {
-      statusDiv.innerHTML = '<span style="color: var(--status-ok, #10b981); font-weight: 600;">✓ Berhasil! Cek channel Discord Anda.</span>';
+      statusDiv.innerHTML = '<span style="color: var(--status-ok, #10b981); font-weight: 600;">✓ Berhasil &amp; Webhook Tersimpan! Cek channel Discord Anda.</span>';
     } else {
       statusDiv.innerHTML = '<span style="color: var(--status-nok, #ef4444); font-weight: 600;">✗ ' + (data.message || 'Gagal mengirim pesan.') + '</span>';
     }
@@ -927,6 +965,16 @@ function testDiscordWebhook(channel) {
     btn.innerHTML = originalBtnHtml;
     statusDiv.innerHTML = '<span style="color: var(--status-nok, #ef4444); font-weight: 600;">✗ Gagal: ' + err.message + '</span>';
   });
+}
+
+function clearWebhook(channel) {
+  if (!confirm('Apakah Anda yakin ingin menghapus konfigurasi webhook Discord ini?')) return;
+  var input = document.getElementById(channel === 'security' ? 'discord_webhook_security' : 'discord_webhook_noc');
+  var clearFlag = document.getElementById(channel === 'security' ? 'clear_discord_webhook_security' : 'clear_discord_webhook_noc');
+  if (input) input.value = '';
+  if (clearFlag) clearFlag.value = '1';
+  var statusDiv = document.getElementById(channel === 'security' ? 'status_discord_sec' : 'status_discord_noc');
+  if (statusDiv) statusDiv.innerHTML = '<span style="color: var(--text-subtle);">Webhook akan dihapus saat form disimpan.</span>';
 }
 </script>
 

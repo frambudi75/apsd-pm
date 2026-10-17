@@ -361,7 +361,7 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
     <table class="doc-header-table">
       <tr>
         <td style="width: 75px;">
-          <img src="<?= htmlspecialchars(get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png')) ?>" alt="Logo Kop" style="height: 42px; object-fit: contain;">
+          <img src="<?= htmlspecialchars(get_effective_report_logo()) ?>" alt="Logo Kop" style="height: 42px; object-fit: contain;">
         </td>
         <td style="padding-left: 10px;">
           <div class="doc-title-main">Laporan Pekerjaan Daily Unit SBU ICT IASS</div>

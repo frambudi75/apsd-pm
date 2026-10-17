@@ -470,7 +470,7 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     <table class="doc-header-table">
       <tr>
         <td style="width: 80px;">
-          <img src="<?= htmlspecialchars(get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png')) ?>" alt="Logo Kop" style="height: 48px; object-fit: contain;">
+          <img src="<?= htmlspecialchars(get_effective_report_logo()) ?>" alt="Logo Kop" style="height: 48px; object-fit: contain;">
         </td>
         <td style="padding-left: 12px;">
           <div class="doc-title-main"><?= htmlspecialchars(get_system_setting('company_name', 'IASS SBU ICT KNO')) ?></div>

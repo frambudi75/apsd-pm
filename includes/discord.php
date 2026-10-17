@@ -50,7 +50,7 @@ function send_discord_payload(string $webhookUrl, array $payload, ?string $fileP
 
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'User-Agent: APSD-PM-NOC-System/2.0'
+                'User-Agent: PM-NOC-System/2.0'
             ]);
         } else {
             // Standard JSON payload
@@ -58,7 +58,7 @@ function send_discord_payload(string $webhookUrl, array $payload, ?string $fileP
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
-                'User-Agent: APSD-PM-NOC-System/2.0'
+                'User-Agent: PM-NOC-System/2.0'
             ]);
         }
 
@@ -93,7 +93,7 @@ function send_discord_notification(string $channelType, array $embedData, ?strin
             return false;
         }
 
-        $appTitle = get_system_setting('app_title', 'IASS SBU ICT KNO');
+        $appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
 
         $payload = [
             'username' => $appTitle . ($channelType === 'security' ? ' [Security]' : ' [NOC Bot]'),
@@ -279,6 +279,9 @@ function discord_notify_shift_complete(array $shift, array $activities = [], int
         ];
     }
 
+    $appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+    $appSubtitle = get_system_setting('app_subtitle', 'Sistem PM & NOC');
+
     $embed = [
         'title' => '📋 Laporan Shift Selesai & Terkunci - Shift ' . $shiftType,
         'description' => 'Sesi kegiatan harian NOC telah diselesaikan dan dikunci secara resmi. Berkas PDF laporan resmi dan ringkasan handover shift terlampir.',
@@ -286,7 +289,7 @@ function discord_notify_shift_complete(array $shift, array $activities = [], int
         'color' => 0x008080, // Teal
         'fields' => $fields,
         'footer' => [
-            'text' => 'PT Angkasa Pura Sarana Digital • Sistem PM & NOC'
+            'text' => $appTitle . ' • ' . $appSubtitle
         ],
         'timestamp' => date('c')
     ];
@@ -334,6 +337,8 @@ function discord_notify_system_optimize(array $stats, float $executionTimeMs): b
         ]
     ];
 
+    $appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+
     $embed = [
         'title' => '⚙️ Auto-Optimise Sistem Selesai Dijalankan',
         'description' => 'Defragmentasi basis data, pemangkasan WAL log, dan pembersihan file temporary berhasil diselesaikan.',
@@ -341,7 +346,7 @@ function discord_notify_system_optimize(array $stats, float $executionTimeMs): b
         'color' => 0x059669, // Emerald
         'fields' => $fields,
         'footer' => [
-            'text' => 'IASS SBU ICT KNO • System Maintenance'
+            'text' => $appTitle . ' • System Maintenance'
         ],
         'timestamp' => date('c')
     ];
@@ -385,6 +390,8 @@ function discord_notify_security_alert(string $event, string $username, string $
         ];
     }
 
+    $appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+
     $embed = [
         'title' => '⚠️ Peringatan Keamanan Sistem (Security Alert)',
         'description' => 'Terdeteksi upaya otentikasi mencurigakan atau peringatan hak akses pada sistem.',
@@ -392,7 +399,7 @@ function discord_notify_security_alert(string $event, string $username, string $
         'color' => 0xDC2626, // Red
         'fields' => $fields,
         'footer' => [
-            'text' => 'IASS SBU ICT KNO • Security & Audit Trail'
+            'text' => $appTitle . ' • Security & Audit Trail'
         ],
         'timestamp' => date('c')
     ];
@@ -438,6 +445,8 @@ function discord_notify_document_upload(string $title, string $category, string 
         ]
     ];
 
+    $appTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+
     $embed = [
         'title' => '📁 Berkas Baru Ditambahkan ke Brankas Dokumen',
         'description' => 'Dokumen baru telah diunggah dan dapat diakses oleh anggota tim yang memiliki wewenang.',
@@ -445,7 +454,7 @@ function discord_notify_document_upload(string $title, string $category, string 
         'color' => 0x0284C7, // Blue
         'fields' => $fields,
         'footer' => [
-            'text' => 'PT Angkasa Pura Sarana Digital • Document Vault'
+            'text' => $appTitle . ' • Brankas Dokumen'
         ],
         'timestamp' => date('c')
     ];

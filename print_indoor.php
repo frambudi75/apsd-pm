@@ -48,10 +48,7 @@ $dateMonthYear = date('d F Y', strtotime($report['report_date']));
 $rightLogoPath = $report['custom_logo_path'] ?? 'assets/img/logo_telkomsel.png';
 $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_exists(__DIR__ . '/' . $rightLogoPath));
 
-$leftLogoPath = get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png');
-if (!file_exists(__DIR__ . '/' . $leftLogoPath)) {
-    $leftLogoPath = 'assets/img/logo_ias.png';
-}
+$leftLogoPath = get_effective_report_logo();
 
 // Compact Mode: Only print filled photos, skipping empty N/A slots
 $isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');

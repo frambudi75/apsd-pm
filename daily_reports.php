@@ -526,6 +526,12 @@ include __DIR__ . '/includes/header.php';
                         <?= app_icon('download', 12) ?>
                         <span>Unduh</span>
                       </a>
+                      <?php if (has_role('superadmin')): ?>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteReportShift(<?= (int)$s['id'] ?>, '<?= htmlspecialchars(addslashes($tech)) ?>', '<?= date('d/m/Y', strtotime($s['shift_date'])) ?>', this)" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
+                          <?= app_icon('trash', 12) ?>
+                          <span>Hapus</span>
+                        </button>
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
@@ -819,6 +825,42 @@ include __DIR__ . '/includes/header.php';
   <?php endif; ?>
 
 </div>
+
+<script>
+function deleteReportShift(shiftId, tech, shiftDate, btn) {
+  var msg = 'PERINGATAN SUPERADMIN:\nApakah Anda yakin ingin menghapus laporan sesi shift teknisi ' + tech + ' tanggal ' + shiftDate + '?\n\nSemua data kegiatan dan dokumentasi foto di dalamnya akan dihapus permanen.';
+  if (!confirm(msg)) {
+    return;
+  }
+  btn.disabled = true;
+  var fd = new FormData();
+  fd.append('shift_id', shiftId);
+
+  fetch('api/delete_daily_shift.php', {
+    method: 'POST',
+    body: fd
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      alert(data.message);
+      var tr = btn.closest('tr');
+      if (tr) {
+        tr.remove();
+      } else {
+        window.location.reload();
+      }
+    } else {
+      btn.disabled = false;
+      alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    alert('Error: ' + err.message);
+  });
+}
+</script>
 
 <?php
 include __DIR__ . '/includes/footer.php';

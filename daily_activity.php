@@ -399,6 +399,12 @@ include __DIR__ . '/includes/header.php';
                   <span>Shift Terkunci</span>
                 </span>
               <?php endif; ?>
+              <?php if (has_role('superadmin')): ?>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteCurrentShift(<?= (int)$currentShift['id'] ?>, '<?= htmlspecialchars(addslashes($shiftInfo['name'])) ?>', '<?= date('d/m/Y', strtotime($filterDate)) ?>')" style="display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
+                  <?= app_icon('trash', 13) ?>
+                  <span>Hapus Laporan</span>
+                </button>
+              <?php endif; ?>
             </div>
           </div>
 
@@ -521,8 +527,13 @@ include __DIR__ . '/includes/header.php';
                   </h4>
                 </div>
 
-                <!-- Delete Action (if shift active and permitted) -->
-                <?php if ((!$currentShift || $currentShift['status'] === 'active') && ($isAdmin || (int)$act['user_id'] === $userId)): ?>
+                <!-- Delete Action (if shift active and permitted, or superadmin anytime) -->
+                <?php 
+                $canDeleteActivity = (
+                    ($currentShift && $currentShift['status'] === 'active' && ($isAdmin || (int)$act['user_id'] === $userId)) ||
+                    has_role('superadmin')
+                );
+                if ($canDeleteActivity): ?>
                   <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteActivity(<?= (int)$act['id'] ?>)" title="Hapus Kegiatan" style="padding: 2px 8px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
                     <?= app_icon('trash', 12) ?>
                     <span>Hapus</span>
@@ -1489,6 +1500,33 @@ function deleteActivity(actId) {
       var card = document.getElementById('act_card_' + actId);
       if (card) card.remove();
       alert(data.message);
+    } else {
+      alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+    }
+  })
+  .catch(function(err) {
+    alert('Error: ' + err.message);
+  });
+}
+
+// Delete Entire Shift (Superadmin Only)
+function deleteCurrentShift(shiftId, shiftName, shiftDate) {
+  var msg = 'PERINGATAN SUPERADMIN:\nApakah Anda yakin ingin MENGHAPUS seluruh laporan shift ' + shiftName + ' (' + shiftDate + ')?\n\nSemua kegiatan dan foto dokumentasi pada sesi shift ini akan dihapus permanen.';
+  if (!confirm(msg)) {
+    return;
+  }
+  var fd = new FormData();
+  fd.append('shift_id', shiftId);
+
+  fetch('api/delete_daily_shift.php', {
+    method: 'POST',
+    body: fd
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      alert(data.message);
+      window.location.href = 'daily_activity';
     } else {
       alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
     }

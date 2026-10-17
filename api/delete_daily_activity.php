@@ -50,7 +50,7 @@ try {
     }
 
     if ($act['shift_status'] === 'completed' && !has_role(['superadmin', 'admin'])) {
-        echo json_encode(['success' => false, 'message' => 'Shift telah dikunci. Kegiatan tidak dapat dihapus.']);
+        echo json_encode(['success' => false, 'message' => 'Shift telah dikunci. Silakan hubungi Superadmin jika ada koreksi atau permintaan hapus kegiatan.']);
         exit;
     }
 

@@ -158,13 +158,9 @@ include __DIR__ . '/includes/header.php';
             <td style="padding: 8px 0; color: var(--text-subtle);">Supervisor / Leader</td>
             <td style="padding: 8px 0; font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($sysLeader) ?></td>
           </tr>
-          <tr style="border-bottom: 1px solid var(--border);">
+          <tr>
             <td style="padding: 8px 0; color: var(--text-subtle);">Jabatan Leader</td>
             <td style="padding: 8px 0; font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($sysLeaderRole) ?></td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: var(--text-subtle);">Vendor Mitra O&amp;M</td>
-            <td style="padding: 8px 0; font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($sysVendor) ?></td>
           </tr>
         </table>
       </div>
@@ -213,6 +209,44 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
+  </div>
+
+  <!-- Kotak Khusus Informasi Developer / Pembuat Aplikasi -->
+  <div class="settings-card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary); background: linear-gradient(135deg, rgba(0, 128, 128, 0.04) 0%, rgba(2, 132, 199, 0.03) 100%), var(--bg-surface);">
+    <div class="settings-card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: var(--primary);"><?= app_icon('user', 18) ?></span>
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">Pengembang Aplikasi</h4>
+      </div>
+      <span class="badge" style="background: rgba(0, 128, 128, 0.12); color: var(--primary); font-size: 0.72rem; font-weight: 700;">Developer</span>
+    </div>
+    <div class="settings-card-body" style="padding: 1.5rem;">
+      <div style="display: flex; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;">
+        <!-- Avatar Badge -->
+        <div style="width: 54px; height: 54px; border-radius: 14px; background: linear-gradient(135deg, #008080 0%, #0284c7 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; box-shadow: 0 4px 14px rgba(0, 128, 128, 0.25); flex-shrink: 0;">
+          HF
+        </div>
+
+        <div style="flex: 1; min-width: 240px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Habib Frambudi</h3>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 0.7rem; font-weight: 700;">Pembuat Aplikasi</span>
+          </div>
+
+          <p style="font-size: 0.82rem; color: var(--text-subtle); margin: 0 0 1rem 0; line-height: 1.5; max-width: 600px;">
+            Pembuat dan pengembang aplikasi Sistem Preventive Maintenance &amp; Logbook NOC.
+          </p>
+
+          <div>
+            <a href="https://github.com/frambudi75" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 0.45rem 1rem; text-decoration: none;" title="Buka Profil GitHub Habib Frambudi">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span>GitHub @frambudi75</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modul & Fitur Unggulan Sistem -->

@@ -889,7 +889,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // 7. PWA Installation Prompt & Offline Handler
-  let deferredPrompt = null;
   const pwaInstallBanner = document.getElementById('pwa_install_banner');
   const btnInstallPwa = document.getElementById('btn_install_pwa');
   const btnDismissPwa = document.getElementById('btn_dismiss_pwa');
@@ -908,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
-    deferredPrompt = e;
+    window.deferredPrompt = e;
 
     // Tampilkan tombol pasang di sidebar dan topbar jika belum standalone
     if (!isAppStandalone) {
@@ -929,14 +928,15 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   window.triggerPwaInstall = async function () {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
       try {
-        const { outcome } = await deferredPrompt.userChoice;
+        const { outcome } = await window.deferredPrompt.userChoice;
         console.log('PWA installation choice:', outcome);
         if (outcome === 'accepted') {
-          deferredPrompt = null;
+          window.deferredPrompt = null;
           if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
+          if (window.closePwaModal) window.closePwaModal();
         }
       } catch (errChoice) {}
       return;
@@ -944,7 +944,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Jika prompt belum siap atau perangkat khusus, buka modal panduan
     const modalEl = document.getElementById('pwa_install_modal');
-    if (!modalEl) return;
+    if (!modalEl) {
+      alert('Panduan: Buka menu peramban Anda (titik tiga) lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".');
+      return;
+    }
 
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
@@ -957,10 +960,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const stateDesktop = document.getElementById('pwa_state_desktop');
 
     if (stateInstalled) stateInstalled.style.display = isStandalone ? 'block' : 'none';
-    if (statePromptReady) statePromptReady.style.display = (!isStandalone && deferredPrompt) ? 'block' : 'none';
+    if (statePromptReady) statePromptReady.style.display = (!isStandalone && window.deferredPrompt) ? 'block' : 'none';
     if (stateIos) stateIos.style.display = (!isStandalone && isIos) ? 'block' : 'none';
     if (stateInsecure) stateInsecure.style.display = (!isStandalone && !isIos && !isSecure) ? 'block' : 'none';
-    if (stateDesktop) stateDesktop.style.display = (!isStandalone && !isIos && isSecure && !deferredPrompt) ? 'block' : 'none';
+    if (stateDesktop) stateDesktop.style.display = (!isStandalone && !isIos) ? 'block' : 'none';
 
     modalEl.style.display = 'flex';
   };
@@ -971,17 +974,19 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   window.executeDeferredPrompt = async function () {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
       try {
-        const { outcome } = await deferredPrompt.userChoice;
+        const { outcome } = await window.deferredPrompt.userChoice;
         console.log('PWA install outcome:', outcome);
         if (outcome === 'accepted') {
-          deferredPrompt = null;
+          window.deferredPrompt = null;
           if (pwaInstallBanner) pwaInstallBanner.style.display = 'none';
-          closePwaModal();
+          window.closePwaModal();
         }
       } catch (e) {}
+    } else {
+      alert('Gunakan menu browser (titik tiga) di pojok kanan atas, lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".');
     }
   };
 
@@ -991,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (pwaInstallBanner && !isAppStandalone) {
       pwaInstallBanner.style.display = 'flex';
     }
-    closePwaModal();
+    window.closePwaModal();
     alert('Notifikasi banner pasang PWA telah direset dan diaktifkan kembali.');
   };
 

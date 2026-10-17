@@ -137,8 +137,10 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
       </div>
     </div>
   </div>
+</div>
+
 <!-- Modal Bantuan & Panduan Pasang Aplikasi PWA -->
-<div id="pwa_install_modal" class="qr-modal-overlay no-print" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+<div id="pwa_install_modal" class="qr-modal-overlay no-print" style="display: none; align-items: center; justify-content: center; z-index: 99999;" onclick="if(event.target === this) closePwaModal();">
   <div style="background: var(--bg-card); color: var(--text-main); border-radius: var(--radius-md); max-width: 480px; width: 92%; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border); overflow: hidden; animation: pwaSlideUp 0.25s ease-out;">
     <div style="padding: 1rem 1.25rem; background: var(--bg-alt); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
       <div style="display: flex; align-items: center; gap: 10px;">
@@ -184,17 +186,17 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
         </div>
       </div>
 
-      <!-- State 4: Desktop Chrome / Edge Manual -->
+      <!-- State 4: Desktop Chrome / Edge & Android Manual -->
       <div id="pwa_state_desktop" style="display: none;">
         <p style="margin-bottom: 0.5rem; color: var(--text-main); font-weight: 600;">
-          Jika notifikasi otomatis tidak muncul di layar Anda:
+          Panduan Pasang Aplikasi di Peramban:
         </p>
         <ul style="margin: 0 0 1rem 0; padding-left: 1.2rem; font-size: 0.8rem; color: var(--text-subtle); display: flex; flex-direction: column; gap: 6px;">
           <li>
-            <strong>Melalui Kolom URL:</strong> Klik ikon pasang (komputer/panah bawah) di sebelah kanan kolom alamat URL (omnibox) Chrome / Edge.
+            <strong>Komputer / Laptop (Chrome &amp; Edge):</strong> Klik ikon pasang (komputer dengan tanda panah ke bawah) di sebelah kanan bilah alamat URL (omnibox), atau klik menu titik tiga di pojok kanan atas &gt; pilih <em>Pasang Aplikasi</em>.
           </li>
           <li>
-            <strong>Melalui Menu Browser:</strong> Klik ikon titik tiga di pojok kanan atas &gt; pilih <strong>Simpan dan bagikan</strong> &gt; pilih <strong>Pasang IASS SBU ICT KNO</strong>.
+            <strong>Ponsel Android (Chrome):</strong> Ketuk menu titik tiga (⋮) di pojok kanan atas peramban &gt; pilih <strong>Tambahkan ke Layar Utama</strong> atau <strong>Pasang / Instal Aplikasi</strong>.
           </li>
         </ul>
       </div>
@@ -220,11 +222,108 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
   </div>
 </div>
 
+<script>
+  // Top-level early capture for PWA Install Prompt
+  window.deferredPrompt = window.deferredPrompt || null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    var topbarBtn = document.getElementById('btn_topbar_install_pwa');
+    var sidebarBtn = document.getElementById('sidebar_pwa_item');
+    var promptReadyState = document.getElementById('pwa_state_prompt_ready');
+    if (topbarBtn) topbarBtn.style.display = 'inline-flex';
+    if (sidebarBtn) sidebarBtn.style.display = 'block';
+    if (promptReadyState) promptReadyState.style.display = 'block';
+  });
+
+  window.triggerPwaInstall = async function () {
+    if (window.deferredPrompt) {
+      try {
+        window.deferredPrompt.prompt();
+        var choice = await window.deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          window.deferredPrompt = null;
+          var banner = document.getElementById('pwa_install_banner');
+          if (banner) banner.style.display = 'none';
+          if (window.closePwaModal) window.closePwaModal();
+        }
+        return;
+      } catch (err) {
+        console.warn('Deferred prompt error:', err);
+      }
+    }
+
+    var modalEl = document.getElementById('pwa_install_modal');
+    if (!modalEl) {
+      alert('Panduan: Buka menu titik tiga pada browser Anda, lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".');
+      return;
+    }
+
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    var isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    var isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    var stateInstalled = document.getElementById('pwa_state_installed');
+    var statePromptReady = document.getElementById('pwa_state_prompt_ready');
+    var stateIos = document.getElementById('pwa_state_ios');
+    var stateInsecure = document.getElementById('pwa_state_insecure');
+    var stateDesktop = document.getElementById('pwa_state_desktop');
+
+    if (stateInstalled) stateInstalled.style.display = isStandalone ? 'block' : 'none';
+    if (statePromptReady) statePromptReady.style.display = (!isStandalone && window.deferredPrompt) ? 'block' : 'none';
+    if (stateIos) stateIos.style.display = (!isStandalone && isIos) ? 'block' : 'none';
+    if (stateInsecure) stateInsecure.style.display = (!isStandalone && !isIos && !isSecure) ? 'block' : 'none';
+    if (stateDesktop) stateDesktop.style.display = (!isStandalone && !isIos) ? 'block' : 'none';
+
+    modalEl.style.display = 'flex';
+  };
+
+  window.closePwaModal = function () {
+    var modalEl = document.getElementById('pwa_install_modal');
+    if (modalEl) modalEl.style.display = 'none';
+  };
+
+  window.executeDeferredPrompt = async function () {
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
+      try {
+        var choice = await window.deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          window.deferredPrompt = null;
+          var banner = document.getElementById('pwa_install_banner');
+          if (banner) banner.style.display = 'none';
+          closePwaModal();
+        }
+      } catch (e) {
+        console.warn('PWA execution choice error:', e);
+      }
+    } else {
+      alert('Gunakan menu browser (titik tiga) di pojok kanan atas, lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".');
+    }
+  };
+
+  window.resetPwaBanner = function () {
+    localStorage.removeItem('pwa_prompt_dismissed');
+    localStorage.removeItem('pwa_prompt_dismissed_at');
+    var banner = document.getElementById('pwa_install_banner');
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (banner && !isStandalone) banner.style.display = 'flex';
+    closePwaModal();
+    alert('Notifikasi banner pasang PWA telah direset dan diaktifkan kembali.');
+  };
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      window.closePwaModal();
+    }
+  });
+</script>
+
 <script src="assets/js/qrious.min.js"></script>
 <script src="assets/js/html2pdf.bundle.min.js"></script>
 <script src="assets/js/draft_manager.js?v=<?= filemtime(__DIR__ . '/../assets/js/draft_manager.js') ?>"></script>
 <script src="assets/js/qr_scanner.js?v=<?= filemtime(__DIR__ . '/../assets/js/qr_scanner.js') ?>"></script>
-<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v9"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>_v10"></script>
 <script>
 
 

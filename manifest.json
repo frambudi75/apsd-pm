@@ -1,6 +1,6 @@
 {
-    "name": "IASS SBU ICT KNO - Sistem PM & NOC",
-    "short_name": "IASS SBU ICT KNO",
+    "name": "ICT HUB - Sistem PM & NOC",
+    "short_name": "ICT HUB",
     "description": "Sistem PM & NOC",
     "start_url": "./",
     "scope": "./",

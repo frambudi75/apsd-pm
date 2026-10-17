@@ -211,30 +211,6 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
         <div class="sidebar-group-title">Master Data</div>
         <ul class="sidebar-nav-list">
           <li>
-            <a href="sites" class="sidebar-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>" title="Data Master Site &amp; Tower">
-              <span class="sidebar-nav-icon"><?= app_icon('map-pin', 18) ?></span>
-              <span>Data Master Site</span>
-            </a>
-          </li>
-          <li>
-            <a href="operators" class="sidebar-nav-item <?= ($curPage === 'operators.php') ? 'active' : '' ?>" title="Data Master Operator Seluler">
-              <span class="sidebar-nav-icon"><?= app_icon('wifi', 18) ?></span>
-              <span>Master Operator</span>
-            </a>
-          </li>
-          <li>
-            <a href="users" class="sidebar-nav-item <?= ($curPage === 'users.php') ? 'active' : '' ?>" title="Manajemen Pengguna &amp; Akun">
-              <span class="sidebar-nav-icon"><?= app_icon('users', 18) ?></span>
-              <span>Kelola Pengguna</span>
-            </a>
-          </li>
-          <li>
-            <a href="settings" class="sidebar-nav-item <?= ($curPage === 'settings.php') ? 'active' : '' ?>" title="Pengaturan Sistem &amp; Preferensi">
-              <span class="sidebar-nav-icon"><?= app_icon('settings', 18) ?></span>
-              <span>Pengaturan Sistem</span>
-            </a>
-          </li>
-          <li>
             <a href="audit_log" class="sidebar-nav-item <?= ($curPage === 'audit_log.php') ? 'active' : '' ?>" title="Audit Log &amp; Rekam Jejak Keamanan">
               <span class="sidebar-nav-icon"><?= app_icon('shield', 18) ?></span>
               <span>Audit Log</span>
@@ -246,6 +222,30 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
               <span class="sidebar-nav-icon"><?= app_icon('refresh', 18) ?></span>
               <span>Auto-Optimise</span>
               <span class="sidebar-nav-badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Tune</span>
+            </a>
+          </li>
+          <li>
+            <a href="sites" class="sidebar-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>" title="Data Master Site &amp; Tower">
+              <span class="sidebar-nav-icon"><?= app_icon('map-pin', 18) ?></span>
+              <span>Data Master Site</span>
+            </a>
+          </li>
+          <li>
+            <a href="users" class="sidebar-nav-item <?= ($curPage === 'users.php') ? 'active' : '' ?>" title="Manajemen Pengguna &amp; Akun">
+              <span class="sidebar-nav-icon"><?= app_icon('users', 18) ?></span>
+              <span>Kelola Pengguna</span>
+            </a>
+          </li>
+          <li>
+            <a href="operators" class="sidebar-nav-item <?= ($curPage === 'operators.php') ? 'active' : '' ?>" title="Data Master Operator Seluler">
+              <span class="sidebar-nav-icon"><?= app_icon('wifi', 18) ?></span>
+              <span>Master Operator</span>
+            </a>
+          </li>
+          <li>
+            <a href="settings" class="sidebar-nav-item <?= ($curPage === 'settings.php') ? 'active' : '' ?>" title="Pengaturan Sistem &amp; Preferensi">
+              <span class="sidebar-nav-icon"><?= app_icon('settings', 18) ?></span>
+              <span>Pengaturan Sistem</span>
             </a>
           </li>
         </ul>
@@ -263,6 +263,20 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
         </ul>
       </div>
       <?php endif; ?>
+
+      <!-- Section 5: Informasi Sistem -->
+      <div>
+        <div class="sidebar-group-title">Informasi</div>
+        <ul class="sidebar-nav-list">
+          <li>
+            <a href="about" class="sidebar-nav-item <?= ($curPage === 'about.php') ? 'active' : '' ?>" title="Tentang Aplikasi &amp; Catatan Rilis">
+              <span class="sidebar-nav-icon"><?= app_icon('info', 18) ?></span>
+              <span>Tentang Aplikasi</span>
+              <span class="sidebar-nav-badge" style="background: rgba(0, 128, 128, 0.12); color: var(--primary); font-weight: 700;"><?= APP_VERSION ?></span>
+            </a>
+          </li>
+        </ul>
+      </div>
 
       <!-- PWA Quick Install Sidebar Button -->
       <div id="sidebar_pwa_item" style="padding: 0.5rem 0.75rem 0.25rem 0.75rem;">
@@ -291,7 +305,7 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
       </a>
 
       <div class="sidebar-actions-row">
-        <a href="profile" class="sidebar-action-btn <?= ($curPage === 'profile.php') ? 'active' : '' ?>" title="Pengaturan Akun & Profil">
+        <a href="profile" class="sidebar-action-btn <?= ($curPage === 'profile.php') ? 'active' : '' ?>" title="Pengaturan Akun &amp; Profil">
           <span><?= app_icon('user', 15) ?></span>
           <span>Profil</span>
         </a>
@@ -299,10 +313,6 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
           <span id="sidebar_theme_icon"><?= app_icon('moon', 15) ?></span>
           <span id="sidebar_theme_text">Tema</span>
         </button>
-        <a href="about" class="sidebar-action-btn <?= ($curPage === 'about.php') ? 'active' : '' ?>" title="Tentang Sistem & Info Versi">
-          <span><?= app_icon('info', 15) ?></span>
-          <span>Info</span>
-        </a>
         <a href="logout" class="sidebar-action-btn sidebar-action-danger" onclick="return confirm('Apakah Anda yakin ingin keluar?')" title="Keluar dari sistem">
           <span><?= app_icon('log-out', 15) ?></span>
           <span>Keluar</span>

@@ -31,9 +31,10 @@ function send_discord_payload(string $webhookUrl, array $payload, ?string $fileP
         curl_setopt($ch, CURLOPT_URL, $webhookUrl);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
         if ($filePath && file_exists($filePath)) {
             // Multipart upload with attachment
@@ -124,6 +125,80 @@ function get_server_base_url(): string {
 }
 
 /**
+ * Helper: Generate berkas PDF resmi shift daily activity menggunakan headless browser
+ */
+function generate_shift_pdf_file(int $shiftId): ?string {
+    if ($shiftId <= 0) return null;
+
+    $browserCandidates = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser'
+    ];
+
+    $browserBin = null;
+    foreach ($browserCandidates as $p) {
+        if (file_exists($p)) {
+            $browserBin = $p;
+            break;
+        }
+    }
+
+    if (!$browserBin) {
+        return null;
+    }
+
+    $tempDir = __DIR__ . '/../uploads/temp';
+    if (!is_dir($tempDir)) {
+        @mkdir($tempDir, 0777, true);
+    }
+
+    $profileDir = $tempDir . '/chrome_pwa_pdf_profile';
+    $pdfPath = $tempDir . '/Logbook_NOC_Shift_' . $shiftId . '_' . time() . '.pdf';
+
+    $localPort = $_SERVER['SERVER_PORT'] ?? '80';
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+    if (basename($scriptDir) === 'api' || basename($scriptDir) === 'includes') {
+        $scriptDir = dirname($scriptDir);
+    }
+    $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
+    $pdfToken = hash_hmac('sha256', (string)$shiftId, 'apsd_internal_secret_2026');
+    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/print_shift.php?shift_id={$shiftId}&pdf_token={$pdfToken}";
+
+    $cmd = sprintf(
+        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
+        $browserBin,
+        $profileDir,
+        $pdfPath,
+        $internalUrl
+    );
+
+    @exec($cmd, $output, $returnCode);
+
+    $maxWait = 6.0;
+    $waited = 0.0;
+    while ($waited < $maxWait) {
+        clearstatcache(true, $pdfPath);
+        if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {
+            return $pdfPath;
+        }
+        usleep(300000); // 300ms
+        $waited += 0.3;
+    }
+
+    if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {
+        return $pdfPath;
+    }
+
+    return null;
+}
+
+/**
  * Notifikasi: Sesi Shift Daily Activity Selesai Dilaporkan
  */
 function discord_notify_shift_complete(array $shift, array $activities = [], int $photoCount = 0): bool {
@@ -167,10 +242,47 @@ function discord_notify_shift_complete(array $shift, array $activities = [], int
         ]
     ];
 
+    // Ringkasan kegiatan
+    if (!empty($activities)) {
+        $activityLines = [];
+        $i = 1;
+        foreach (array_slice($activities, 0, 5) as $act) {
+            $time = htmlspecialchars($act['activity_time'] ?? '-');
+            $cat = htmlspecialchars($act['category'] ?? '-');
+            $title = htmlspecialchars($act['title'] ?? $act['description'] ?? '');
+            if (mb_strlen($title) > 60) {
+                $title = mb_substr($title, 0, 57) . '...';
+            }
+            $activityLines[] = "{$i}. `[{$time}]` **{$cat}**: {$title}";
+            $i++;
+        }
+        if (count($activities) > 5) {
+            $activityLines[] = '... dan ' . (count($activities) - 5) . ' kegiatan lainnya.';
+        }
+        $fields[] = [
+            'name' => '📋 Ringkasan Kegiatan Logbook',
+            'value' => implode("\n", $activityLines),
+            'inline' => false
+        ];
+    }
+
+    // Generate PDF otomatis untuk lampiran discord
+    $pdfPath = generate_shift_pdf_file($shiftId);
+    $shiftDateClean = str_replace(['/', '\\'], '-', $shiftDate);
+    $pdfFilename = 'Logbook_NOC_' . $shiftType . '_' . $shiftDateClean . '.pdf';
+
+    if ($pdfPath && file_exists($pdfPath)) {
+        $fields[] = [
+            'name' => '📎 Berkas PDF Resmi',
+            'value' => 'Dokumen PDF laporan shift telah otomatis digenerate dan dilampirkan pada pesan ini.',
+            'inline' => false
+        ];
+    }
+
     $embed = [
-        'title' => '📋 Laporan Shift Selesai & Terkunci - ' . $shiftType,
-        'description' => 'Sesi kegiatan harian NOC telah diselesaikan dan dilaporkan ke pimpinan/admin.',
-        'url' => $baseUrl . 'print_shift?id=' . $shiftId,
+        'title' => '📋 Laporan Shift Selesai & Terkunci - Shift ' . $shiftType,
+        'description' => 'Sesi kegiatan harian NOC telah diselesaikan dan dikunci secara resmi. Berkas PDF laporan resmi dan ringkasan handover shift terlampir.',
+        'url' => $baseUrl . 'print_shift?shift_id=' . $shiftId,
         'color' => 0x008080, // Teal
         'fields' => $fields,
         'footer' => [
@@ -179,7 +291,14 @@ function discord_notify_shift_complete(array $shift, array $activities = [], int
         'timestamp' => date('c')
     ];
 
-    return send_discord_notification('noc', $embed);
+    $res = send_discord_notification('noc', $embed, $pdfPath, $pdfFilename);
+
+    // Hapus file temporary PDF setelah pengiriman
+    if ($pdfPath && file_exists($pdfPath)) {
+        @unlink($pdfPath);
+    }
+
+    return $res;
 }
 
 /**

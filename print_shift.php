@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_login();
 
 $pdo = get_db_connection();
-$shiftId = (int)($_GET['shift_id'] ?? 0);
+$shiftId = (int)($_GET['shift_id'] ?? $_GET['id'] ?? 0);
 
 if ($shiftId <= 0) {
     die("ID Shift tidak valid.");

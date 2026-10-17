@@ -265,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <div class="login-footer-info">
-    &copy; <?= date('Y') ?> IASS SBU ICT KNO &bull; Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>) &bull; Sesi login aktif 12 jam
+    &copy; <?= date('Y') ?> ICT HUB &bull; Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>) &bull; Sesi login aktif 12 jam
   </div>
 
 </div>
@@ -289,6 +289,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       const isPwd = pwdInput.type === 'password';
       pwdInput.type = isPwd ? 'text' : 'password';
       this.textContent = isPwd ? '🙈' : '👁️';
+    });
+  }
+
+  // Register Service Worker for PWA installation on login screen
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js?v=14')
+        .then(function (reg) {
+          console.log('PWA ServiceWorker registered with scope:', reg.scope);
+        })
+        .catch(function (err) {
+          console.log('PWA ServiceWorker registration failed:', err);
+        });
     });
   }
 </script>

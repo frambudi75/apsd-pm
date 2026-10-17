@@ -14,6 +14,7 @@ uploads/daily/*
 !uploads/daily/.gitkeep
 uploads/branding/*
 !uploads/branding/.gitkeep
+!uploads/branding/pwa-icon-*.png
 uploads/documents/*
 !uploads/documents/.gitkeep
 scratch/

@@ -3,14 +3,9 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v2.6.1';
+const CACHE_NAME = 'iass-pm-v2.7.0';
 const STATIC_ASSETS = [
   './',
-  'reports',
-  'form_indoor',
-  'form_outdoor',
-  'sites',
-  'operators',
   'manifest.json',
   'assets/css/app.css',
   'assets/css/print.css',
@@ -20,18 +15,22 @@ const STATIC_ASSETS = [
   'assets/js/qr_scanner.js',
   'assets/js/app.js',
   'assets/img/logo_ias.png',
-  'assets/img/logo_telkomsel.png',
-  'assets/img/logo_indosat.svg',
-  'assets/img/logo_xl.svg',
-  'assets/img/logo_smartfren.svg',
   'assets/img/icon-192.png',
-  'assets/img/icon-512.png'
+  'assets/img/icon-512.png',
+  'uploads/branding/pwa-icon-192.png',
+  'uploads/branding/pwa-icon-512.png'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_ASSETS);
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (e) {
+          // Individual asset failure should never block service worker installation
+        }
+      }
     })
   );
   self.skipWaiting();

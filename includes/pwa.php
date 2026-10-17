@@ -98,13 +98,16 @@ function sync_pwa_manifest_and_icons(): bool {
 
             if ($gen192 && file_exists($dest192)) {
                 $icon192 = 'uploads/branding/pwa-icon-192.png';
+                @copy($dest192, __DIR__ . '/../assets/img/icon-192.png');
             }
             if ($gen512 && file_exists($dest512)) {
                 $icon512 = 'uploads/branding/pwa-icon-512.png';
+                @copy($dest512, __DIR__ . '/../assets/img/icon-512.png');
             }
         }
 
         $manifestData = [
+            'id' => './',
             'name' => $appTitle . ($appSubtitle !== '' ? ' - ' . $appSubtitle : ''),
             'short_name' => mb_strimwidth($appTitle, 0, 16, ''),
             'description' => $appSubtitle !== '' ? $appSubtitle : 'Sistem Checklist Pemeliharaan Berkala & Logbook NOC',
@@ -117,13 +120,25 @@ function sync_pwa_manifest_and_icons(): bool {
             'categories' => ['business', 'productivity', 'utilities'],
             'icons' => [
                 [
-                    'src' => $icon192,
+                    'src' => 'assets/img/icon-192.png',
                     'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any maskable'
                 ],
                 [
-                    'src' => $icon512,
+                    'src' => 'assets/img/icon-512.png',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ],
+                [
+                    'src' => 'uploads/branding/pwa-icon-192.png',
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ],
+                [
+                    'src' => 'uploads/branding/pwa-icon-512.png',
                     'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'any maskable'

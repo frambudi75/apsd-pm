@@ -74,6 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script>
     (function() {
       try {
+        var urlParams = new URLSearchParams(window.location.search);
+        var urlTheme = urlParams.get('theme');
+        if (urlTheme === 'dark' || urlTheme === 'light') {
+          localStorage.setItem('iass_theme', urlTheme);
+        }
         var t = localStorage.getItem('iass_theme');
         if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.setAttribute('data-theme', 'dark');
@@ -349,6 +354,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border-color: var(--primary);
     }
 
+    .auth-theme-btn .theme-icon-light,
+    .auth-theme-btn .theme-icon-dark {
+      align-items: center;
+      justify-content: center;
+    }
+
+    [data-theme="light"] .auth-theme-btn .theme-icon-light,
+    :root:not([data-theme="dark"]) .auth-theme-btn .theme-icon-light {
+      display: none !important;
+    }
+
+    [data-theme="light"] .auth-theme-btn .theme-icon-dark,
+    :root:not([data-theme="dark"]) .auth-theme-btn .theme-icon-dark {
+      display: inline-flex !important;
+    }
+
+    [data-theme="dark"] .auth-theme-btn .theme-icon-light {
+      display: inline-flex !important;
+    }
+
+    [data-theme="dark"] .auth-theme-btn .theme-icon-dark {
+      display: none !important;
+    }
+
     .auth-form-wrapper {
       max-width: 420px;
       width: 100%;
@@ -501,38 +530,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       color: var(--text-main);
     }
 
+    /* Auth Alerts */
+    .auth-alert {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm, 6px);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .auth-alert-info {
+      background: rgba(2, 132, 199, 0.08);
+      color: #0284c7;
+      border: 1px solid rgba(2, 132, 199, 0.22);
+    }
+
+    [data-theme="dark"] .auth-alert-info {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .auth-alert-error {
+      background: var(--status-nok-bg);
+      color: var(--status-nok);
+      border: 1px solid var(--status-nok-border);
+    }
+
+    .auth-mobile-header {
+      display: none;
+    }
+
     /* Responsive Reflow for Mobile (< 992px) */
     @media (max-width: 991px) {
       .login-split-wrapper {
         flex-direction: column;
+        background: var(--bg-main);
       }
 
+      /* Hide duplicate heavy hero pane on mobile for clean unified mobile screen */
       .login-hero-pane {
-        flex: none;
-        padding: 2.25rem 1.75rem 2rem 1.75rem;
-      }
-
-      .hero-features-grid,
-      .hero-footer-meta {
-        display: none; /* Hide heavy features on small screen for compact fast view */
-      }
-
-      .hero-app-title {
-        font-size: 1.6rem;
-      }
-
-      .hero-subtitle {
-        margin-bottom: 0;
-        font-size: 0.9rem;
+        display: none;
       }
 
       .login-auth-pane {
         flex: 1;
-        padding: 2rem 1.5rem;
+        min-height: 100vh;
+        padding: 1.5rem 1.25rem 2rem 1.25rem;
+        justify-content: space-between;
+        background: var(--bg-main);
       }
 
-      .auth-mobile-brand {
+      .auth-mobile-header {
         display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 1.25rem;
+      }
+
+      .auth-mobile-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.3rem 0.75rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.85rem;
+      }
+
+      .auth-mobile-logo {
+        height: 52px;
+        max-width: 160px;
+        object-fit: contain;
+        margin-bottom: 0.65rem;
+      }
+
+      .auth-mobile-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin: 0 0 0.25rem 0;
+      }
+
+      .auth-mobile-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-subtle);
+        margin: 0;
+      }
+
+      .auth-top-bar {
+        margin-bottom: 0.75rem;
+      }
+
+      .auth-form-header {
+        display: none;
       }
     }
   </style>
@@ -620,12 +720,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <main class="login-auth-pane">
     <!-- Top Action Bar -->
     <div class="auth-top-bar">
-      <div class="auth-mobile-brand">
-        <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="Logo" class="auth-mobile-logo">
-      </div>
       <div style="margin-left: auto;">
         <button type="button" class="auth-theme-btn" onclick="toggleIassTheme()" title="Ganti Tema">
-          <span class="theme-icon-light" aria-hidden="true" style="display: inline-flex; align-items: center;">
+          <span class="theme-icon-light" aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -638,7 +735,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
           </span>
-          <span class="theme-icon-dark" aria-hidden="true" style="display: inline-flex; align-items: center;">
+          <span class="theme-icon-dark" aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
@@ -650,13 +747,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Center Login Form Box -->
     <div class="auth-form-wrapper">
+      <!-- Dedicated Mobile Brand Header (Visible ONLY on mobile) -->
+      <div class="auth-mobile-header">
+        <div class="auth-mobile-badge">
+          <span class="hero-status-indicator"></span>
+          <span>Bandara Internasional Kualanamu (KNO)</span>
+        </div>
+        <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="Logo Aplikasi" class="auth-mobile-logo">
+        <h1 class="auth-mobile-title"><?= htmlspecialchars($sysAppTitle) ?></h1>
+        <p class="auth-mobile-subtitle"><?= htmlspecialchars($sysAppSubtitle) ?></p>
+      </div>
+
       <div class="auth-form-header">
         <h2 class="auth-form-title">Masuk ke Portal</h2>
         <p class="auth-form-desc">Silakan masukkan username dan password Anda untuk memulai sesi kerja.</p>
       </div>
 
       <?php if (!empty($errorMessage)): ?>
-        <div style="background: var(--status-nok-bg); color: var(--status-nok); border: 1px solid var(--status-nok-border); padding: 0.75rem 1rem; border-radius: var(--radius-sm, 6px); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px;">
+        <div class="auth-alert auth-alert-error">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -667,7 +775,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
 
       <?php if (!empty($infoMessage)): ?>
-        <div style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 0.75rem 1rem; border-radius: var(--radius-sm, 6px); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px;">
+        <div class="auth-alert auth-alert-info">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>

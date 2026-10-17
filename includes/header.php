@@ -299,6 +299,10 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
           <span id="sidebar_theme_icon"><?= app_icon('moon', 15) ?></span>
           <span id="sidebar_theme_text">Tema</span>
         </button>
+        <a href="about" class="sidebar-action-btn <?= ($curPage === 'about.php') ? 'active' : '' ?>" title="Tentang Sistem & Info Versi">
+          <span><?= app_icon('info', 15) ?></span>
+          <span>Info</span>
+        </a>
         <a href="logout" class="sidebar-action-btn sidebar-action-danger" onclick="return confirm('Apakah Anda yakin ingin keluar?')" title="Keluar dari sistem">
           <span><?= app_icon('log-out', 15) ?></span>
           <span>Keluar</span>

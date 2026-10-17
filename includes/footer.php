@@ -9,7 +9,7 @@ $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     </div><!-- /.app-content-body -->
     <footer class="no-print desktop-footer">
       <div class="container" style="max-width: 100%;">
-        <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'))) ?>. All rights reserved. &bull; <span class="footer-version-tag">Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>)</span></p>
+        <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'))) ?>. All rights reserved. &bull; <a href="about" style="color: inherit; text-decoration: none;" title="Buka Informasi Platform & Versi"><span class="footer-version-tag">Versi <?= APP_VERSION ?> (Build <?= APP_BUILD_DATE ?>)</span></a></p>
         <p style="font-size: 0.75rem; margin-top: 0.25rem;">Sistem Laporan Pemeliharaan Berkala (Preventive Maintenance) &amp; Daily Activity NOC Standar Resmi</p>
       </div>
     </footer>

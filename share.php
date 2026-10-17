@@ -22,6 +22,11 @@ $pdo = get_db_connection();
 $token = trim($_GET['token'] ?? '');
 $action = trim($_GET['action'] ?? 'view');
 
+// Dynamic branding from system settings
+$sysAppTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+$sysAppSubtitle = get_system_setting('app_subtitle', 'Sistem PM & NOC');
+$sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
+
 // Helper: Format byte sizes
 function format_shared_doc_size(int $bytes): string {
     if ($bytes >= 1073741824) {
@@ -68,14 +73,21 @@ function get_shared_file_badge(string $ext): array {
 
 // Fungsi render template error
 function render_share_error_page(string $title, string $message, string $iconType = 'alert-triangle') {
+    global $sysAppTitle, $sysAppLogo;
+    if (empty($sysAppTitle)) {
+        $sysAppTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+    }
+    if (empty($sysAppLogo)) {
+        $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
+    }
     ?>
     <!DOCTYPE html>
     <html lang="id">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title><?= htmlspecialchars($title) ?> - IASS SBU ICT KNO</title>
-      <link rel="icon" type="image/png" href="assets/img/logo_ias.png">
+      <title><?= htmlspecialchars($title) ?> - <?= htmlspecialchars($sysAppTitle) ?></title>
+      <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
       <style>
         :root {
           --primary: #008080;
@@ -146,7 +158,10 @@ function render_share_error_page(string $title, string $message, string $iconTyp
     </head>
     <body>
       <div class="error-card">
-        <div class="brand-badge">IASS SBU ICT KNO</div>
+        <div style="text-align: center; margin-bottom: 12px;">
+          <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="<?= htmlspecialchars($sysAppTitle) ?>" style="max-height: 40px; max-width: 140px; object-fit: contain;">
+        </div>
+        <div class="brand-badge"><?= htmlspecialchars($sysAppTitle) ?></div>
         <div class="error-icon"><?= app_icon($iconType, 32) ?></div>
         <h2><?= htmlspecialchars($title) ?></h2>
         <p><?= nl2br(htmlspecialchars($message)) ?></p>
@@ -250,8 +265,8 @@ if ((int)$share['has_pin'] === 1) {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Proteksi PIN Dokumen - IASS SBU ICT KNO</title>
-          <link rel="icon" type="image/png" href="assets/img/logo_ias.png">
+          <title>Proteksi PIN Dokumen - <?= htmlspecialchars($sysAppTitle) ?></title>
+          <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
           <style>
             :root {
               --primary: #008080;
@@ -397,6 +412,9 @@ if ((int)$share['has_pin'] === 1) {
         </head>
         <body>
           <div class="pin-card">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="<?= htmlspecialchars($sysAppTitle) ?>" style="max-height: 42px; max-width: 150px; object-fit: contain;">
+            </div>
             <div class="pin-header">
               <div class="pin-icon">
                 <?= app_icon('lock', 30) ?>
@@ -519,8 +537,8 @@ if (!empty($share['expires_at'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= htmlspecialchars($share['title']) ?> - Portal Berbagi Dokumen</title>
-  <link rel="icon" type="image/png" href="assets/img/logo_ias.png">
+  <title><?= htmlspecialchars($share['title']) ?> - <?= htmlspecialchars($sysAppTitle) ?></title>
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
   <style>
     :root {
       --primary: #008080;
@@ -859,9 +877,9 @@ if (!empty($share['expires_at'])) {
   <!-- Top Navigation -->
   <header class="share-navbar">
     <a href="./" class="share-brand">
-      <img src="assets/img/logo_ias.png" alt="Logo IASS">
+      <img src="<?= htmlspecialchars($sysAppLogo) ?>" alt="<?= htmlspecialchars($sysAppTitle) ?>">
       <div class="share-brand-text">
-        <span class="brand-title">IASS SBU ICT KNO</span>
+        <span class="brand-title"><?= htmlspecialchars($sysAppTitle) ?></span>
         <span class="brand-sub">Portal Berbagi Dokumen Resmi</span>
       </div>
     </a>
@@ -962,7 +980,7 @@ if (!empty($share['expires_at'])) {
   </main>
 
   <footer class="share-footer">
-    <div>Dokumen resmi ini dibagikan melalui Sistem Brankas Dokumen Terproteksi <strong>IASS SBU ICT KNO</strong>.</div>
+    <div>Dokumen resmi ini dibagikan melalui Sistem Brankas Dokumen Terproteksi <strong><?= htmlspecialchars($sysAppTitle) ?></strong>.</div>
     <div style="margin-top: 4px; color: #94a3b8;">Dilarang membagikan atau menyalahgunakan berkas tanpa izin pemilik dokumen.</div>
   </footer>
 

@@ -687,27 +687,25 @@ include __DIR__ . '/includes/header.php';
 
 <!-- Modal: Catat Kegiatan Harian -->
 <div id="activity_modal" class="modal-backdrop-custom" style="display: none;">
-  <div class="modal-dialog-custom">
-    <div class="modal-content-custom">
-      
-      <div class="modal-header-custom">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <?= app_icon('file-text', 18, 'text-primary') ?>
-          <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Catat Kegiatan Harian NOC</h4>
-        </div>
-        <button type="button" class="modal-close-btn" id="btn_close_activity_modal">&times;</button>
+  <form id="form_save_activity" class="modal-dialog-custom" enctype="multipart/form-data">
+    
+    <div class="modal-header-custom">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <?= app_icon('file-text', 18, 'text-primary') ?>
+        <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Catat Kegiatan Harian NOC</h4>
       </div>
+      <button type="button" class="modal-close-btn" id="btn_close_activity_modal" aria-label="Tutup">&times;</button>
+    </div>
 
-      <form id="form_save_activity" enctype="multipart/form-data">
-        <input type="hidden" name="shift_id" value="<?= (int)($currentShift['id'] ?? 0) ?>">
-        <input type="hidden" name="shift_date" value="<?= htmlspecialchars($filterDate) ?>">
-        <input type="hidden" name="shift_type" value="<?= htmlspecialchars($filterShiftType) ?>">
+    <input type="hidden" name="shift_id" value="<?= (int)($currentShift['id'] ?? 0) ?>">
+    <input type="hidden" name="shift_date" value="<?= htmlspecialchars($filterDate) ?>">
+    <input type="hidden" name="shift_type" value="<?= htmlspecialchars($filterShiftType) ?>">
 
-        <div class="modal-body-custom">
-          
-          <!-- Row 1: Time & Category -->
-          <div class="row g-3 mb-3">
-            <div class="col-md-5">
+    <div class="modal-body-custom">
+      
+      <!-- Row 1: Time & Category -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-5">
               <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Waktu Kegiatan</label>
               <input type="text" name="activity_time" id="input_act_time" class="form-control" value="<?= date('H:i') ?> WIB" placeholder="Contoh: 09:30 WIB" required>
             </div>
@@ -825,10 +823,7 @@ include __DIR__ . '/includes/header.php';
             <span>Simpan Kegiatan</span>
           </button>
         </div>
-      </form>
-
-    </div>
-  </div>
+  </form>
 </div>
 
 <!-- Modal: Kirim Laporan & Info PDF ke WhatsApp -->
@@ -915,13 +910,16 @@ include __DIR__ . '/includes/header.php';
 .modal-backdrop-custom {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-dialog-custom {
@@ -931,19 +929,33 @@ include __DIR__ . '/includes/header.php';
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-  animation: slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUpFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
+  margin: auto;
+}
+
+.modal-content-custom {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .modal-header-custom {
-  padding: 1.1rem 1.25rem;
+  flex-shrink: 0;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: var(--bg-card);
+  z-index: 2;
 }
 
 .modal-close-btn {
@@ -953,20 +965,80 @@ include __DIR__ . '/includes/header.php';
   line-height: 1;
   color: var(--text-muted);
   cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close-btn:hover {
+  background: var(--bg-alt);
+  color: var(--text-main);
 }
 
 .modal-body-custom {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 1.25rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .modal-footer-custom {
+  flex-shrink: 0;
   padding: 0.85rem 1.25rem;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 8px;
   background: var(--bg-alt);
+  z-index: 2;
+}
+
+@media (max-width: 640px) {
+  .modal-backdrop-custom {
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    align-items: flex-end;
+  }
+
+  .modal-dialog-custom {
+    max-height: calc(100dvh - 0.75rem);
+    max-height: calc(100vh - 0.75rem);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .modal-header-custom {
+    padding: 0.85rem 1rem;
+  }
+
+  .modal-body-custom {
+    padding: 1rem 0.85rem;
+  }
+
+  .modal-footer-custom {
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    gap: 10px;
+  }
+
+  .modal-footer-custom .btn {
+    flex: 1;
+    min-height: 44px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .btn-cat-badge {
@@ -1025,15 +1097,34 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      // Auto-focus first input after animation
+      setTimeout(function() {
+        var firstInput = document.getElementById('input_act_time');
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
   }
   function closeModal() {
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
   }
 
   if (btnOpen) btnOpen.addEventListener('click', openModal);
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
 
   // Start Shift Handler
   var btnStartShift = document.getElementById('btn_start_shift_action');
@@ -1323,15 +1414,29 @@ document.addEventListener('DOMContentLoaded', function() {
   var inputWaPhone = document.getElementById('input_wa_phone');
 
   function openWaModal() {
-    if (waModal) waModal.style.display = 'flex';
+    if (waModal) {
+      waModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
   }
   function closeWaModal() {
-    if (waModal) waModal.style.display = 'none';
+    if (waModal) {
+      waModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
   }
 
   if (btnOpenWa) btnOpenWa.addEventListener('click', openWaModal);
   if (btnCloseWa) btnCloseWa.addEventListener('click', closeWaModal);
   if (btnCancelWa) btnCancelWa.addEventListener('click', closeWaModal);
+
+  if (waModal) {
+    waModal.addEventListener('click', function(e) {
+      if (e.target === waModal) {
+        closeWaModal();
+      }
+    });
+  }
 
   function copyTextToClipboard() {
     if (textareaMsg) {

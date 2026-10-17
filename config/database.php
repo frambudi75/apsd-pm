@@ -1016,43 +1016,39 @@ function set_system_setting(string $key, string $value): bool {
 }
 
 /**
- * Get effective branding logo for reports, PDFs, and print layouts
- * Prioritizes custom application logo uploaded from settings
+ * Get kop surat logo for official printable reports & PDFs
+ * Reads strictly from the right setting in settings.php (report_left_logo_path)
+ */
+function get_report_kop_logo(): string {
+    $reportLogo = trim(get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png'));
+    $cleanPath = preg_replace('/\?.*$/', '', $reportLogo);
+    $fullPath = __DIR__ . '/../' . ltrim($cleanPath, '/\\');
+    if (!empty($cleanPath) && file_exists($fullPath)) {
+        return $cleanPath;
+    }
+    return 'assets/img/logo_ias.png';
+}
+
+/**
+ * Backward compatibility alias for get_report_kop_logo
  */
 function get_effective_report_logo(): string {
-    $appLogo = trim(get_system_setting('app_logo_path', ''));
-    $appLogoClean = strtok($appLogo, '?');
-    if (!empty($appLogoClean) && strpos($appLogoClean, 'assets/img/logo_ias.png') === false) {
-        $fullPath = __DIR__ . '/../' . ltrim($appLogoClean, '/\\');
-        if (file_exists($fullPath)) {
-            return $appLogoClean;
-        }
-    }
+    return get_report_kop_logo();
+}
 
-    $reportLogo = trim(get_system_setting('report_left_logo_path', ''));
-    $reportLogoClean = strtok($reportLogo, '?');
-    if (!empty($reportLogoClean) && strpos($reportLogoClean, 'assets/img/logo_ias.png') === false) {
-        $fullPath = __DIR__ . '/../' . ltrim($reportLogoClean, '/\\');
-        if (file_exists($fullPath)) {
-            return $reportLogoClean;
-        }
+/**
+ * Get application logo URL for browser tab bar / taskbar favicon
+ * Reads strictly from the left setting in settings.php (app_logo_path)
+ * Automatically adds filemtime query string to prevent stale browser tab icon caching
+ */
+function get_app_favicon_url(): string {
+    $appLogo = trim(get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3'));
+    $cleanPath = preg_replace('/\?.*$/', '', $appLogo);
+    $fullPath = __DIR__ . '/../' . ltrim($cleanPath, '/\\');
+    if (!empty($cleanPath) && file_exists($fullPath)) {
+        return $cleanPath . '?v=' . filemtime($fullPath);
     }
-
-    if (!empty($appLogoClean)) {
-        $fullPath = __DIR__ . '/../' . ltrim($appLogoClean, '/\\');
-        if (file_exists($fullPath)) {
-            return $appLogoClean;
-        }
-    }
-
-    if (!empty($reportLogoClean)) {
-        $fullPath = __DIR__ . '/../' . ltrim($reportLogoClean, '/\\');
-        if (file_exists($fullPath)) {
-            return $reportLogoClean;
-        }
-    }
-
-    return 'assets/img/logo_ias.png';
+    return $appLogo;
 }
 
 

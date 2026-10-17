@@ -92,7 +92,9 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
-  <link rel="icon" type="image/png" href="assets/img/logo_ias.png?v=3">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -361,7 +363,7 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
     <table class="doc-header-table">
       <tr>
         <td style="width: 75px;">
-          <img src="<?= htmlspecialchars(get_effective_report_logo()) ?>" alt="Logo Kop" style="height: 42px; object-fit: contain;">
+          <img src="<?= htmlspecialchars(get_report_kop_logo()) ?>" alt="Logo Kop" style="height: 42px; object-fit: contain;">
         </td>
         <td style="padding-left: 10px;">
           <div class="doc-title-main">Laporan Pekerjaan Daily Unit SBU ICT IASS</div>

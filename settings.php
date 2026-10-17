@@ -158,11 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     @chmod($dest, 0666);
                     $cropTransparency($dest);
                     set_system_setting('app_logo_path', 'uploads/branding/' . $filename);
-
-                    // Otomatis sinkronkan juga logo kop cetak jika belum di-upload terpisah
-                    if (empty($_FILES['report_left_logo_file']['name'])) {
-                        set_system_setting('report_left_logo_path', 'uploads/branding/' . $filename);
-                    }
                 }
             } else {
                 throw new Exception('Format file logo aplikasi tidak valid. Gunakan format PNG, JPG, SVG, atau WebP.');

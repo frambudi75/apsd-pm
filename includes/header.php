@@ -30,15 +30,11 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($sysAppTitle) ?>">
-  <?php 
-    $pwaTouchIcon = file_exists(__DIR__ . '/../uploads/branding/pwa-icon-192.png') 
-      ? 'uploads/branding/pwa-icon-192.png?v=' . filemtime(__DIR__ . '/../uploads/branding/pwa-icon-192.png') 
-      : $sysAppLogo;
-  ?>
-  <link rel="apple-touch-icon" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
   
   <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/../assets/css/app.css') ?>">
-  <link rel="icon" type="image/png" href="<?= htmlspecialchars($pwaTouchIcon) ?>">
 
   <script>
     (function() {

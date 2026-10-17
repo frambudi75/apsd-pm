@@ -49,7 +49,7 @@ $dateAbbr = date('d-M-y', strtotime($report['report_date']));
 $rightLogoPath = $report['custom_logo_path'] ?? 'assets/img/logo_ias.png';
 $showRightLogo = ($rightLogoPath !== 'none' && !empty($rightLogoPath) && file_exists(__DIR__ . '/' . $rightLogoPath));
 
-$leftLogoPath = get_effective_report_logo();
+$leftLogoPath = get_report_kop_logo();
 
 // Compact Mode: Only print filled photos, skipping empty N/A slots
 $isCompact = (isset($_GET['compact']) && $_GET['compact'] == '1');
@@ -107,6 +107,9 @@ $totalPages = 5 + $totalPhotoPages;
 <head>
   <meta charset="UTF-8">
   <title>PM_Outdoor_<?= preg_replace('/[^A-Za-z0-9_\-]/', '_', $site['site_name'] ?? 'Site') ?>_<?= date('Ymd', strtotime($report['report_date'])) ?></title>
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
   <link rel="stylesheet" href="assets/css/print.css?v=<?= filemtime(__DIR__ . '/assets/css/print.css') ?>">
   <style>
     .pole-meta-table td {

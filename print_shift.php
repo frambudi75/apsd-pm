@@ -66,7 +66,9 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
   <meta charset="UTF-8">
   <title>Laporan Shift NOC - <?= htmlspecialchars($techName) ?> (<?= htmlspecialchars($formattedDate) ?>)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="assets/img/logo_ias.png?v=3">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="apple-touch-icon" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
   
   <style>
     @page {
@@ -470,7 +472,7 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     <table class="doc-header-table">
       <tr>
         <td style="width: 80px;">
-          <img src="<?= htmlspecialchars(get_effective_report_logo()) ?>" alt="Logo Kop" style="height: 48px; object-fit: contain;">
+          <img src="<?= htmlspecialchars(get_report_kop_logo()) ?>" alt="Logo Kop" style="height: 48px; object-fit: contain;">
         </td>
         <td style="padding-left: 12px;">
           <div class="doc-title-main"><?= htmlspecialchars(get_system_setting('company_name', 'IASS SBU ICT KNO')) ?></div>

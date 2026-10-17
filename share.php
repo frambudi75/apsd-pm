@@ -87,7 +87,8 @@ function render_share_error_page(string $title, string $message, string $iconTyp
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title><?= htmlspecialchars($title) ?> - <?= htmlspecialchars($sysAppTitle) ?></title>
-      <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
+      <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+      <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
       <style>
         :root {
           --primary: #008080;
@@ -266,7 +267,8 @@ if ((int)$share['has_pin'] === 1) {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Proteksi PIN Dokumen - <?= htmlspecialchars($sysAppTitle) ?></title>
-          <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
+          <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+          <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
           <style>
             :root {
               --primary: #008080;
@@ -538,7 +540,8 @@ if (!empty($share['expires_at'])) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= htmlspecialchars($share['title']) ?> - <?= htmlspecialchars($sysAppTitle) ?></title>
-  <link rel="icon" type="image/png" href="<?= htmlspecialchars($sysAppLogo) ?>">
+  <link rel="icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= htmlspecialchars(get_app_favicon_url()) ?>">
   <style>
     :root {
       --primary: #008080;

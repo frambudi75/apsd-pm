@@ -351,6 +351,30 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 14. Table user_document_external_shares (Public / External Share Links)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_document_external_shares (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            document_id INT NOT NULL,
+            created_by_user_id INT NOT NULL,
+            share_token VARCHAR(64) NOT NULL UNIQUE,
+            has_pin TINYINT NOT NULL DEFAULT 0,
+            pin_hash VARCHAR(255) NULL,
+            expires_at DATETIME NULL,
+            access_count INT NOT NULL DEFAULT 0,
+            last_accessed_at DATETIME NULL,
+            is_active TINYINT NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_extshare_token (share_token),
+            INDEX idx_extshare_doc (document_id),
+            INDEX idx_extshare_active (is_active),
+            INDEX idx_extshare_expires (expires_at),
+            FOREIGN KEY (document_id) REFERENCES user_documents(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
@@ -611,6 +635,30 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_share_target ON user_document_shares(shared_with_user_id);
         CREATE INDEX IF NOT EXISTS idx_share_owner ON user_document_shares(shared_by_user_id);
         CREATE UNIQUE INDEX IF NOT EXISTS uq_doc_shared_user ON user_document_shares(document_id, shared_with_user_id);
+    ");
+
+    // 15. Table user_document_external_shares (Public / External Share Links)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS user_document_external_shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id INTEGER NOT NULL,
+            created_by_user_id INTEGER NOT NULL,
+            share_token VARCHAR(64) NOT NULL UNIQUE,
+            has_pin INTEGER NOT NULL DEFAULT 0,
+            pin_hash VARCHAR(255) NULL,
+            expires_at DATETIME NULL,
+            access_count INTEGER NOT NULL DEFAULT 0,
+            last_accessed_at DATETIME NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (document_id) REFERENCES user_documents(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_extshare_token ON user_document_external_shares(share_token);
+        CREATE INDEX IF NOT EXISTS idx_extshare_doc ON user_document_external_shares(document_id);
+        CREATE INDEX IF NOT EXISTS idx_extshare_active ON user_document_external_shares(is_active);
+        CREATE INDEX IF NOT EXISTS idx_extshare_expires ON user_document_external_shares(expires_at);
     ");
 
     seed_default_sites_if_empty($pdo);

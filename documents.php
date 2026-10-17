@@ -503,11 +503,15 @@ include __DIR__ . '/includes/header.php';
   .doc-category-badge {
     background: rgba(0, 128, 128, 0.1);
     color: var(--primary);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 6px;
     border: 1px solid rgba(0, 128, 128, 0.2);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    line-height: 1.3;
   }
   .doc-privacy-badge {
     font-size: 0.7rem;
@@ -639,6 +643,36 @@ include __DIR__ . '/includes/header.php';
     align-items: center;
     justify-content: center;
     margin: 0 auto 12px;
+  }
+
+  /* Share Modal Tabs & External Link Styles */
+  .share-tabs-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .share-tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-subtle);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .share-tab-btn:hover {
+    color: var(--primary);
+  }
+  .share-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
   }
 
   /* Modal Dialog Styles */
@@ -1652,91 +1686,226 @@ include __DIR__ . '/includes/header.php';
   </form>
 </div>
 
-<!-- Modal 2: Atur Hak Akses Berbagi Saja (Share Modal) -->
+<!-- Modal 2: Atur Hak Akses & Berbagi Dokumen (Internal & Eksternal) -->
 <div class="vault-modal-backdrop" id="modal_share_doc">
-  <form id="form_share_doc" class="vault-modal-dialog" onsubmit="submitShareForm(event)">
+  <div class="vault-modal-dialog">
     <div class="vault-modal-header">
       <h3>
         <?= app_icon('share', 20) ?>
-        <span>Atur Hak Akses Berbagi</span>
+        <span>Hak Akses &amp; Berbagi Dokumen</span>
       </h3>
       <button type="button" class="vault-modal-close" onclick="closeShareModal()" aria-label="Tutup">&times;</button>
     </div>
     
     <div class="vault-modal-body">
-      <input type="hidden" name="document_id" id="share_doc_id" value="0">
-      <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 4px;" id="share_doc_title_text">
-        -
-      </div>
-      <div style="font-size: 0.78rem; color: var(--text-subtle); margin-bottom: 14px;" id="share_doc_file_text">
-        -
-      </div>
-
-      <div class="vault-privacy-options">
-        <label class="vault-privacy-option">
-          <input type="radio" name="privacy_type" value="private" id="modal_share_priv_private" onchange="toggleModalShareBox()">
-          <div>
-            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-              🔒 Pribadi (Hanya Saya)
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-subtle);">
-              Tutup akses berbagi. Hanya Anda yang dapat melihat berkas ini.
-            </div>
-          </div>
-        </label>
-
-        <label class="vault-privacy-option">
-          <input type="radio" name="privacy_type" value="shared_users" id="modal_share_priv_shared" onchange="toggleModalShareBox()">
-          <div>
-            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-              👥 Bagikan ke Rekan Tertentu
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-subtle);">
-              Pilih rekan kerja yang diizinkan mengunduh dan membaca berkas ini.
-            </div>
-          </div>
-        </label>
-
-        <label class="vault-privacy-option">
-          <input type="radio" name="privacy_type" value="team" id="modal_share_priv_team" onchange="toggleModalShareBox()">
-          <div>
-            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
-              🌐 Seluruh Tim NOC
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-subtle);">
-              Buka akses untuk semua staf dan teknisi yang terdaftar.
-            </div>
-          </div>
-        </label>
-      </div>
-
-      <div id="box_modal_share_users" style="display: none; margin-top: 10px;">
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
-          Beri Tanda Centang untuk Rekan yang Diizinkan:
+      <input type="hidden" id="share_doc_id" value="0">
+      
+      <!-- Ringkasan Dokumen -->
+      <div style="background: var(--bg-alt); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 2px;" id="share_doc_title_text">
+          -
         </div>
-        <div class="vault-user-checklist">
-          <?php foreach ($activeUsers as $u): ?>
-            <label class="vault-user-item">
-              <input type="checkbox" name="share_user_ids[]" value="<?= $u['id'] ?>" class="cb-modal-share-user">
-              <span>
-                <strong><?= htmlspecialchars($u['full_name'] ?: $u['username']) ?></strong>
-                <span style="font-size: 0.72rem; color: var(--text-subtle);">(@<?= htmlspecialchars($u['username']) ?> &bull; <?= htmlspecialchars($u['role']) ?>)</span>
-              </span>
+        <div style="font-size: 0.78rem; color: var(--text-subtle);" id="share_doc_file_text">
+          -
+        </div>
+      </div>
+
+      <!-- Tab Switcher Modal -->
+      <div class="share-tabs-nav">
+        <button type="button" class="share-tab-btn active" id="tab_btn_share_internal" onclick="switchShareModalTab('internal')">
+          <?= app_icon('users', 14) ?>
+          <span>Berbagi Internal Tim</span>
+        </button>
+        <button type="button" class="share-tab-btn" id="tab_btn_share_external" onclick="switchShareModalTab('external')">
+          <?= app_icon('share', 14) ?>
+          <span>Tautan Eksternal (Link Publik)</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: Berbagi Internal Tim -->
+      <form id="form_share_doc" onsubmit="submitShareForm(event)">
+        <div id="tab_content_share_internal">
+          <div class="vault-privacy-options">
+            <label class="vault-privacy-option">
+              <input type="radio" name="privacy_type" value="private" id="modal_share_priv_private" onchange="toggleModalShareBox()">
+              <div>
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
+                  🔒 Pribadi (Hanya Saya)
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">
+                  Tutup akses berbagi. Hanya Anda yang dapat melihat berkas ini.
+                </div>
+              </div>
             </label>
-          <?php endforeach; ?>
+
+            <label class="vault-privacy-option">
+              <input type="radio" name="privacy_type" value="shared_users" id="modal_share_priv_shared" onchange="toggleModalShareBox()">
+              <div>
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
+                  👥 Bagikan ke Rekan Tertentu
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">
+                  Pilih rekan kerja yang diizinkan mengunduh dan membaca berkas ini.
+                </div>
+              </div>
+            </label>
+
+            <label class="vault-privacy-option">
+              <input type="radio" name="privacy_type" value="team" id="modal_share_priv_team" onchange="toggleModalShareBox()">
+              <div>
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
+                  🌐 Seluruh Tim NOC
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-subtle);">
+                  Buka akses untuk semua staf dan teknisi yang terdaftar.
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div id="box_modal_share_users" style="display: none; margin-top: 10px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+              Beri Tanda Centang untuk Rekan yang Diizinkan:
+            </div>
+            <div class="vault-user-checklist">
+              <?php foreach ($activeUsers as $u): ?>
+                <label class="vault-user-item">
+                  <input type="checkbox" name="share_user_ids[]" value="<?= $u['id'] ?>" class="cb-modal-share-user">
+                  <span>
+                    <strong><?= htmlspecialchars($u['full_name'] ?: $u['username']) ?></strong>
+                    <span style="font-size: 0.72rem; color: var(--text-subtle);">(@<?= htmlspecialchars($u['username']) ?> &bull; <?= htmlspecialchars($u['role']) ?>)</span>
+                  </span>
+                </label>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <div id="share_alert" style="display: none; padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-top: 12px;"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border);">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeShareModal()">Tutup</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="btn_submit_share" style="font-weight: 700; padding: 0.45rem 1.25rem;">
+              Simpan Hak Akses Internal
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- TAB 2: Berbagi Tautan Eksternal Publik -->
+      <div id="tab_content_share_external" style="display: none;">
+        <!-- Loading State -->
+        <div id="ext_share_loading" style="text-align: center; padding: 24px; color: var(--text-subtle); font-size: 0.88rem;">
+          Memuat data tautan berbagi eksternal...
+        </div>
+
+        <!-- Active Share Link View -->
+        <div id="box_active_ext_share" style="display: none;">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 6px;">
+                <?= app_icon('check-circle', 14, '#166534') ?>
+                <span>Tautan Berbagi Eksternal Aktif</span>
+              </span>
+              <span id="badge_ext_share_pin" style="font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">
+                PIN
+              </span>
+            </div>
+            
+            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 10px;">
+              <input type="text" id="ext_share_link_input" class="form-control" readonly style="font-size: 0.82rem; font-weight: 600; background: #ffffff;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyExternalShareLink()" id="btn_copy_ext_link" title="Salin Tautan" style="padding: 0.4rem 0.8rem; flex-shrink: 0; font-weight: 700;">
+                Salin
+              </button>
+              <a href="#" id="link_preview_ext" target="_blank" class="btn btn-secondary btn-sm" title="Buka Tautan" style="padding: 0.4rem 0.8rem; flex-shrink: 0;">
+                <?= app_icon('eye', 13) ?>
+              </a>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #374151; line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
+              <div>
+                <strong>Masa Berlaku:</strong> <span id="text_ext_share_expiry">-</span>
+              </div>
+              <div>
+                <strong>Statistik:</strong> Diakses <span id="text_ext_share_views">0 kali</span> &bull; Terakhir: <span id="text_ext_share_last">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="revokeExternalShare()" id="btn_revoke_ext" style="font-size: 0.76rem; display: inline-flex; align-items: center; gap: 4px;">
+              <?= app_icon('trash', 12) ?>
+              <span>Cabut / Matikan Tautan</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="toggleEditExternalShare()" id="btn_toggle_edit_ext" style="font-size: 0.76rem; display: inline-flex; align-items: center; gap: 4px;">
+              <?= app_icon('settings', 12) ?>
+              <span>Ubah Pengaturan Tautan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Create / Update Share Form -->
+        <div id="box_form_ext_share" style="display: none;">
+          <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;" id="lbl_form_ext_mode">
+            Atur Tautan Berbagi Eksternal:
+          </div>
+
+          <!-- PIN Protection Option -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin: 0;">
+              <input type="checkbox" id="ext_use_pin" onchange="togglePinInputBox()">
+              <span>Kunci Tautan dengan Kode PIN Keamanan</span>
+            </label>
+            <div id="box_ext_pin_field" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
+              <label for="ext_pin_value" style="display: block; font-size: 0.76rem; font-weight: 700; color: var(--text-subtle); margin-bottom: 4px;">
+                Kode PIN Akses (4 - 20 karakter):
+              </label>
+              <div style="position: relative; max-width: 260px;">
+                <input type="password" id="ext_pin_value" class="form-control" placeholder="Contoh: 123456" maxlength="20" autocomplete="off" style="padding-right: 36px; letter-spacing: 2px;">
+                <button type="button" onclick="togglePinVisibility()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--text-subtle);">
+                  <?= app_icon('eye', 14) ?>
+                </button>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                Penerima tautan wajib memasukkan PIN ini untuk membuka atau mengunduh dokumen.
+              </div>
+            </div>
+          </div>
+
+          <!-- Expiration Option -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
+            <label for="ext_expiry_preset" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+              Masa Berlaku Tautan (Batas Waktu Akses):
+            </label>
+            <select id="ext_expiry_preset" class="form-control" onchange="toggleCustomExpiryInput()" style="max-width: 320px;">
+              <option value="1h">1 Jam</option>
+              <option value="24h">24 Jam (1 Hari)</option>
+              <option value="3d">3 Hari</option>
+              <option value="7d" selected>7 Hari (Rekomendasi)</option>
+              <option value="30d">30 Hari</option>
+              <option value="custom">Pilih Tanggal &amp; Jam Spesifik...</option>
+              <option value="never">Tanpa Batas Waktu (Selamanya)</option>
+            </select>
+            <div id="box_ext_custom_expiry" style="display: none; margin-top: 10px;">
+              <label for="ext_expiry_custom" style="display: block; font-size: 0.76rem; font-weight: 700; color: var(--text-subtle); margin-bottom: 4px;">
+                Pilih Tanggal &amp; Jam Kedaluwarsa:
+              </label>
+              <input type="datetime-local" id="ext_expiry_custom" class="form-control" style="max-width: 260px;">
+            </div>
+          </div>
+
+          <div id="ext_share_alert" style="display: none; padding: 10px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 12px;"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeShareModal()">Batal</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn_save_ext_share" onclick="saveExternalShare()" style="font-weight: 700; padding: 0.45rem 1.25rem;">
+              Buat Tautan Berbagi
+            </button>
+          </div>
         </div>
       </div>
 
-      <div id="share_alert" style="display: none; padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-top: 12px;"></div>
     </div>
-    
-    <div class="vault-modal-footer">
-      <button type="button" class="btn btn-secondary" onclick="closeShareModal()">Batal</button>
-      <button type="submit" class="btn btn-primary" id="btn_submit_share" style="min-width: 140px; font-weight: 700;">
-        Simpan Hak Akses
-      </button>
-    </div>
-  </form>
+  </div>
 </div>
 
 <script>
@@ -2004,6 +2173,8 @@ include __DIR__ . '/includes/header.php';
     document.getElementById('share_doc_file_text').textContent = 'Berkas: ' + doc.original_filename;
     document.getElementById('share_alert').style.display = 'none';
 
+    switchShareModalTab('internal');
+
     if (doc.privacy_type === 'shared_users') {
       document.getElementById('modal_share_priv_shared').checked = true;
     } else if (doc.privacy_type === 'team') {
@@ -2026,6 +2197,249 @@ include __DIR__ . '/includes/header.php';
   function closeShareModal() {
     document.body.style.overflow = '';
     document.getElementById('modal_share_doc').style.display = 'none';
+  }
+
+  // Switch Share Modal Tabs (Internal vs External Link)
+  function switchShareModalTab(tab) {
+    var btnInternal = document.getElementById('tab_btn_share_internal');
+    var btnExternal = document.getElementById('tab_btn_share_external');
+    var contentInternal = document.getElementById('tab_content_share_internal');
+    var contentExternal = document.getElementById('tab_content_share_external');
+
+    if (tab === 'external') {
+      btnInternal.classList.remove('active');
+      btnExternal.classList.add('active');
+      contentInternal.style.display = 'none';
+      contentExternal.style.display = 'block';
+      loadExternalShareInfo();
+    } else {
+      btnInternal.classList.add('active');
+      btnExternal.classList.remove('active');
+      contentInternal.style.display = 'block';
+      contentExternal.style.display = 'none';
+    }
+  }
+
+  // Load External Share Link Info via AJAX
+  function loadExternalShareInfo() {
+    var docId = document.getElementById('share_doc_id').value;
+    var loading = document.getElementById('ext_share_loading');
+    var boxActive = document.getElementById('box_active_ext_share');
+    var boxForm = document.getElementById('box_form_ext_share');
+    var alertBox = document.getElementById('ext_share_alert');
+
+    loading.style.display = 'block';
+    boxActive.style.display = 'none';
+    boxForm.style.display = 'none';
+    alertBox.style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('action', 'get');
+    fd.append('document_id', docId);
+
+    fetch('api/manage_external_share.php', {
+      method: 'POST',
+      body: fd
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      loading.style.display = 'none';
+      if (data.success && data.has_active_share && data.share) {
+        var s = data.share;
+        document.getElementById('ext_share_link_input').value = s.share_url;
+        document.getElementById('link_preview_ext').href = s.share_url;
+        
+        var pinBadge = document.getElementById('badge_ext_share_pin');
+        if (s.has_pin) {
+          pinBadge.textContent = 'Terproteksi PIN';
+          pinBadge.style.background = '#e0f2fe';
+          pinBadge.style.color = '#0369a1';
+        } else {
+          pinBadge.textContent = 'Tanpa PIN (Akses Bebas)';
+          pinBadge.style.background = '#f1f5f9';
+          pinBadge.style.color = '#475569';
+        }
+
+        document.getElementById('text_ext_share_expiry').textContent = s.expiry_info.label;
+        document.getElementById('text_ext_share_views').textContent = s.access_count + ' kali';
+        document.getElementById('text_ext_share_last').textContent = s.last_accessed_at;
+
+        boxActive.style.display = 'block';
+        boxForm.style.display = 'none';
+        document.getElementById('lbl_form_ext_mode').textContent = 'Perbarui Pengaturan Tautan Eksternal:';
+        document.getElementById('btn_save_ext_share').textContent = 'Perbarui Tautan Berbagi';
+      } else {
+        boxActive.style.display = 'none';
+        boxForm.style.display = 'block';
+        document.getElementById('lbl_form_ext_mode').textContent = 'Atur Tautan Berbagi Eksternal Baru:';
+        document.getElementById('btn_save_ext_share').textContent = 'Buat Tautan Berbagi';
+        document.getElementById('ext_use_pin').checked = false;
+        togglePinInputBox();
+        document.getElementById('ext_expiry_preset').value = '7d';
+        toggleCustomExpiryInput();
+      }
+    })
+    .catch(function(err) {
+      loading.style.display = 'none';
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fee2e2';
+      alertBox.style.color = '#991b1b';
+      alertBox.textContent = 'Gagal memuat informasi tautan: ' + err.message;
+    });
+  }
+
+  // Toggle PIN input field
+  function togglePinInputBox() {
+    var checked = document.getElementById('ext_use_pin').checked;
+    document.getElementById('box_ext_pin_field').style.display = checked ? 'block' : 'none';
+    if (checked) {
+      document.getElementById('ext_pin_value').focus();
+    }
+  }
+
+  // Toggle Custom Expiry input
+  function toggleCustomExpiryInput() {
+    var val = document.getElementById('ext_expiry_preset').value;
+    document.getElementById('box_ext_custom_expiry').style.display = (val === 'custom') ? 'block' : 'none';
+  }
+
+  // Toggle PIN visibility
+  function togglePinVisibility() {
+    var input = document.getElementById('ext_pin_value');
+    input.type = (input.type === 'password') ? 'text' : 'password';
+  }
+
+  // Copy external share link
+  function copyExternalShareLink() {
+    var input = document.getElementById('ext_share_link_input');
+    var btn = document.getElementById('btn_copy_ext_link');
+    if (!input || !input.value) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(input.value).then(function() {
+        btn.textContent = 'Tersalin!';
+        setTimeout(function() { btn.textContent = 'Salin'; }, 2000);
+      });
+    } else {
+      input.select();
+      document.execCommand('copy');
+      btn.textContent = 'Tersalin!';
+      setTimeout(function() { btn.textContent = 'Salin'; }, 2000);
+    }
+  }
+
+  // Toggle edit external share
+  function toggleEditExternalShare() {
+    var boxForm = document.getElementById('box_form_ext_share');
+    if (boxForm.style.display === 'none') {
+      boxForm.style.display = 'block';
+      boxForm.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      boxForm.style.display = 'none';
+    }
+  }
+
+  // Save / update external share
+  function saveExternalShare() {
+    var docId = document.getElementById('share_doc_id').value;
+    var btn = document.getElementById('btn_save_ext_share');
+    var alertBox = document.getElementById('ext_share_alert');
+    var usePin = document.getElementById('ext_use_pin').checked ? '1' : '0';
+    var pin = document.getElementById('ext_pin_value').value.trim();
+    var preset = document.getElementById('ext_expiry_preset').value;
+    var customExpiry = document.getElementById('ext_expiry_custom').value;
+
+    if (usePin === '1' && pin === '' && document.getElementById('btn_save_ext_share').textContent.indexOf('Perbarui') === -1) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fee2e2';
+      alertBox.style.color = '#991b1b';
+      alertBox.textContent = 'Silakan tentukan kode PIN keamanan (minimal 4 karakter).';
+      return;
+    }
+
+    if (preset === 'custom' && !customExpiry) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fee2e2';
+      alertBox.style.color = '#991b1b';
+      alertBox.textContent = 'Silakan pilih tanggal dan jam kedaluwarsa.';
+      return;
+    }
+
+    btn.disabled = true;
+    var origText = btn.textContent;
+    btn.textContent = 'Memproses Tautan...';
+    alertBox.style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('action', 'save');
+    fd.append('document_id', docId);
+    fd.append('use_pin', usePin);
+    fd.append('pin', pin);
+    fd.append('expiry_preset', preset);
+    fd.append('expiry_custom', customExpiry);
+
+    fetch('api/manage_external_share.php', {
+      method: 'POST',
+      body: fd
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = origText;
+      if (data.success) {
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#d1fae5';
+        alertBox.style.color = '#065f46';
+        alertBox.textContent = data.message || 'Tautan berbagi berhasil disimpan.';
+        loadExternalShareInfo();
+      } else {
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#fee2e2';
+        alertBox.style.color = '#991b1b';
+        alertBox.textContent = data.message || 'Gagal menyimpan tautan.';
+      }
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = origText;
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fee2e2';
+      alertBox.style.color = '#991b1b';
+      alertBox.textContent = 'Terjadi kesalahan: ' + err.message;
+    });
+  }
+
+  // Revoke external share
+  function revokeExternalShare() {
+    if (!confirm('Apakah Anda yakin ingin mencabut tautan berbagi eksternal ini?\n\nSiapa pun yang memiliki tautan ini tidak akan dapat membuka atau mengunduh dokumen lagi.')) {
+      return;
+    }
+    var docId = document.getElementById('share_doc_id').value;
+    var btn = document.getElementById('btn_revoke_ext');
+    btn.disabled = true;
+
+    var fd = new FormData();
+    fd.append('action', 'revoke');
+    fd.append('document_id', docId);
+
+    fetch('api/manage_external_share.php', {
+      method: 'POST',
+      body: fd
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      if (data.success) {
+        alert(data.message);
+        loadExternalShareInfo();
+      } else {
+        alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+      }
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      alert('Error: ' + err.message);
+    });
   }
 
   // Submit Upload / Edit Form

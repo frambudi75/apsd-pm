@@ -807,19 +807,49 @@ if (!empty($share['expires_at'])) {
       margin-top: auto;
     }
     @media (max-width: 640px) {
+      .share-navbar {
+        padding: 10px 14px;
+      }
+      .brand-title {
+        font-size: 0.88rem;
+      }
+      .share-status-pill {
+        font-size: 0.68rem;
+        padding: 3px 8px;
+      }
       .share-container {
         padding: 0 12px;
-        margin: 16px auto;
+        margin: 14px auto;
       }
       .doc-share-card {
-        padding: 20px 16px;
+        padding: 18px 14px;
+      }
+      .doc-main-row {
+        gap: 12px;
+      }
+      .doc-big-badge {
+        width: 48px;
+        height: 48px;
+        font-size: 0.76rem;
       }
       .doc-title {
         font-size: 1.15rem;
       }
+      .doc-meta-grid {
+        grid-template-columns: 1fr;
+        padding: 10px 12px;
+        gap: 10px;
+      }
       .btn-action {
         width: 100%;
         justify-content: center;
+      }
+      .preview-body {
+        min-height: 320px;
+        padding: 8px;
+      }
+      .preview-iframe {
+        height: 60vh;
       }
     }
   </style>

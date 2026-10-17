@@ -675,6 +675,19 @@ include __DIR__ . '/includes/header.php';
     border-bottom-color: var(--primary);
   }
 
+  @media (max-width: 480px) {
+    .share-tabs-nav {
+      gap: 4px;
+    }
+    .share-tab-btn {
+      padding: 8px 6px;
+      font-size: 0.76rem;
+      flex: 1;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+
   /* Modal Dialog Styles */
   .vault-modal-backdrop {
     position: fixed;
@@ -1812,7 +1825,7 @@ include __DIR__ . '/includes/header.php';
             </div>
             
             <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 10px;">
-              <input type="text" id="ext_share_link_input" class="form-control" readonly style="font-size: 0.82rem; font-weight: 600; background: #ffffff;">
+              <input type="text" id="ext_share_link_input" class="form-control" readonly style="flex: 1; min-width: 0; font-size: 0.82rem; font-weight: 600; background: #ffffff;">
               <button type="button" class="btn btn-secondary btn-sm" onclick="copyExternalShareLink()" id="btn_copy_ext_link" title="Salin Tautan" style="padding: 0.4rem 0.8rem; flex-shrink: 0; font-weight: 700;">
                 Salin
               </button>

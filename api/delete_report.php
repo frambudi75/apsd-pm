@@ -1,6 +1,6 @@
 <?php
 /**
- * API Delete PM Report
+ * API Delete PM Report (Single & Batch Delete)
  * PT Angkasa Pura Sarana Digital
  */
 require_once __DIR__ . '/../config/database.php';
@@ -13,32 +13,61 @@ if (!has_role(['superadmin', 'admin'])) {
 
 $pdo = get_db_connection();
 
-$report_id = intval($_GET['id'] ?? 0);
-if ($report_id > 0) {
+// Support single delete via GET/POST id, or batch delete via POST ids[]
+$ids = [];
+if (!empty($_POST['ids']) && is_array($_POST['ids'])) {
+    foreach ($_POST['ids'] as $rawId) {
+        $val = intval($rawId);
+        if ($val > 0) $ids[] = $val;
+    }
+} elseif (!empty($_GET['id'])) {
+    $val = intval($_GET['id']);
+    if ($val > 0) $ids[] = $val;
+} elseif (!empty($_POST['id'])) {
+    $val = intval($_POST['id']);
+    if ($val > 0) $ids[] = $val;
+}
+
+if (!empty($ids)) {
     try {
         $pdo->beginTransaction();
 
-        // Remove photo directory if exists
-        $uploadDir = __DIR__ . "/../uploads/reports/{$report_id}";
-        if (is_dir($uploadDir)) {
-            $files = glob($uploadDir . '/*');
-            foreach ($files as $file) {
-                if (is_file($file)) @unlink($file);
+        foreach ($ids as $report_id) {
+            // Remove photo directory if exists
+            $uploadDir = __DIR__ . "/../uploads/reports/{$report_id}";
+            if (is_dir($uploadDir)) {
+                $files = glob($uploadDir . '/*');
+                if ($files) {
+                    foreach ($files as $file) {
+                        if (is_file($file)) @unlink($file);
+                    }
+                }
+                @rmdir($uploadDir);
             }
-            @rmdir($uploadDir);
-        }
 
-        $stmt = $pdo->prepare("DELETE FROM pm_reports WHERE id = ?");
-        $stmt->execute([$report_id]);
+            // Cleanup child tables explicitly
+            $pdo->prepare("DELETE FROM pm_indoor_details WHERE report_id = ?")->execute([$report_id]);
+            $pdo->prepare("DELETE FROM pm_outdoor_details WHERE report_id = ?")->execute([$report_id]);
+            $pdo->prepare("DELETE FROM pm_photos WHERE report_id = ?")->execute([$report_id]);
+            $pdo->prepare("DELETE FROM report_shares WHERE report_id = ?")->execute([$report_id]);
+
+            // Delete master report record
+            $pdo->prepare("DELETE FROM pm_reports WHERE id = ?")->execute([$report_id]);
+        }
 
         $pdo->commit();
 
-        // Invalidate Redis cache
+        // Invalidate Redis cache immediately so changes appear instantly without delay
         require_once __DIR__ . '/../config/redis.php';
         AppRedis::flushPrefix('dashboard:');
+        AppRedis::flushPrefix('reports:');
         AppRedis::del('reports:all');
+        AppRedis::del('reports:all_v2');
 
-        $returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports?msg=deleted' : '../?msg=deleted';
+        $countDeleted = count($ids);
+        $returnDest = ($_GET['return'] ?? $_POST['return'] ?? '') === 'reports' 
+            ? "../reports?msg=deleted&count={$countDeleted}" 
+            : "../?msg=deleted&count={$countDeleted}";
         header("Location: " . $returnDest);
         exit;
     } catch (Exception $e) {
@@ -49,6 +78,6 @@ if ($report_id > 0) {
     }
 }
 
-$returnDest = ($_GET['return'] ?? '') === 'reports' ? '../reports' : '../';
+$returnDest = ($_GET['return'] ?? $_POST['return'] ?? '') === 'reports' ? '../reports' : '../';
 header("Location: " . $returnDest);
 exit;

@@ -99,8 +99,9 @@ ksort($uniqueMonths);
   </div>
 
   <?php if (isset($_GET['msg']) && $_GET['msg'] === 'deleted'): ?>
+    <?php $delCount = intval($_GET['count'] ?? 1); ?>
     <div class="alert alert-success" style="margin-bottom: 1.25rem;">
-      Laporan berhasil dihapus dari arsip database.
+      <?= ($delCount > 1) ? "Sebanyak {$delCount} laporan berhasil dihapus dari arsip database." : "Laporan berhasil dihapus dari arsip database." ?>
     </div>
   <?php elseif (isset($_GET['msg']) && $_GET['msg'] === 'created'): ?>
     <div class="alert alert-success" style="margin-bottom: 1.25rem;">
@@ -485,11 +486,29 @@ ksort($uniqueMonths);
     </div>
   </div>
 
-</main>
+    <!-- Floating Batch Actions Bar -->
+    <div id="batch_action_bar" class="batch-action-bar no-print" style="display: none;">
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+        <span>☑️</span> Terpilih: <span id="batch_selected_count" style="color: var(--primary); font-weight: 800; font-size: 0.95rem;">0</span> Laporan
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button type="button" id="btn_batch_download_zip" class="btn btn-sm btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 38px;">
+          <span>📦</span> Unduh Berkas ZIP PDF
+        </button>
+        <button type="button" id="btn_batch_delete" class="btn btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; background: #ef4444; color: #ffffff; border: 1px solid #dc2626; min-height: 38px;">
+          <span>🗑️</span> Hapus Terpilih
+        </button>
+        <button type="button" id="btn_batch_cancel" class="btn btn-sm btn-secondary" style="color: var(--text-subtle); min-height: 38px;">
+          Batal
+        </button>
+      </div>
+    </div>
+
+  </main>
 
 <script>
   // Realtime Client-Side Multi-Filter: Search, Type, Site, Month, & Anomaly Status
-  (function () {
+  document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('report_search_input');
     const filterButtons = document.querySelectorAll('.btn-filter-type');
     const selectSite = document.getElementById('filter_site_select');
@@ -563,6 +582,7 @@ ksort($uniqueMonths);
           noMatchBox.style.display = 'none';
         }
       }
+      updateBatchBar();
     }
 
     if (searchInput) {
@@ -665,16 +685,22 @@ ksort($uniqueMonths);
     const batchBar = document.getElementById('batch_action_bar');
     const batchCount = document.getElementById('batch_selected_count');
     const btnBatchZip = document.getElementById('btn_batch_download_zip');
+    const btnBatchDelete = document.getElementById('btn_batch_delete');
     const btnBatchCancel = document.getElementById('btn_batch_cancel');
 
     function updateBatchBar() {
       const checkedBoxes = document.querySelectorAll('.report-select-chk:checked');
-      const count = checkedBoxes.length;
+      const checkedIds = new Set();
+      checkedBoxes.forEach(c => checkedIds.add(c.value));
+      const count = checkedIds.size;
+
       if (batchCount) batchCount.textContent = count;
-      if (batchBar) batchBar.style.display = count > 0 ? 'flex' : 'none';
+      if (batchBar) {
+        batchBar.style.display = count > 0 ? 'flex' : 'none';
+      }
       if (checkAll) {
-        const visibleBoxes = document.querySelectorAll('.report-row:not([style*="display: none"]) .report-select-chk');
-        checkAll.checked = visibleBoxes.length > 0 && checkedBoxes.length === visibleBoxes.length;
+        const visibleTableBoxes = document.querySelectorAll('.desktop-table-container .report-row:not([style*="display: none"]) .report-select-chk');
+        checkAll.checked = visibleTableBoxes.length > 0 && Array.from(visibleTableBoxes).every(c => c.checked);
       }
     }
 
@@ -686,12 +712,26 @@ ksort($uniqueMonths);
           const chk = row.querySelector('.report-select-chk');
           if (chk) chk.checked = isChecked;
         });
+
+        // Also check visible mobile cards
+        const visibleCards = document.querySelectorAll('.mobile-cards-container .report-card-item:not([style*="display: none"])');
+        visibleCards.forEach(card => {
+          const chk = card.querySelector('.report-select-chk');
+          if (chk) chk.checked = isChecked;
+        });
+
         updateBatchBar();
       });
     }
 
     document.addEventListener('change', function (e) {
       if (e.target && e.target.classList.contains('report-select-chk')) {
+        // Sync checkboxes between desktop table and mobile cards if same ID
+        const targetVal = e.target.value;
+        const targetChecked = e.target.checked;
+        document.querySelectorAll('.report-select-chk[value="' + targetVal + '"]').forEach(c => {
+          c.checked = targetChecked;
+        });
         updateBatchBar();
       }
     });
@@ -707,7 +747,7 @@ ksort($uniqueMonths);
     if (btnBatchZip) {
       btnBatchZip.addEventListener('click', function () {
         const checkedBoxes = document.querySelectorAll('.report-select-chk:checked');
-        const ids = Array.from(checkedBoxes).map(c => c.value);
+        const ids = Array.from(new Set(Array.from(checkedBoxes).map(c => c.value)));
         if (ids.length === 0) {
           alert('Pilih setidaknya satu laporan terlebih dahulu.');
           return;
@@ -736,22 +776,47 @@ ksort($uniqueMonths);
         }, 3000);
       });
     }
-  })();
-</script>
 
-  <!-- Floating Batch Actions Bar -->
-  <div id="batch_action_bar" class="batch-action-bar no-print" style="display: none;">
-    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">
-      Terpilih: <span id="batch_selected_count" style="color: var(--primary);">0</span> Dokumen
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <button type="button" id="btn_batch_download_zip" class="btn btn-sm btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-        <span>📦</span> Unduh Berkas ZIP PDF
-      </button>
-      <button type="button" id="btn_batch_cancel" class="btn btn-sm btn-secondary" style="color: var(--text-subtle);">
-        Batal
-      </button>
-    </div>
-  </div>
+    if (btnBatchDelete) {
+      btnBatchDelete.addEventListener('click', function () {
+        const checkedBoxes = document.querySelectorAll('.report-select-chk:checked');
+        const ids = Array.from(new Set(Array.from(checkedBoxes).map(c => c.value)));
+        if (ids.length === 0) {
+          alert('Pilih setidaknya satu laporan terlebih dahulu.');
+          return;
+        }
+
+        const confirmMsg = 'Apakah Anda yakin ingin menghapus ' + ids.length + ' laporan terpilih dari arsip database? Tindakan ini tidak dapat dibatalkan.';
+        if (!confirm(confirmMsg)) {
+          return;
+        }
+
+        btnBatchDelete.disabled = true;
+        btnBatchDelete.innerHTML = '<span>⏳ Menghapus...</span>';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'api/delete_report.php';
+
+        const returnInput = document.createElement('input');
+        returnInput.type = 'hidden';
+        returnInput.name = 'return';
+        returnInput.value = 'reports';
+        form.appendChild(returnInput);
+
+        ids.forEach(id => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'ids[]';
+          input.value = id;
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+      });
+    }
+  });
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

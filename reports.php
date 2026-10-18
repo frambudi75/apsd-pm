@@ -3,6 +3,8 @@
  * Riwayat & Arsip Laporan PM
  * IASS SBU ICT KNO
  */
+require_once __DIR__ . '/includes/auth.php';
+require_login();
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/redis.php';
 require_once __DIR__ . '/includes/checklist_data.php';

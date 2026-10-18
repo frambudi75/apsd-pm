@@ -43,16 +43,16 @@ if (!is_dir($tempDir)) {
     @mkdir($tempDir, 0777, true);
 }
 
-// Candidate headless browser binary paths
+// Candidate headless browser binary paths (Chrome prioritized on Windows)
 $browserCandidates = [
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser'
 ];
 
 $browserBin = null;
@@ -63,9 +63,12 @@ foreach ($browserCandidates as $p) {
     }
 }
 
-$localPort = $_SERVER['SERVER_PORT'] ?? '80';
+$localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
+$isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
+$scheme = $isSsl ? 'https' : 'http';
 $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
 $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
+$profileDir = $tempDir . '/chrome_batch_profile';
 
 $filesToZip = [];
 $cleanupFiles = [];
@@ -81,11 +84,12 @@ foreach ($reports as $report) {
     if (!file_exists($pdfPath) || filesize($pdfPath) < 30000) {
         if ($browserBin) {
             $pdfToken = hash_hmac('sha256', (string)$rId, 'apsd_internal_secret_2026');
-            $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$rId}&pdf_token={$pdfToken}";
+            $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$rId}&pdf_token={$pdfToken}";
 
             $cmd = sprintf(
-                '"%s" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
+                '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --no-pdf-header-footer --print-to-pdf="%s" "%s"',
                 $browserBin,
+                $profileDir,
                 $pdfPath,
                 $internalUrl
             );

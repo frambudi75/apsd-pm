@@ -53,6 +53,13 @@ try {
         @unlink($filePath);
     }
 
+    // Delete related child shares first to maintain data integrity
+    $stmtShares = $pdo->prepare("DELETE FROM user_document_shares WHERE document_id = ?");
+    $stmtShares->execute([$docId]);
+
+    $stmtExtShares = $pdo->prepare("DELETE FROM user_document_external_shares WHERE document_id = ?");
+    $stmtExtShares->execute([$docId]);
+
     // Delete database records
     $stmtDel = $pdo->prepare("DELETE FROM user_documents WHERE id = ?");
     $stmtDel->execute([$docId]);

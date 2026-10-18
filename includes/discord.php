@@ -166,17 +166,19 @@ function generate_shift_pdf_file(int $shiftId): ?string {
     $profileDir = $tempDir . '/chrome_pwa_pdf_profile';
     $pdfPath = $tempDir . '/Logbook_NOC_Shift_' . $shiftId . '_' . time() . '.pdf';
 
-    $localPort = $_SERVER['SERVER_PORT'] ?? '80';
+    $localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
+    $isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
+    $scheme = $isSsl ? 'https' : 'http';
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     if (basename($scriptDir) === 'api' || basename($scriptDir) === 'includes') {
         $scriptDir = dirname($scriptDir);
     }
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
     $pdfToken = hash_hmac('sha256', (string)$shiftId, 'apsd_internal_secret_2026');
-    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/print_shift.php?shift_id={$shiftId}&pdf_token={$pdfToken}";
+    $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/print_shift.php?shift_id={$shiftId}&pdf_token={$pdfToken}";
 
     $cmd = sprintf(
-        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
+        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --no-pdf-header-footer --print-to-pdf="%s" "%s"',
         $browserBin,
         $profileDir,
         $pdfPath,

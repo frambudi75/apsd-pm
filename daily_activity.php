@@ -221,9 +221,11 @@ if ($currentShift && !empty($currentShift['notes'])) {
     $waMessageLines[] = $currentShift['notes'];
 }
 
-$waMessageLines[] = "";
-$waMessageLines[] = "📄 *Unduh / Tinjau Dokumen PDF Resmi Shift*:";
-$waMessageLines[] = $pdfUrl;
+if ($shiftId > 0) {
+    $waMessageLines[] = "";
+    $waMessageLines[] = "📄 *Unduh / Tinjau Dokumen PDF Resmi Shift*:";
+    $waMessageLines[] = $pdfUrl;
+}
 $waMessageLines[] = "=====================================";
 $waMessageLines[] = "_Dikirim otomatis melalui Sistem PM & NOC IASS SBU ICT KNO_";
 

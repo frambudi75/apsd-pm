@@ -112,7 +112,7 @@ if (isset($_GET['delete'])) {
         require_once __DIR__ . '/includes/audit.php';
         log_audit_event('MASTER_DATA', 'SITE_DELETE', 'Hapus master site: ' . $siteInfo['site_name'] . ' (' . ($siteInfo['site_id_str'] ?: 'ID ' . $delId) . ')', 'sites', $delId);
     }
-    header("Location: sites.php?msg=deleted");
+    header("Location: sites?msg=deleted");
     exit;
 }
 

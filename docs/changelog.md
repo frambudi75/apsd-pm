@@ -23,6 +23,18 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
   - Memperbaiki nama tabel `system_settings` dan menyertakan seluruh tabel laporan PM (`pm_reports`, `pm_indoor_details`, `pm_outdoor_details`, `pm_photos`, `daily_activity_photos`, `user_document_shares`, `user_document_external_shares`).
 * **Pembersihan Ikon Aksi Dokumen Cetak (`print_outdoor.php` & `print_indoor.php`)**:
   - Mengganti seluruh emoji pada tombol cetak dan unduh dengan ikon SVG inline profesional sesuai standar Anti-Slop AI.
+* **Audit & Penguatan Keamanan Akses Formulir PM (`form_indoor.php`, `form_outdoor.php`, `reports.php`)**:
+  - Menerapkan pemeriksaan login wajib sebelum query database dijalankan, mencegah pemrosesan data tanpa otentikasi.
+* **Penanganan Loopback Port 443 & Flag Keamanan Headless Chrome (`download_pdf.php`, `batch_download_pdf.php`, `includes/discord.php`)**:
+  - Memperbaiki URL loopback lokal internal agar menggunakan protokol HTTPS pada server dengan port 443 serta menambahkan opsi `--ignore-certificate-errors` dan `--allow-insecure-localhost`.
+* **Pembaruan Versi Cache PWA Service Worker (`sw.js`)**:
+  - Memperbarui `CACHE_NAME` ke `iass-pm-v2.7.6` agar browser klien otomatis membuang cache lama dan memuat aset terbaru.
+* **Integritas Relasi Brankas Dokumen (`api/delete_document.php`)**:
+  - Membersihkan data berbagi berkas pada `user_document_shares` dan `user_document_external_shares` sebelum dokumen dihapus.
+* **Penguatan Proteksi Open Redirect (`login.php`)**:
+  - Menolak URL redirect relatif protokol ganda (`//` atau `\\`) pada parameter redirect halaman login.
+* **Optimasi Rute Hapus Master Site (`sites.php`)**:
+  - Mengarahkan aksi hapus langsung ke URL kanonikal `sites?msg=deleted` tanpa melewati 301 hop redirect.
 
 ---
 

@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $baseUrl = get_app_base_url();
             
             // Validate redirect URL to prevent open redirect
-            if (!empty($redirectUrl) && (strpos($redirectUrl, 'http://') === false && strpos($redirectUrl, 'https://') === false)) {
+            if (!empty($redirectUrl) && (strpos($redirectUrl, 'http://') === false && strpos($redirectUrl, 'https://') === false && strpos($redirectUrl, '//') === false && strpos($redirectUrl, '\\') === false)) {
                 header('Location: ' . $redirectUrl);
             } else {
                 header('Location: ' . $baseUrl);

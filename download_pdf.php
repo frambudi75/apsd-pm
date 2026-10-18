@@ -81,15 +81,17 @@ if ($browserBin) {
     $pdfPath = $tempDir . '/' . $pdfFilename;
 
     // Detect internal base URL with secure signed token
-    $localPort = $_SERVER['SERVER_PORT'] ?? '80';
+    $localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
+    $isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
+    $scheme = $isSsl ? 'https' : 'http';
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
     $pdfToken = hash_hmac('sha256', $targetId, 'apsd_internal_secret_2026');
-    $internalUrl = "http://127.0.0.1:{$localPort}{$basePath}/{$printFile}?{$idParam}&pdf_token={$pdfToken}";
+    $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/{$printFile}?{$idParam}&pdf_token={$pdfToken}";
 
     $profileDir = $tempDir . '/chrome_headless_profile';
     $cmd = sprintf(
-        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --no-pdf-header-footer --print-to-pdf="%s" "%s"',
+        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --no-pdf-header-footer --print-to-pdf="%s" "%s"',
         $browserBin,
         $profileDir,
         $pdfPath,

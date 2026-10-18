@@ -56,11 +56,7 @@ if ((int)$doc['user_id'] !== $userId && !$isSuperAdmin) {
  * Helper: Bangun URL lengkap untuk tautan share
  */
 function build_external_share_url(string $token): string {
-    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443;
-    $protocol = $isSecure ? 'https://' : 'http://';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $baseUrl = get_app_base_url();
-    return $protocol . $host . $baseUrl . 'share?token=' . urlencode($token);
+    return get_full_app_url('share?token=' . urlencode($token));
 }
 
 /**

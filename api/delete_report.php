@@ -49,7 +49,6 @@ if (!empty($ids)) {
             $pdo->prepare("DELETE FROM pm_indoor_details WHERE report_id = ?")->execute([$report_id]);
             $pdo->prepare("DELETE FROM pm_outdoor_details WHERE report_id = ?")->execute([$report_id]);
             $pdo->prepare("DELETE FROM pm_photos WHERE report_id = ?")->execute([$report_id]);
-            $pdo->prepare("DELETE FROM report_shares WHERE report_id = ?")->execute([$report_id]);
 
             // Delete master report record
             $pdo->prepare("DELETE FROM pm_reports WHERE id = ?")->execute([$report_id]);

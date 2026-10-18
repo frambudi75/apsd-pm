@@ -12,6 +12,10 @@ Options -Indexes
     # 1. Recovery rule: redirect any cached /var/www/html paths to root
     RewriteRule ^var/www/html/?(.*)$ /$1 [R=301,L]
 
+    # Recovery rule: redirect accidental /apsd/ subpath to root if app is running at root domain
+    RewriteCond %{DOCUMENT_ROOT}/apsd !-d
+    RewriteRule ^apsd/(.*)$ /$1 [R=301,L,QSA]
+
     # 2. Block direct access to sensitive system directories & files (HTTP 403)
     RewriteRule ^database(/.*)?$ - [F,L,NC]
     RewriteRule ^config(/.*)?$ - [F,L,NC]

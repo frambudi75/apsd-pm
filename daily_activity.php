@@ -182,9 +182,8 @@ $techName = $currentShift['technician_name'] ?? ($currentUser['full_name'] ?? $c
 $shiftNameLabel = $shiftInfo['name'] . ' (' . $shiftInfo['time'] . ')';
 $formattedDateIndo = date('d F Y', strtotime($filterDate));
 
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$pdfUrl = $protocol . $host . '/apsd/print_shift?shift_id=' . ($currentShift['id'] ?? 0);
+$shiftId = (int)($currentShift['id'] ?? 0);
+$pdfUrl = get_full_app_url('print_shift?shift_id=' . $shiftId);
 
 $waMessageLines = [];
 $waMessageLines[] = "*LAPORAN LOGBOOK HARIAN SHIFT NOC*";

@@ -112,7 +112,12 @@ function send_discord_notification(string $channelType, array $embedData, ?strin
  * Helper: Bangun URL lengkap server untuk tombol/tautan
  */
 function get_server_base_url(): string {
-    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443;
+    if (function_exists('get_full_app_url')) {
+        return get_full_app_url();
+    }
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
     $protocol = $isSecure ? 'https://' : 'http://';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $script = $_SERVER['SCRIPT_NAME'] ?? '';

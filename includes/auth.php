@@ -15,6 +15,28 @@ require_once __DIR__ . '/audit.php';
 const SESSION_LIFETIME = 43200; // 12 jam (12 * 3600 detik)
 
 /**
+ * Detect if current request is running under HTTPS (including reverse proxies & Cloudflare)
+ */
+function is_ssl_request(): bool {
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    if ((int)($_SERVER['SERVER_PORT'] ?? 80) === 443) {
+        return true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+        return true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+        return true;
+    }
+    if (!empty($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], 'https') !== false) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * Get dynamic application base URL (works in both Docker root and XAMPP subdirectories)
  */
 function get_app_base_url(): string {
@@ -28,6 +50,33 @@ function get_app_base_url(): string {
 }
 
 /**
+ * Get dynamic full application base URL with protocol and host
+ * Works seamlessly across:
+ * - Production domain root (e.g. https://pm.ictkno.my.id/print_shift?shift_id=10)
+ * - Localhost XAMPP subdirectories (e.g. http://localhost/apsd/print_shift?shift_id=10)
+ * - Docker root (e.g. http://localhost:8080/print_shift?shift_id=10)
+ */
+function get_full_app_url(string $relativePath = ''): string {
+    $customBase = '';
+    if (function_exists('get_system_setting')) {
+        $customBase = trim(get_system_setting('app_base_url', ''));
+    }
+    if (!empty($customBase)) {
+        $fullBase = rtrim($customBase, '/') . '/';
+    } else {
+        $protocol = is_ssl_request() ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUrl = get_app_base_url();
+        $fullBase = $protocol . $host . $baseUrl;
+    }
+
+    if ($relativePath === '') {
+        return $fullBase;
+    }
+    return $fullBase . ltrim($relativePath, '/');
+}
+
+/**
  * Start or resume a secure session with 12-hour lifetime
  */
 function start_secure_session(): void {
@@ -36,7 +85,7 @@ function start_secure_session(): void {
     }
     if (session_status() === PHP_SESSION_NONE) {
         // Enforce cookie lifetime & security settings
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+        $isSecure = is_ssl_request();
         
         session_set_cookie_params([
             'lifetime' => SESSION_LIFETIME,

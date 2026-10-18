@@ -4,6 +4,20 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.9] - 2026-10-18
+
+#### Ditambahkan
+* **Pengingat Pintar Serah Terima Shift / Shift Handover Alert (`daily_activity.php`, `assets/css/app.css`)**:
+  - Menghadirkan banner pengingat otomatis pada halaman Daily Activity yang aktif 30 menit sebelum jam operasional shift berakhir (pukul 19:30 WIB untuk Shift Pagi, 07:30 WIB untuk Shift Malam, dan 16:30 WIB untuk Office Hour).
+  - Dilengkapi tombol 1-klik "Kirim WA" untuk langsung membuka format laporan siap kirim ke grup WhatsApp dan tombol "Serahkan Shift" untuk mengunci status laporan shift tanpa harus mencari tombol lain.
+  - Peringatan status mendesak (urgent alert merah) otomatis menyala jika jam operasional shift telah terlampaui tetapi status shift masih berstatus aktif (belum diserahkan).
+  - Timer real-time di sisi browser (client-side background checker) yang otomatis menampilkan notifikasi tanpa perlu refresh halaman saat teknisi sedang bertugas.
+  - Opsi tutup sementara pengingat selama 15 menit jika teknisi masih menyelesaikan pencatatan kegiatan terakhir.
+* **Pembaruan Versi PWA Service Worker (`sw.js`)**:
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v2.7.9` untuk penyegaran aset CSS dan JavaScript di peramban teknisi.
+
+---
+
 ### [Versi 2.7.8] - 2026-10-18
 
 #### Diperbaiki

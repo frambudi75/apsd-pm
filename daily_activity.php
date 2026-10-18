@@ -174,6 +174,58 @@ if ($currentShift) {
     }
 }
 
+// Hitung status pengingat serah terima shift (30 menit sebelum shift berakhir)
+$currentMinute = (int)date('i');
+$currentTotalMinutes = ($currentHour * 60) + $currentMinute; // 0 - 1439 menit dari jam 00:00
+
+$isHandoverPeriod = false;
+$handoverMessage = '';
+$handoverTitle = 'Shift Akan Segera Berakhir';
+$handoverUrgent = false;
+
+if ($currentShift && $currentShift['status'] === 'active') {
+    if ($filterShiftType === 'pagi') {
+        // Shift Pagi berakhir pukul 20:00 WIB (1200 menit). Pengingat mulai 19:30 WIB (1170 menit)
+        if ($currentTotalMinutes >= 1170 && $currentTotalMinutes < 1200) {
+            $isHandoverPeriod = true;
+            $minsLeft = 1200 - $currentTotalMinutes;
+            $handoverTitle = 'Shift Pagi Akan Berakhir (' . $minsLeft . ' Menit Lagi)';
+            $handoverMessage = 'Shift Pagi akan berakhir dalam ' . $minsLeft . ' menit (pukul 20:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+        } elseif ($currentTotalMinutes >= 1200 || $currentHour < 8) {
+            $isHandoverPeriod = true;
+            $handoverUrgent = true;
+            $handoverTitle = 'Jam Operasional Shift Pagi Telah Berakhir';
+            $handoverMessage = 'Jam operasional Shift Pagi telah berakhir (pukul 20:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke grup WhatsApp untuk kelancaran pergantian shift.';
+        }
+    } elseif ($filterShiftType === 'malam') {
+        // Shift Malam berakhir pukul 08:00 WIB (480 menit). Pengingat mulai 07:30 WIB (450 menit)
+        if ($currentTotalMinutes >= 450 && $currentTotalMinutes < 480) {
+            $isHandoverPeriod = true;
+            $minsLeft = 480 - $currentTotalMinutes;
+            $handoverTitle = 'Shift Malam Akan Berakhir (' . $minsLeft . ' Menit Lagi)';
+            $handoverMessage = 'Shift Malam akan berakhir dalam ' . $minsLeft . ' menit (pukul 08:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+        } elseif ($currentTotalMinutes >= 480 && $currentHour < 12) {
+            $isHandoverPeriod = true;
+            $handoverUrgent = true;
+            $handoverTitle = 'Jam Operasional Shift Malam Telah Berakhir';
+            $handoverMessage = 'Jam operasional Shift Malam telah berakhir (pukul 08:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke grup WhatsApp untuk kelancaran pergantian shift.';
+        }
+    } elseif ($filterShiftType === 'oh') {
+        // Office Hour berakhir pukul 17:00 WIB (1020 menit). Pengingat mulai 16:30 WIB (990 menit)
+        if ($currentTotalMinutes >= 990 && $currentTotalMinutes < 1020) {
+            $isHandoverPeriod = true;
+            $minsLeft = 1020 - $currentTotalMinutes;
+            $handoverTitle = 'Jam Kerja OH Akan Berakhir (' . $minsLeft . ' Menit Lagi)';
+            $handoverMessage = 'Jam kerja Office Hour akan berakhir dalam ' . $minsLeft . ' menit (pukul 17:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+        } elseif ($currentTotalMinutes >= 1020) {
+            $isHandoverPeriod = true;
+            $handoverUrgent = true;
+            $handoverTitle = 'Jam Kerja Office Hour Telah Berakhir';
+            $handoverMessage = 'Jam kerja Office Hour telah berakhir (pukul 17:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke WhatsApp.';
+        }
+    }
+}
+
 // Fetch list of recent shifts for history drawer / list
 $historyShifts = [];
 try {
@@ -365,6 +417,39 @@ include __DIR__ . '/includes/header.php';
             <?= app_icon('arrow-right', 12) ?>
             <span>Beralih ke Shift <?= ucfirst($realtimeShift) ?> Aktif</span>
           </a>
+        </div>
+      <?php endif; ?>
+
+      <!-- Shift Handover Alert Banner (30 Menit Sebelum Pergantian Shift) -->
+      <?php if ($currentShift && $currentShift['status'] === 'active'): ?>
+        <div id="shift_handover_alert" class="shift-handover-banner <?= $handoverUrgent ? 'urgent' : '' ?>" style="<?= $isHandoverPeriod ? '' : 'display: none;' ?>">
+          <div class="handover-banner-inner">
+            <div class="handover-icon-box">
+              <?= app_icon('bell', 22) ?>
+            </div>
+            <div class="handover-content">
+              <div class="handover-title">
+                <span class="handover-badge"><?= $handoverUrgent ? 'PERHATIAN SEGERA' : 'PENGINGAT SERAH TERIMA' ?></span>
+                <strong id="handover_title_text"><?= htmlspecialchars($handoverTitle) ?></strong>
+              </div>
+              <div class="handover-desc" id="handover_desc_text">
+                <?= htmlspecialchars($handoverMessage ?: 'Shift akan berakhir dalam 30 menit. Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.') ?>
+              </div>
+            </div>
+            <div class="handover-actions">
+              <button type="button" class="btn btn-whatsapp btn-sm" onclick="document.getElementById('btn_open_wa_modal').click()" title="Bagikan Ringkasan ke Grup WhatsApp">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.053-1.02-.072-.258-.084-.582-.206-1.007-.393-1.782-.784-2.944-2.587-3.033-2.706-.089-.12-1.084-1.442-1.084-2.75 0-1.309.686-1.954.929-2.217.243-.262.531-.328.708-.328.177 0 .354.008.509.016.166.009.388-.063.607.462.227.544.773 1.884.841 2.02.067.137.112.298.022.477-.089.178-.133.29-.266.444-.133.155-.28.345-.399.463-.133.134-.271.278-.117.543.155.266.689 1.134 1.477 1.836 1.013.902 1.868 1.182 2.134 1.315.266.133.421.111.576-.067.155-.178.664-.775.841-1.041.177-.266.354-.222.597-.133.244.089 1.549.731 1.815.864.266.133.443.199.509.31.066.111.066.643-.078 1.048z"/></svg>
+                <span>Kirim WA</span>
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm" onclick="document.getElementById('btn_complete_shift').click()" title="Selesaikan &amp; Serahkan Shift">
+                <?= app_icon('check-circle', 13) ?>
+                <span>Serahkan Shift</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="dismissHandoverAlert()" title="Tutup pengingat sementara (15 menit)" style="padding: 4px 8px; font-weight: 700;">
+                &times;
+              </button>
+            </div>
+          </div>
         </div>
       <?php endif; ?>
 
@@ -1626,6 +1711,96 @@ function viewPhotoFull(src, caption) {
     modal.style.display = 'flex';
   }
 }
+
+// Shift Handover Reminder Checker (runs immediately and every 30s)
+(function initShiftHandoverReminder() {
+  var isShiftActive = <?= ($currentShift && $currentShift['status'] === 'active') ? 'true' : 'false' ?>;
+  var shiftType = '<?= htmlspecialchars($filterShiftType) ?>';
+  var alertEl = document.getElementById('shift_handover_alert');
+  if (!isShiftActive || !alertEl) return;
+
+  function checkHandover() {
+    var dismissedUntil = sessionStorage.getItem('handover_dismissed_until');
+    if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) {
+      alertEl.style.display = 'none';
+      return;
+    }
+
+    var now = new Date();
+    // Use WIB (UTC+7)
+    var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    var wib = new Date(utc + (3600000 * 7));
+    var hours = wib.getHours();
+    var minutes = wib.getMinutes();
+    var totalMins = (hours * 60) + minutes;
+
+    var shouldShow = false;
+    var isUrgent = false;
+    var msg = '';
+    var title = 'Shift Akan Segera Berakhir';
+
+    if (shiftType === 'pagi') {
+      if (totalMins >= 1170 && totalMins < 1200) {
+        shouldShow = true;
+        var left = 1200 - totalMins;
+        title = 'Shift Pagi Akan Berakhir (' + left + ' Menit Lagi)';
+        msg = 'Shift Pagi akan berakhir dalam ' + left + ' menit (pukul 20:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+      } else if (totalMins >= 1200 || hours < 8) {
+        shouldShow = true;
+        isUrgent = true;
+        title = 'Jam Operasional Shift Pagi Telah Berakhir';
+        msg = 'Jam operasional Shift Pagi telah berakhir (pukul 20:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke grup WhatsApp untuk kelancaran pergantian shift.';
+      }
+    } else if (shiftType === 'malam') {
+      if (totalMins >= 450 && totalMins < 480) {
+        shouldShow = true;
+        var left = 480 - totalMins;
+        title = 'Shift Malam Akan Berakhir (' + left + ' Menit Lagi)';
+        msg = 'Shift Malam akan berakhir dalam ' + left + ' menit (pukul 08:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+      } else if (totalMins >= 480 && hours < 12) {
+        shouldShow = true;
+        isUrgent = true;
+        title = 'Jam Operasional Shift Malam Telah Berakhir';
+        msg = 'Jam operasional Shift Malam telah berakhir (pukul 08:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke grup WhatsApp untuk kelancaran pergantian shift.';
+      }
+    } else if (shiftType === 'oh') {
+      if (totalMins >= 990 && totalMins < 1020) {
+        shouldShow = true;
+        var left = 1020 - totalMins;
+        title = 'Jam Kerja OH Akan Berakhir (' + left + ' Menit Lagi)';
+        msg = 'Jam kerja Office Hour akan berakhir dalam ' + left + ' menit (pukul 17:00 WIB). Pastikan seluruh kegiatan telah tercatat, status shift diserahkan, dan laporan telah dibagikan ke WhatsApp.';
+      } else if (totalMins >= 1020) {
+        shouldShow = true;
+        isUrgent = true;
+        title = 'Jam Kerja Office Hour Telah Berakhir';
+        msg = 'Jam kerja Office Hour telah berakhir (pukul 17:00 WIB). Mohon segera serahkan status shift dan bagikan laporan ke WhatsApp.';
+      }
+    }
+
+    if (shouldShow) {
+      alertEl.style.display = 'block';
+      if (isUrgent) {
+        alertEl.classList.add('urgent');
+      } else {
+        alertEl.classList.remove('urgent');
+      }
+      var descEl = document.getElementById('handover_desc_text');
+      var titleEl = document.getElementById('handover_title_text');
+      if (descEl) descEl.textContent = msg;
+      if (titleEl) titleEl.textContent = title;
+    } else {
+      alertEl.style.display = 'none';
+    }
+  }
+
+  window.dismissHandoverAlert = function() {
+    sessionStorage.setItem('handover_dismissed_until', String(Date.now() + (15 * 60 * 1000)));
+    alertEl.style.display = 'none';
+  };
+
+  checkHandover();
+  setInterval(checkHandover, 30000);
+})();
 </script>
 
 <?php

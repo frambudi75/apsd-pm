@@ -30,6 +30,17 @@ if (!empty($_POST['ids']) && is_array($_POST['ids'])) {
 
 if (!empty($ids)) {
     try {
+        // Pre-fetch report metadata for descriptive audit logging before deletion
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmtMeta = $pdo->prepare("
+            SELECT r.id, r.report_type, r.report_date, s.site_name 
+            FROM pm_reports r 
+            LEFT JOIN sites s ON r.site_id = s.id 
+            WHERE r.id IN ($placeholders)
+        ");
+        $stmtMeta->execute($ids);
+        $deletedReportsMeta = $stmtMeta->fetchAll();
+
         $pdo->beginTransaction();
 
         foreach ($ids as $report_id) {
@@ -55,6 +66,21 @@ if (!empty($ids)) {
         }
 
         $pdo->commit();
+
+        // Record audit trail event
+        if (function_exists('log_audit_event')) {
+            $summaryParts = [];
+            foreach ($deletedReportsMeta as $rm) {
+                $siteLabel = $rm['site_name'] ?: ('Site #' . $rm['id']);
+                $dateLabel = !empty($rm['report_date']) ? date('d/m/Y', strtotime($rm['report_date'])) : '-';
+                $summaryParts[] = strtoupper($rm['report_type']) . ' ' . $siteLabel . ' (' . $dateLabel . ')';
+            }
+            $logDetail = 'Hapus ' . count($ids) . ' laporan PM: ' . implode('; ', array_slice($summaryParts, 0, 5));
+            if (count($summaryParts) > 5) {
+                $logDetail .= ' dan ' . (count($summaryParts) - 5) . ' laporan lainnya.';
+            }
+            log_audit_event('REPORT', 'REPORT_DELETE', $logDetail, 'pm_report', count($ids) === 1 ? $ids[0] : null);
+        }
 
         // Invalidate Redis cache immediately so changes appear instantly without delay
         require_once __DIR__ . '/../config/redis.php';

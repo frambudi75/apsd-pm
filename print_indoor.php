@@ -174,11 +174,13 @@ $totalPages = 3 + $totalPhotoPages;
       <a href="reports" style="display: inline-block; padding: 6px 14px; background: #e2e8f0; color: #1e293b; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px;">
         &larr; Riwayat
       </a>
-      <button onclick="window.print()" style="display: inline-block; padding: 6px 16px; background: #008080; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
-        🖨️ Cetak / Simpan PDF
+      <button onclick="window.print()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; background: #008080; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span>Cetak / Simpan PDF</span>
       </button>
-      <button type="button" id="btn_download_pdf" onclick="triggerClientDownload()" style="display: inline-block; padding: 6px 14px; background: #0284c7; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
-        ⬇️ Download PDF
+      <button type="button" id="btn_download_pdf" onclick="triggerClientDownload()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: #0284c7; color: #ffffff; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 13px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span id="label_download">Unduh PDF</span>
       </button>
     </div>
   </div>
@@ -193,14 +195,15 @@ $totalPages = 3 + $totalPhotoPages;
 
     function triggerClientDownload() {
       const btn = document.getElementById('btn_download_pdf');
-      if (btn) {
-        btn.innerText = '⏳ Mengunduh PDF...';
+      const label = document.getElementById('label_download');
+      if (btn && label) {
+        label.innerText = 'Mengunduh PDF...';
         btn.disabled = true;
       }
       window.location.href = 'download_pdf?id=<?= $report['id'] ?><?= $isCompact ? '&compact=1' : '' ?>';
       setTimeout(function() {
-        if (btn) {
-          btn.innerText = '⬇️ Download PDF';
+        if (btn && label) {
+          label.innerText = 'Unduh PDF';
           btn.disabled = false;
         }
       }, 4000);

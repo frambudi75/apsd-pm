@@ -68,9 +68,20 @@ try {
     } else {
         // MySQL / MariaDB
         $tables = [
-            'sites', 'users', 'operators', 'settings',
-            'daily_shifts', 'daily_activities', 'daily_activity_photos',
-            'user_documents', 'user_document_shares', 'user_document_external_shares',
+            'sites',
+            'pm_reports',
+            'pm_indoor_details',
+            'pm_outdoor_details',
+            'pm_photos',
+            'users',
+            'operators',
+            'daily_shifts',
+            'daily_activities',
+            'daily_activity_photos',
+            'system_settings',
+            'user_documents',
+            'user_document_shares',
+            'user_document_external_shares',
             'audit_logs'
         ];
 

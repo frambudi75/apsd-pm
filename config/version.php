@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.7.9');
+    define('APP_VERSION', 'v2.8.0');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Pengingat Pintar Serah Terima Shift & Preservasi Foto Cetak Logbook');
+    define('APP_RELEASE_TITLE', 'Penegakan SOP Kunci Shift & Keandalan Notifikasi Discord NOC');
 }

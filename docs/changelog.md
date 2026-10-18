@@ -2,6 +2,23 @@
 
 Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (PM) PT Angkasa Pura Sarana Digital.
 
+### [Versi 2.8.0] - 2026-10-18
+
+#### Ditambahkan
+* **Penegakan Disiplin SOP Sesi Shift Tak Tertutup (`daily_activity.php`, `api/start_shift.php`, `api/complete_shift.php`)**:
+  - Penahanan otomatis pembukaan shift baru jika teknisi masih memiliki sesi shift aktif sebelumnya yang belum diselesaikan / ditutup.
+  - **Kasus A (Shift memiliki catatan kegiatan)**: Menampilkan banner peringatan oranye informatif dengan tombol 1-klik untuk langsung menuju sesi shift sebelumnya agar dapat diselesaikan dan diserahkan.
+  - **Kasus B (Shift kosong tanpa kegiatan)**: Menerapkan penahanan ketat (lockout merah) dengan larangan mandiri menutup shift kosong. Menampilkan tombol hubungi Superadmin via WhatsApp untuk evaluasi dan reset penutupan sesi secara resmi.
+  - Superadmin / Administrator memiliki hak wewenang override untuk menutup paksa shift kosong dengan catatan audit otomatis.
+
+#### Diperbaiki
+* **Keandalan & Kebersihan Notifikasi Discord Logbook NOC (`api/complete_shift.php`, `includes/discord.php`)**:
+  - Memperbaiki query SQL pengambilan kegiatan shift agar menyertakan kolom `title`, memastikan judul kegiatan resmi tersemat akurat di pesan Discord.
+  - Mengganti encoding entitas HTML (`htmlspecialchars`) dengan pembersihan tag murni (`strip_tags`) pada embed Discord agar karakter seperti `&` tidak berubah menjadi `&amp;`.
+  - Memastikan fail-safe pengiriman notifikasi Discord dan pelampiran otomatis berkas PDF resmi logbook shift.
+* **Pembaruan Versi PWA Service Worker (`sw.js`)**:
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v2.8.0` untuk pembaruan skrip dan aset antarmuka peramban teknisi.
+
 ---
 
 ### [Versi 2.7.9] - 2026-10-18

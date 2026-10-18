@@ -254,9 +254,10 @@ function discord_notify_shift_complete(array $shift, array $activities = [], int
         $activityLines = [];
         $i = 1;
         foreach (array_slice($activities, 0, 5) as $act) {
-            $time = htmlspecialchars($act['activity_time'] ?? '-');
-            $cat = htmlspecialchars($act['category'] ?? '-');
-            $title = htmlspecialchars($act['title'] ?? $act['description'] ?? '');
+            $time = strip_tags($act['activity_time'] ?? '-');
+            $cat = strip_tags($act['category'] ?? '-');
+            $rawTitle = !empty(trim($act['title'] ?? '')) ? trim($act['title']) : trim($act['description'] ?? 'Kegiatan NOC');
+            $title = strip_tags($rawTitle);
             if (mb_strlen($title) > 60) {
                 $title = mb_substr($title, 0, 57) . '...';
             }

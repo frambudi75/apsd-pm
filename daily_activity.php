@@ -131,6 +131,23 @@ if ($selectedShiftId > 0) {
 
 $shiftInfo = get_shift_info($filterShiftType);
 
+// Validasi Disiplin SOP: Deteksi apakah teknisi masih memiliki sesi shift aktif sebelumnya yang belum ditutup
+$pendingUnclosedShift = null;
+if (!$currentShift && !$isAdmin) {
+    $stmtPending = $pdo->prepare("
+        SELECT s.*, 
+               (SELECT COUNT(*) FROM daily_activities a WHERE a.shift_id = s.id) AS total_activities
+        FROM daily_shifts s
+        WHERE s.user_id = ? 
+          AND s.status = 'active'
+          AND (s.shift_date < ? OR (s.shift_date = ? AND s.shift_type != ?))
+        ORDER BY s.shift_date DESC, s.id DESC
+        LIMIT 1
+    ");
+    $stmtPending->execute([$filterUserId, $filterDate, $filterDate, $filterShiftType]);
+    $pendingUnclosedShift = $stmtPending->fetch();
+}
+
 // If shift exists, fetch its activities and attached photos
 $activities = [];
 $catSummary = [];
@@ -538,6 +555,89 @@ include __DIR__ . '/includes/header.php';
             </div>
           <?php endif; ?>
         </div>
+      <?php elseif ($pendingUnclosedShift): ?>
+        <?php
+          $pShiftDate = date('d F Y', strtotime($pendingUnclosedShift['shift_date']));
+          $pShiftInfo = get_shift_info($pendingUnclosedShift['shift_type']);
+          $pActCount = (int)$pendingUnclosedShift['total_activities'];
+          $pJumpUrl = 'daily_activity.php?shift_id=' . (int)$pendingUnclosedShift['id'];
+          $cleanWa = preg_replace('/[^0-9]/', '', $defaultWaPhone);
+          if (str_starts_with($cleanWa, '08')) {
+              $cleanWa = '62' . substr($cleanWa, 1);
+          }
+          $waText = "Halo Superadmin NOC, saya " . ($techName ?: 'Teknisi') . " ingin melaporkan kendala sesi shift kosong yang belum ditutup pada Shift " . $pShiftInfo['name'] . " (" . $pShiftDate . "). Mohon bantuan untuk evaluasi dan reset penutupan sesi tersebut.";
+          $superadminWaUrl = !empty($cleanWa) ? "https://wa.me/{$cleanWa}?text=" . rawurlencode($waText) : '';
+        ?>
+        <?php if ($pActCount > 0): ?>
+          <!-- Case A: Pending Shift with Activities (Warning Card) -->
+          <div class="daily-shift-card" style="border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 1.4rem; border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                  <?= app_icon('alert-triangle', 24, '#d97706') ?>
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h4 class="daily-shift-title" style="margin: 0; color: #b45309; font-weight: 800;">
+                      Akses Buka Shift Baru Ditahan: Sesi Shift Sebelumnya Belum Ditutup
+                    </h4>
+                    <span class="sla-status-pill sla-warning" style="display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('clock', 11) ?> SOP Handover
+                    </span>
+                  </div>
+                  <div style="font-size: 0.86rem; color: var(--text-main); margin-top: 6px; line-height: 1.5; max-width: 720px;">
+                    Anda masih memiliki sesi <strong><?= htmlspecialchars($pShiftInfo['name']) ?></strong> (<strong><?= $pShiftDate ?></strong>) yang berstatus aktif dengan <strong><?= $pActCount ?> kegiatan tercatat</strong> dan belum diselesaikan. Sesuai SOP disiplin NOC, selesaikan dan serahkan shift sebelumnya terlebih dahulu sebelum membuka sesi shift baru.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <a href="<?= $pJumpUrl ?>" class="btn btn-warning" style="padding: 0.65rem 1.4rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);">
+                  <?= app_icon('arrow-right', 14) ?>
+                  <span>Selesaikan & Serahkan Shift Sebelumnya</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        <?php else: ?>
+          <!-- Case B: Pending Empty Shift (Strict Lockout Red Card) -->
+          <div class="daily-shift-card" style="border: 2px solid #ef4444; background: rgba(239, 68, 68, 0.08); padding: 1.4rem; border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                  <?= app_icon('shield-alert', 24, '#dc2626') ?>
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h4 class="daily-shift-title" style="margin: 0; color: #b91c1c; font-weight: 800;">
+                      Akses Ditahan Sistem (Pelanggaran SOP): Shift Kosong Belum Ditutup
+                    </h4>
+                    <span class="sla-status-pill sla-danger" style="display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('lock', 11) ?> Terkunci Sistem
+                    </span>
+                  </div>
+                  <div style="font-size: 0.86rem; color: var(--text-main); margin-top: 6px; line-height: 1.5; max-width: 720px;">
+                    Sistem mendeteksi Anda membuka sesi <strong><?= htmlspecialchars($pShiftInfo['name']) ?></strong> (<strong><?= $pShiftDate ?></strong>) tanpa catatan kegiatan (0 kegiatan) dan meninggalkannya tanpa ditutup. Sesuai SOP disiplin logbook NOC, Anda <strong>tidak dapat membuka shift baru</strong> dan <strong>tidak diizinkan menutup shift kosong secara mandiri</strong>. Silakan hubungi Superadmin / Team Leader NOC untuk evaluasi dan reset penutupan sesi tersebut.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <?php if (!empty($superadminWaUrl)): ?>
+                  <a href="<?= $superadminWaUrl ?>" target="_blank" rel="noopener noreferrer" class="btn btn-danger" style="padding: 0.65rem 1.4rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.053-1.02-.072-.258-.084-.582-.206-1.007-.393-1.782-.784-2.944-2.587-3.033-2.706-.089-.12-1.084-1.442-1.084-2.75 0-1.309.686-1.954.929-2.217.243-.262.531-.328.708-.328.177 0 .354.008.509.016.166.009.388-.063.607.462.227.544.773 1.884.841 2.02.067.137.112.298.022.477-.089.178-.133.29-.266.444-.133.155-.28.345-.399.463-.133.134-.271.278-.117.543.155.266.689 1.134 1.477 1.836 1.013.902 1.868 1.182 2.134 1.315.266.133.421.111.576-.067.155-.178.664-.775.841-1.041.177-.266.354-.222.597-.133.244.089 1.549.731 1.815.864.266.133.443.199.509.31.066.111.066.643-.078 1.048z"/></svg>
+                    <span>Hubungi Superadmin via WA</span>
+                  </a>
+                <?php else: ?>
+                  <span class="btn btn-outline-danger btn-sm disabled" style="cursor: not-allowed; display: inline-flex; align-items: center; gap: 6px; padding: 0.6rem 1rem;">
+                    <?= app_icon('phone', 14) ?>
+                    <span>Hubungi Superadmin NOC</span>
+                  </span>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+        <?php endif; ?>
       <?php else: ?>
         <!-- Shift Not Started Yet Banner -->
         <div class="daily-shift-card" style="border: 2px dashed var(--primary-border); background: var(--bg-card); padding: 1.4rem;">
@@ -592,19 +692,53 @@ include __DIR__ . '/includes/header.php';
       </div>
 
       <?php if (!$currentShift): ?>
-        <div style="background: var(--bg-card); border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
-          <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-            <?= app_icon('clock', 32) ?>
+        <?php if ($pendingUnclosedShift): ?>
+          <?php if ((int)$pendingUnclosedShift['total_activities'] > 0): ?>
+            <div style="background: var(--bg-card); border: 2px dashed #f59e0b; border-radius: var(--radius-lg); padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+              <div style="width: 64px; height: 64px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <?= app_icon('alert-triangle', 32, '#d97706') ?>
+              </div>
+              <h4 style="font-size: 1.2rem; font-weight: 800; color: #b45309; margin: 0 0 0.5rem 0;">Akses Shift Baru Ditahan</h4>
+              <p style="font-size: 0.88rem; color: var(--text-subtle); max-width: 480px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+                Anda tidak dapat membuka sesi shift baru karena masih memiliki sesi <strong><?= htmlspecialchars($pShiftInfo['name']) ?></strong> (<?= $pShiftDate ?>) yang belum ditutup (<?= (int)$pendingUnclosedShift['total_activities'] ?> kegiatan tercatat). Silakan selesaikan sesi tersebut terlebih dahulu.
+              </p>
+              <a href="<?= $pJumpUrl ?>" class="btn btn-warning" style="padding: 0.65rem 1.6rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);">
+                <?= app_icon('arrow-right', 15) ?>
+                <span>Buka & Selesaikan Shift Sebelumnya</span>
+              </a>
+            </div>
+          <?php else: ?>
+            <div style="background: var(--bg-card); border: 2px dashed #ef4444; border-radius: var(--radius-lg); padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+              <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <?= app_icon('lock', 32, '#dc2626') ?>
+              </div>
+              <h4 style="font-size: 1.2rem; font-weight: 800; color: #b91c1c; margin: 0 0 0.5rem 0;">Pencatatan Kegiatan Terkunci</h4>
+              <p style="font-size: 0.88rem; color: var(--text-subtle); max-width: 480px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+                Sesi shift baru ditahan oleh sistem karena sesi <strong><?= htmlspecialchars($pShiftInfo['name']) ?></strong> (<?= $pShiftDate ?>) berstatus kosong (0 kegiatan) dan belum ditutup. Sesuai SOP, silakan hubungi Superadmin NOC untuk evaluasi dan reset sesi tersebut.
+              </p>
+              <?php if (!empty($superadminWaUrl)): ?>
+                <a href="<?= $superadminWaUrl ?>" target="_blank" rel="noopener noreferrer" class="btn btn-danger" style="padding: 0.65rem 1.6rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.053-1.02-.072-.258-.084-.582-.206-1.007-.393-1.782-.784-2.944-2.587-3.033-2.706-.089-.12-1.084-1.442-1.084-2.75 0-1.309.686-1.954.929-2.217.243-.262.531-.328.708-.328.177 0 .354.008.509.016.166.009.388-.063.607.462.227.544.773 1.884.841 2.02.067.137.112.298.022.477-.089.178-.133.29-.266.444-.133.155-.28.345-.399.463-.133.134-.271.278-.117.543.155.266.689 1.134 1.477 1.836 1.013.902 1.868 1.182 2.134 1.315.266.133.421.111.576-.067.155-.178.664-.775.841-1.041.177-.266.354-.222.597-.133.244.089 1.549.731 1.815.864.266.133.443.199.509.31.066.111.066.643-.078 1.048z"/></svg>
+                  <span>Hubungi Superadmin via WhatsApp</span>
+                </a>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
+        <?php else: ?>
+          <div style="background: var(--bg-card); border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+              <?= app_icon('clock', 32) ?>
+            </div>
+            <h4 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem 0;">Sesi Shift Belum Dimulai</h4>
+            <p style="font-size: 0.88rem; color: var(--text-subtle); max-width: 480px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
+              Sesi <strong><?= htmlspecialchars($shiftInfo['name']) ?></strong> untuk tanggal <strong><?= date('d M Y', strtotime($filterDate)) ?></strong> belum dibuka. Silakan klik tombol di bawah untuk membuka sesi shift dan mulai mencatat kegiatan harian NOC.
+            </p>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('btn_start_shift_action').click()" style="padding: 0.65rem 1.6rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 128, 128, 0.25);">
+              <?= app_icon('play', 15) ?>
+              <span>Buka / Mulai Shift Sekarang</span>
+            </button>
           </div>
-          <h4 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem 0;">Sesi Shift Belum Dimulai</h4>
-          <p style="font-size: 0.88rem; color: var(--text-subtle); max-width: 480px; margin: 0 auto 1.5rem auto; line-height: 1.5;">
-            Sesi <strong><?= htmlspecialchars($shiftInfo['name']) ?></strong> untuk tanggal <strong><?= date('d M Y', strtotime($filterDate)) ?></strong> belum dibuka. Silakan klik tombol di bawah untuk membuka sesi shift dan mulai mencatat kegiatan harian NOC.
-          </p>
-          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn_start_shift_action').click()" style="padding: 0.65rem 1.6rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 128, 128, 0.25);">
-            <?= app_icon('play', 15) ?>
-            <span>Buka / Mulai Shift Sekarang</span>
-          </button>
-        </div>
+        <?php endif; ?>
       <?php elseif (empty($activities)): ?>
         <div style="background: var(--bg-card); border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
           <div style="width: 64px; height: 64px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
@@ -1247,11 +1381,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var shiftStatus = btnOpen ? btnOpen.getAttribute('data-shift-status') : '';
 
     if (shiftExists !== '1') {
-      if (confirm('Sesi shift ini belum dibuka. Anda harus memilih dan memulai sesi shift terlebih dahulu sebelum dapat mencatat kegiatan.\n\nApakah Anda ingin membuka dan memulai sesi shift ini sekarang?')) {
-        var startBtn = document.getElementById('btn_start_shift_action');
-        if (startBtn) {
+      var startBtn = document.getElementById('btn_start_shift_action');
+      if (startBtn) {
+        if (confirm('Sesi shift ini belum dibuka. Anda harus memilih dan memulai sesi shift terlebih dahulu sebelum dapat mencatat kegiatan.\n\nApakah Anda ingin membuka dan memulai sesi shift ini sekarang?')) {
           startBtn.click();
         }
+      } else {
+        alert('Akses buka shift ditahan: Anda masih memiliki sesi shift aktif sebelumnya yang belum diselesaikan / ditutup. Silakan periksa banner peringatan di atas.');
       }
       return;
     }
@@ -1328,7 +1464,14 @@ document.addEventListener('DOMContentLoaded', function() {
           alert(data.message);
           window.location.reload();
         } else {
-          alert('Gagal membuka shift: ' + (data.message || 'Terjadi kesalahan sistem.'));
+          if (data.pending_unclosed && !data.is_empty && data.pending_shift_id) {
+            if (confirm(data.message + '\n\nApakah Anda ingin membuka sesi shift yang belum selesai tersebut sekarang?')) {
+              window.location.href = 'daily_activity.php?shift_id=' + data.pending_shift_id;
+              return;
+            }
+          } else {
+            alert(data.message || 'Gagal membuka shift.');
+          }
           btnStartShift.disabled = false;
           btnStartShift.innerHTML = origText;
         }

@@ -62,6 +62,50 @@ try {
         exit;
     }
 
+    // Validasi Disiplin SOP: Cek apakah teknisi masih memiliki sesi shift sebelumnya yang belum ditutup
+    if (!$isAdmin) {
+        $stmtPending = $pdo->prepare("
+            SELECT s.*, 
+                   (SELECT COUNT(*) FROM daily_activities a WHERE a.shift_id = s.id) AS total_activities
+            FROM daily_shifts s
+            WHERE s.user_id = ? 
+              AND s.status = 'active'
+              AND (s.shift_date < ? OR (s.shift_date = ? AND s.shift_type != ?))
+            ORDER BY s.shift_date DESC, s.id DESC
+            LIMIT 1
+        ");
+        $stmtPending->execute([$targetUserId, $shiftDate, $shiftDate, $shiftType]);
+        $pendingShift = $stmtPending->fetch();
+
+        if ($pendingShift) {
+            $shiftInfoPending = get_shift_info($pendingShift['shift_type']);
+            $pDate = date('d F Y', strtotime($pendingShift['shift_date']));
+            $actCount = (int)$pendingShift['total_activities'];
+
+            if ($actCount === 0) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'pending_unclosed' => true,
+                    'is_empty' => true,
+                    'pending_shift_id' => (int)$pendingShift['id'],
+                    'message' => "AKSES DITAHAN SISTEM (PELANGGARAN SOP): Anda masih memiliki sesi {$shiftInfoPending['name']} ({$pDate}) yang belum ditutup dan TIDAK MEMILIKI CATATAN KEGIATAN. Sesuai SOP, silakan hubungi Superadmin / Team Leader NOC untuk evaluasi dan penutupan sesi shift tersebut."
+                ]);
+                exit;
+            } else {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'pending_unclosed' => true,
+                    'is_empty' => false,
+                    'pending_shift_id' => (int)$pendingShift['id'],
+                    'message' => "AKSES DITOLAK: Anda masih memiliki sesi {$shiftInfoPending['name']} ({$pDate}) yang belum diselesaikan ({$actCount} kegiatan tercatat). Selesaikan dan serahkan shift sebelumnya terlebih dahulu sebelum membuka shift baru."
+                ]);
+                exit;
+            }
+        }
+    }
+
     // Create new active shift
     $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     if ($driver === 'sqlite') {

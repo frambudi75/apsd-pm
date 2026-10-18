@@ -369,19 +369,28 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
 
     .photo-doc-img-wrap {
       width: 100%;
-      height: 145px;
+      height: 185px;
       background: #f8fafc;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+
+    .photo-doc-grid-2 .photo-doc-img-wrap {
+      height: 220px;
     }
 
     .photo-doc-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
       display: block;
+      margin: auto;
     }
 
     .photo-doc-caption {
@@ -438,6 +447,18 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
         box-shadow: none !important;
         padding: 0 !important;
         width: 100% !important;
+      }
+      .photo-doc-img-wrap {
+        background: #ffffff !important;
+      }
+      .photo-doc-img-wrap img {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
+        display: block !important;
+        margin: auto !important;
       }
     }
   </style>

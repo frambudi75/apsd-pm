@@ -261,16 +261,24 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
       border: 1px solid #cbd5e1;
       border-radius: 3px;
       overflow: hidden;
-      background: #ffffff;
-      padding: 2px;
+      background: #f8fafc;
+      padding: 3px;
       margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 85px;
+      box-sizing: border-box;
     }
 
     .photo-thumb-wrap img {
-      width: 100%;
-      max-height: 110px;
-      object-fit: cover;
+      max-width: 100%;
+      max-height: 120px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
       display: block;
+      margin: 0 auto;
       border-radius: 2px;
     }
 
@@ -324,6 +332,16 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
       }
       tr {
         page-break-inside: avoid;
+      }
+      .photo-thumb-wrap {
+        background: #ffffff !important;
+      }
+      .photo-thumb-wrap img {
+        max-width: 100% !important;
+        max-height: 120px !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
       }
     }
   </style>

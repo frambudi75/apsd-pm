@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.7.7');
+    define('APP_VERSION', 'v2.7.8');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Deteksi Otomatis Shift Real-Time WIB & Proteksi Pintar Human Error Logbook');
+    define('APP_RELEASE_TITLE', 'Preservasi Aspek Rasio Penuh & Watermark Timestamp Foto Cetak Logbook');
 }

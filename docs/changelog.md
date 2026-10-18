@@ -4,6 +4,18 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.8] - 2026-10-18
+
+#### Diperbaiki
+* **Preservasi Aspek Rasio Utuh & Watermark Timestamp Foto Cetak Logbook (`print_shift.php`, `print_monthly_logbook.php`)**:
+  - Mengubah perlakuan render foto dokumen lampiran kegiatan shift dari `object-fit: cover` menjadi `object-fit: contain` dengan tinggi frame dinamis yang proporsional.
+  - Memastikan seluruh foto lanskap (16:9 dan 4:3) maupun potret dari kamera ponsel teknisi tampil utuh 100% tanpa ada tepi atau bagian bawah yang terpotong.
+  - Teks watermark stempel waktu (jam, tanggal, menit) dan koordinat GPS di bagian sudut bawah foto kini terlihat jelas, tajam, dan lengkap pada mode pratinjau cetak browser maupun ekspor PDF.
+* **Pembaruan Cache Service Worker PWA (`sw.js`)**:
+  - Peningkatan `CACHE_NAME` ke `iass-pm-v2.7.8` agar pembaruan tata letak cetak dokumen langsung aktif di perangkat seluler pengguna.
+
+---
+
 ### [Versi 2.7.7] - 2026-10-18
 
 #### Ditambahkan

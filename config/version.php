@@ -6,13 +6,13 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.7.5');
+    define('APP_VERSION', 'v2.7.6');
 }
 
 if (!defined('APP_BUILD_DATE')) {
-    define('APP_BUILD_DATE', '17 Okt 2026');
+    define('APP_BUILD_DATE', '18 Okt 2026');
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Edit Master Site, Interactive Map Coordinate Picker & Optimalisasi Cache Laporan');
+    define('APP_RELEASE_TITLE', 'Resolusi Tautan WhatsApp, Audit Trail Hapus Laporan & Optimasi MySQL');
 }

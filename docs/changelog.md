@@ -4,6 +4,28 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.6] - 2026-10-18
+
+#### Ditambahkan
+* **Pencatatan Audit Trail Penghapusan Laporan PM (`api/delete_report.php`)**:
+  - Menyimpan ringkasan metadata laporan yang dihapus (jenis laporan, nama site, dan tanggal) ke tabel `audit_logs` secara otomatis saat proses single delete maupun batch delete.
+* **Deteksi Otomatis URL & Dukungan Reverse Proxy / Cloudflare (`includes/auth.php`)**:
+  - Menghadirkan fungsi `get_full_app_url()` dan `is_ssl_request()` untuk membangun URL absolut sistem secara dinamis di seluruh lingkungan (domain produksi root, reverse proxy HTTPS, dan lokal XAMPP).
+* **Aturan Recovery Redirect URL Subfolder Lama (`.htaccess`)**:
+  - Mengarahkan tautan dokumen yang terlanjur beredar dengan awalan `/apsd/` di grup WhatsApp ke rute URL root yang benar tanpa error 404.
+
+#### Diperbaiki
+* **Penghapusan Bug Query Tabel Non-Eksisten pada Hapus Laporan (`api/delete_report.php`)**:
+  - Menghilangkan query `DELETE FROM report_shares` yang memicu error `SQLSTATE[42S02]: Table doesn't exist` pada basis data MySQL produksi.
+* **Perbaikan Tautan Unduh PDF Laporan Shift WhatsApp (`daily_activity.php`)**:
+  - Menghapus hardcoded path `/apsd/` agar tautan laporan shift yang dibagikan ke WhatsApp langsung mengarah ke URL aktif sistem.
+* **Sinkronisasi Skrip Auto-Optimise Database (`cron_optimize.php` & `api/run_system_optimize.php`)**:
+  - Memperbaiki nama tabel `system_settings` dan menyertakan seluruh tabel laporan PM (`pm_reports`, `pm_indoor_details`, `pm_outdoor_details`, `pm_photos`, `daily_activity_photos`, `user_document_shares`, `user_document_external_shares`).
+* **Pembersihan Ikon Aksi Dokumen Cetak (`print_outdoor.php` & `print_indoor.php`)**:
+  - Mengganti seluruh emoji pada tombol cetak dan unduh dengan ikon SVG inline profesional sesuai standar Anti-Slop AI.
+
+---
+
 ### [Versi 2.7.5] - 2026-10-17
 
 #### Ditambahkan

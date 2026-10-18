@@ -3,7 +3,7 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v2.8.0';
+const CACHE_NAME = 'iass-pm-v2.8.1';
 const STATIC_ASSETS = [
   './',
   'manifest.json',
@@ -62,6 +62,17 @@ self.addEventListener('fetch', event => {
 
   // Handle cross-origin or non-http requests safely
   if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Never intercept or cache auth and API requests
+  const reqUrl = new URL(event.request.url);
+  if (
+    reqUrl.pathname.endsWith('/logout') ||
+    reqUrl.pathname.endsWith('/logout.php') ||
+    reqUrl.pathname.includes('/login') ||
+    reqUrl.pathname.includes('/api/')
+  ) {
     return;
   }
 

@@ -268,6 +268,14 @@ include __DIR__ . '/includes/header.php';
         </div>
       </div>
 
+      <!-- Quick Logout Action -->
+      <div style="background: var(--bg-card); border-top: 1px solid var(--border); padding: 0.85rem 1rem;">
+        <a href="<?= get_app_base_url() ?>logout" class="btn btn-danger" id="btn_profile_logout" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 0.55rem; text-decoration: none; border-radius: var(--radius-sm);" title="Keluar dari sesi akun saat ini">
+          <?= app_icon('log-out', 16) ?>
+          <span>Keluar dari Akun</span>
+        </a>
+      </div>
+
     </div>
 
     <!-- RIGHT SECTION: Edit Forms (Profile Info & Password Reset) -->

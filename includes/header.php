@@ -313,7 +313,7 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
           <span id="sidebar_theme_icon"><?= app_icon('moon', 15) ?></span>
           <span id="sidebar_theme_text">Tema</span>
         </button>
-        <a href="logout" class="sidebar-action-btn sidebar-action-danger" onclick="return confirm('Apakah Anda yakin ingin keluar?')" title="Keluar dari sistem">
+        <a href="<?= get_app_base_url() ?>logout" class="sidebar-action-btn sidebar-action-danger" title="Keluar dari sistem" id="btn_sidebar_logout">
           <span><?= app_icon('log-out', 15) ?></span>
           <span>Keluar</span>
         </a>
@@ -340,6 +340,18 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
           <?= app_icon('smartphone', 14) ?>
           <span>Pasang App</span>
         </button>
+        <a href="<?= get_app_base_url() ?>profile" class="topbar-user-badge" title="Profil Saya (<?= htmlspecialchars($currentUser['full_name'] ?? $currentUser['username'] ?? 'User') ?>)" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 0.22rem 0.6rem; border-radius: 20px; background: var(--bg-alt); border: 1px solid var(--border); font-size: 0.75rem; font-weight: 600; color: var(--text-main);">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700;">
+            <?= strtoupper(substr($currentUser['username'] ?? 'U', 0, 2)) ?>
+          </span>
+          <span class="topbar-user-name" style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <?= htmlspecialchars($currentUser['username'] ?? 'User') ?>
+          </span>
+        </a>
+        <a href="<?= get_app_base_url() ?>logout" class="btn btn-sm" id="btn_topbar_logout" title="Keluar dari sistem" style="background: var(--status-nok-bg); color: var(--status-nok); border: 1px solid var(--status-nok-border); font-size: 0.74rem; font-weight: 700; border-radius: 20px; padding: 0.25rem 0.65rem; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer;">
+          <?= app_icon('log-out', 13) ?>
+          <span class="topbar-logout-text">Keluar</span>
+        </a>
       </div>
     </header>
     <div class="app-content-body">

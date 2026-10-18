@@ -8,15 +8,29 @@ require_once __DIR__ . '/config/version.php';
 
 start_secure_session();
 
-// If already authenticated, redirect to home
-if (is_logged_in()) {
+// If explicitly logging out via query parameter, force kill session immediately
+if (isset($_GET['logout'])) {
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        $isSecure = is_ssl_request();
+        setcookie(session_name(), '', time() - 42000, '/', '', $isSecure, true);
+        if (!empty($params['path']) && $params['path'] !== '/') {
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'] ?? '', $isSecure, true);
+        }
+    }
+    @session_destroy();
+    $infoMessage = 'Anda telah berhasil keluar dari sistem.';
+} elseif (is_logged_in()) {
     $baseUrl = get_app_base_url();
     header('Location: ' . $baseUrl);
     exit;
 }
 
 $errorMessage = '';
-$infoMessage = '';
+if (!isset($infoMessage)) {
+    $infoMessage = '';
+}
 
 $sysAppTitle = get_system_setting('app_title', 'ICT HUB');
 $sysCompanyName = get_system_setting('company_name', 'IASS SBU ICT KNO');
@@ -26,8 +40,6 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
 
 if (isset($_GET['expired'])) {
     $infoMessage = 'Sesi Anda telah berakhir setelah 12 jam. Silakan login kembali untuk melanjutkan.';
-} elseif (isset($_GET['logout'])) {
-    $infoMessage = 'Anda telah berhasil keluar dari sistem.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -85,6 +97,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
           document.documentElement.setAttribute('data-theme', 'light');
         }
+<?php if (isset($_GET['logout'])): ?>
+        // Invalidate stale PWA caches and session storage upon explicit logout
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            names.forEach(function(name) {
+              caches.delete(name);
+            });
+          });
+        }
+        try { sessionStorage.clear(); } catch(e) {}
+<?php endif; ?>
       } catch(e) {}
     })();
 

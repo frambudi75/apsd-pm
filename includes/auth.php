@@ -310,9 +310,7 @@ function authenticate_user(string $username, string $password): array {
  * Logout user and redirect to login page
  */
 function logout_user(string $reason = ''): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        @session_start();
-    }
+    start_secure_session();
     $curr = current_user();
     if ($curr) {
         log_audit_event('AUTH', 'LOGOUT', 'Pengguna keluar dari sistem' . ($reason ? ' (alasan: ' . $reason . ')' : ''));
@@ -320,10 +318,11 @@ function logout_user(string $reason = ''): void {
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
-        );
+        $isSecure = is_ssl_request();
+        setcookie(session_name(), '', time() - 42000, '/', '', $isSecure, true);
+        if (!empty($params['path']) && $params['path'] !== '/') {
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'] ?? '', $isSecure, true);
+        }
     }
     @session_destroy();
 

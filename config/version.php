@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.8.0');
+    define('APP_VERSION', 'v2.8.1');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Penegakan SOP Kunci Shift & Keandalan Notifikasi Discord NOC');
+    define('APP_RELEASE_TITLE', 'Peningkatan Keandalan Logout, Modal Konfirmasi & Pembersihan Sesi PWA');
 }

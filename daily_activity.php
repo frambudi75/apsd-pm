@@ -526,7 +526,7 @@ include __DIR__ . '/includes/header.php';
                 <span>PDF</span>
               </a>
               <?php if ($currentShift['status'] === 'active'): ?>
-                <button type="button" class="btn btn-outline-danger btn-sm" id="btn_complete_shift" data-shift-id="<?= (int)$currentShift['id'] ?>" style="display: inline-flex; align-items: center; gap: 4px;" title="Selesaikan shift dan kirim laporan logbook">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btn_complete_shift" onclick="openCompleteShiftModal(<?= (int)$currentShift['id'] ?>, '<?= htmlspecialchars(addslashes($shiftInfo['name'])) ?> (<?= date('d/m/Y', strtotime($filterDate)) ?>)')" style="display: inline-flex; align-items: center; gap: 4px;" title="Selesaikan shift dan kirim laporan logbook">
                   <?= app_icon('check-circle', 13) ?>
                   <span>Selesai Shift</span>
                 </button>
@@ -541,7 +541,7 @@ include __DIR__ . '/includes/header.php';
                 </span>
               <?php endif; ?>
               <?php if (has_role('superadmin')): ?>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteCurrentShift(<?= (int)$currentShift['id'] ?>, '<?= htmlspecialchars(addslashes($shiftInfo['name'])) ?>', '<?= date('d/m/Y', strtotime($filterDate)) ?>')" style="display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btn_open_delete_shift_modal" onclick="openDeleteShiftModal(<?= (int)$currentShift['id'] ?>, '<?= htmlspecialchars(addslashes($shiftInfo['name'])) ?>', '<?= date('d/m/Y', strtotime($filterDate)) ?>', '<?= htmlspecialchars(addslashes($techName)) ?>')" style="display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
                   <?= app_icon('trash', 13) ?>
                   <span>Hapus Laporan</span>
                 </button>
@@ -1174,6 +1174,84 @@ include __DIR__ . '/includes/header.php';
   </div>
 </div>
 
+<!-- Modal: Selesaikan & Serahkan Shift -->
+<div id="complete_shift_modal" class="modal-backdrop-custom" style="display: none;">
+  <div class="modal-dialog-custom" style="max-width: 520px;">
+    <div class="modal-header-custom">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <?= app_icon('check-circle', 20, '#008080') ?>
+        <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Selesaikan &amp; Serahkan Shift</h4>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeCompleteShiftModal()" aria-label="Tutup">&times;</button>
+    </div>
+
+    <div class="modal-body-custom">
+      <div style="background: rgba(0, 128, 128, 0.08); border: 1px solid rgba(0, 128, 128, 0.2); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1rem; font-size: 0.84rem; color: var(--text-main); line-height: 1.5;">
+        Sesi shift <strong id="complete_modal_shift_title">Shift Ini</strong> akan diselesaikan dan logbook dikunci secara resmi. Ringkasan laporan serta dokumen PDF resmi akan otomatis dikirimkan ke Discord NOC.
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">
+          Catatan Serah Terima / Handover: <span style="font-weight: 400; color: var(--text-muted);">(opsional)</span>
+        </label>
+        <textarea id="complete_shift_notes_input" class="form-control" rows="3" placeholder="Masukkan catatan serah terima untuk teknisi shift berikutnya, kondisi perangkat, atau tindak lanjut..."></textarea>
+      </div>
+
+      <input type="hidden" id="complete_modal_shift_id" value="">
+    </div>
+
+    <div class="modal-footer-custom" style="display: flex; justify-content: flex-end; gap: 8px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeCompleteShiftModal()">Batal</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn_confirm_complete_shift" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+        <?= app_icon('check', 14) ?>
+        <span>Kunci &amp; Selesaikan Shift</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Hapus Laporan Shift (Superadmin) -->
+<div id="delete_shift_modal" class="modal-backdrop-custom" style="display: none;">
+  <div class="modal-dialog-custom" style="max-width: 500px;">
+    <div class="modal-header-custom" style="border-bottom: 1px solid rgba(220, 38, 38, 0.2);">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center;">
+          <?= app_icon('trash', 15, '#dc2626') ?>
+        </div>
+        <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #b91c1c;">Hapus Laporan Shift</h4>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeDeleteShiftModal()" aria-label="Tutup">&times;</button>
+    </div>
+
+    <div class="modal-body-custom">
+      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.9rem 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: #7f1d1d; line-height: 1.5;">
+        <strong>PERINGATAN KHUSUS SUPERADMIN:</strong><br>
+        Apakah Anda yakin ingin menghapus permanen seluruh sesi laporan shift ini?
+      </div>
+
+      <div style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-size: 0.82rem; margin-bottom: 0.75rem;">
+        <div style="margin-bottom: 4px;"><strong>Sesi Shift:</strong> <span id="del_modal_shift_name">-</span></div>
+        <div style="margin-bottom: 4px;"><strong>Tanggal:</strong> <span id="del_modal_shift_date">-</span></div>
+        <div><strong>Teknisi:</strong> <span id="del_modal_tech_name">-</span></div>
+      </div>
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+        Seluruh kegiatan dan file foto dokumentasi fisik pada shift ini akan dihapus permanen dari server dan tindakan ini akan dicatat ke audit log.
+      </p>
+
+      <input type="hidden" id="del_modal_shift_id" value="">
+    </div>
+
+    <div class="modal-footer-custom" style="display: flex; justify-content: flex-end; gap: 8px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteShiftModal()">Batal</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn_confirm_delete_shift" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; background: #dc2626; border-color: #dc2626;">
+        <?= app_icon('trash', 14) ?>
+        <span>Ya, Hapus Permanen</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <style>
 /* Custom Modal Styles */
 .modal-backdrop-custom {
@@ -1346,6 +1424,60 @@ var REALTIME_DATE = <?= json_encode($realtimeDate) ?>;
 // Array to hold files & camera captures to upload
 var queuedFiles = [];
 var queuedBase64 = [];
+
+// Global Modal Handlers (Hoisted globally for HTML onclick)
+function openCompleteShiftModal(shiftId, shiftTitle) {
+  var modal = document.getElementById('complete_shift_modal');
+  var idInput = document.getElementById('complete_modal_shift_id');
+  var titleEl = document.getElementById('complete_modal_shift_title');
+  var notesInput = document.getElementById('complete_shift_notes_input');
+  if (modal) {
+    if (idInput) idInput.value = shiftId;
+    if (titleEl && shiftTitle) titleEl.textContent = shiftTitle;
+    if (notesInput) notesInput.value = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (notesInput) {
+      setTimeout(function() { notesInput.focus(); }, 100);
+    }
+  }
+}
+
+function closeCompleteShiftModal() {
+  var modal = document.getElementById('complete_shift_modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+function openDeleteShiftModal(shiftId, shiftName, shiftDate, techName) {
+  var modal = document.getElementById('delete_shift_modal');
+  var idInput = document.getElementById('del_modal_shift_id');
+  var nameEl = document.getElementById('del_modal_shift_name');
+  var dateEl = document.getElementById('del_modal_shift_date');
+  var techEl = document.getElementById('del_modal_tech_name');
+  if (modal) {
+    if (idInput) idInput.value = shiftId;
+    if (nameEl) nameEl.textContent = shiftName || '-';
+    if (dateEl) dateEl.textContent = shiftDate || '-';
+    if (techEl) techEl.textContent = techName || '-';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeDeleteShiftModal() {
+  var modal = document.getElementById('delete_shift_modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+function deleteCurrentShift(shiftId, shiftName, shiftDate) {
+  openDeleteShiftModal(shiftId, shiftName, shiftDate, '');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   var modal = document.getElementById('activity_modal');
@@ -1684,17 +1816,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Complete Shift Action with WhatsApp prompt
-  var btnComplete = document.getElementById('btn_complete_shift');
-  if (btnComplete) {
-    btnComplete.addEventListener('click', function() {
-      var shiftId = this.getAttribute('data-shift-id');
-      var notes = prompt('Masukkan catatan serah terima atau ringkasan penutupan shift (opsional):', '');
-      if (notes === null) return; // User cancelled
+  var completeModal = document.getElementById('complete_shift_modal');
+  if (completeModal) {
+    completeModal.addEventListener('click', function(e) {
+      if (e.target === completeModal) closeCompleteShiftModal();
+    });
+  }
 
-      if (!confirm('Apakah Anda yakin ingin menyelesaikan shift ini? Logbook akan dikunci dan Anda akan diarahkan untuk membagikan laporan ke WhatsApp.')) {
+  var btnConfirmComplete = document.getElementById('btn_confirm_complete_shift');
+  if (btnConfirmComplete) {
+    btnConfirmComplete.addEventListener('click', function() {
+      var shiftId = document.getElementById('complete_modal_shift_id') ? document.getElementById('complete_modal_shift_id').value : '';
+      var notes = document.getElementById('complete_shift_notes_input') ? document.getElementById('complete_shift_notes_input').value.trim() : '';
+
+      if (!shiftId) {
+        alert('ID Shift tidak ditemukan.');
         return;
       }
+
+      var origText = btnConfirmComplete.innerHTML;
+      btnConfirmComplete.disabled = true;
+      btnConfirmComplete.innerHTML = '<span>⏳</span> Memproses...';
 
       var fd = new FormData();
       fd.append('shift_id', shiftId);
@@ -1708,14 +1850,17 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(function(data) {
         if (data.success) {
           alert(data.message);
-          // Open WhatsApp modal directly or reload
           window.location.reload();
         } else {
           alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+          btnConfirmComplete.disabled = false;
+          btnConfirmComplete.innerHTML = origText;
         }
       })
       .catch(function(err) {
         alert('Error: ' + err.message);
+        btnConfirmComplete.disabled = false;
+        btnConfirmComplete.innerHTML = origText;
       });
     });
   }
@@ -1816,30 +1961,50 @@ function deleteActivity(actId) {
   });
 }
 
-// Delete Entire Shift (Superadmin Only)
-function deleteCurrentShift(shiftId, shiftName, shiftDate) {
-  var msg = 'PERINGATAN SUPERADMIN:\nApakah Anda yakin ingin MENGHAPUS seluruh laporan shift ' + shiftName + ' (' + shiftDate + ')?\n\nSemua kegiatan dan foto dokumentasi pada sesi shift ini akan dihapus permanen.';
-  if (!confirm(msg)) {
-    return;
-  }
-  var fd = new FormData();
-  fd.append('shift_id', shiftId);
+var deleteModal = document.getElementById('delete_shift_modal');
+if (deleteModal) {
+  deleteModal.addEventListener('click', function(e) {
+    if (e.target === deleteModal) closeDeleteShiftModal();
+  });
+}
 
-  fetch('api/delete_daily_shift.php', {
-    method: 'POST',
-    body: fd
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    if (data.success) {
-      alert(data.message);
-      window.location.href = 'daily_activity';
-    } else {
-      alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+var btnConfirmDelete = document.getElementById('btn_confirm_delete_shift');
+if (btnConfirmDelete) {
+  btnConfirmDelete.addEventListener('click', function() {
+    var shiftId = document.getElementById('del_modal_shift_id') ? document.getElementById('del_modal_shift_id').value : '';
+
+    if (!shiftId) {
+      alert('ID Shift tidak ditemukan.');
+      return;
     }
-  })
-  .catch(function(err) {
-    alert('Error: ' + err.message);
+
+    var origText = btnConfirmDelete.innerHTML;
+    btnConfirmDelete.disabled = true;
+    btnConfirmDelete.innerHTML = '<span>⏳</span> Menghapus...';
+
+    var fd = new FormData();
+    fd.append('shift_id', shiftId);
+
+    fetch('api/delete_daily_shift.php', {
+      method: 'POST',
+      body: fd
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert(data.message);
+        window.location.href = 'daily_activity';
+      } else {
+        alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.innerHTML = origText;
+      }
+    })
+    .catch(function(err) {
+      alert('Error: ' + err.message);
+      btnConfirmDelete.disabled = false;
+      btnConfirmDelete.innerHTML = origText;
+    });
   });
 }
 

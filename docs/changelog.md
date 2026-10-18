@@ -2,6 +2,26 @@
 
 Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (PM) PT Angkasa Pura Sarana Digital.
 
+### [Versi 2.8.1] - 2026-10-18
+
+#### Diperbaiki
+* **Refaktor Dialog Selesai Shift & Hapus Laporan ke Modal Kustom (`daily_activity.php`)**:
+  - Mengganti dialog native browser `confirm()` dan `prompt()` dengan modal kustom elegan `#complete_shift_modal` dan `#delete_shift_modal`.
+  - Mengatasi bug peramban di mana klik ganda atau kehilangan fokus menyebabkan dialog browser native otomatis tertutup dalam 1 detik atau tidak merespons.
+  - Memastikan modal memiliki input catatan serah terima yang rapi, tombol konfirmasi dengan indikator pemrosesan, dan penutupan mulus via backdrop.
+* **Keandalan & Aksesibilitas Logout / Keluar Sistem (`includes/header.php`, `includes/auth.php`, `login.php`, `profile.php`)**:
+  - Menghapus penghalang dialog konfirmasi browser native pada tautan keluar yang sebelumnya dapat memblokir navigasi saat dibatalkan atau ditekan cepat.
+  - Memastikan tautan keluar menggunakan alamat absolut dinamis `get_app_base_url() . 'logout'` agar selalu valid dari halaman mana pun.
+  - Menghadirkan tombol cepat "Keluar" dan lencana profil pengguna pada bilah navigasi atas (topbar) sehingga pengguna desktop maupun seluler dapat langsung keluar tanpa harus membuka sidebar terlebih dahulu.
+  - Menambahkan tombol keluar mandiri pada kartu ringkasan profil pengguna (`profile.php`).
+  - Menyempurnakan fungsi `logout_user()` di `includes/auth.php` dengan inisialisasi sesi penuh, pembersihan cookie sesi pada root path `/`, dan penghancuran sesi tuntas.
+  - Menambahkan pembersihan sesi paksa dan invalidasi cache Service Worker di `login.php?logout=1` untuk mencegah auto-redirect balik ke dashboard.
+* **Penyempurnaan Service Worker PWA (`sw.js`)**:
+  - Menambahkan pengecualian bypass langsung pada Service Worker untuk rute `/logout`, `/login`, dan `/api/` agar tidak dicegat atau disajikan dari cache saat status autentikasi berubah.
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v2.8.1`.
+
+---
+
 ### [Versi 2.8.0] - 2026-10-18
 
 #### Ditambahkan

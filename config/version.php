@@ -6,7 +6,7 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.7.6');
+    define('APP_VERSION', 'v2.7.7');
 }
 
 if (!defined('APP_BUILD_DATE')) {
@@ -14,5 +14,5 @@ if (!defined('APP_BUILD_DATE')) {
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Resolusi Tautan WhatsApp, Audit Trail Hapus Laporan & Optimasi MySQL');
+    define('APP_RELEASE_TITLE', 'Deteksi Otomatis Shift Real-Time WIB & Proteksi Pintar Human Error Logbook');
 }

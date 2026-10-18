@@ -4,6 +4,11 @@
  * PT Angkasa Pura Sarana Digital - Sistem PM
  */
 
+// Enforce Indonesia Western Time (WIB) across all application features
+if (date_default_timezone_get() !== 'Asia/Jakarta') {
+    date_default_timezone_set('Asia/Jakarta');
+}
+
 function get_db_connection() {
     static $pdo = null;
     if ($pdo !== null) {

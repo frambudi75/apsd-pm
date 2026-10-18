@@ -14,28 +14,53 @@ $isAdmin = has_role(['superadmin', 'admin']);
 
 $pdo = get_db_connection();
 
-// Determine default shift type by current hour (OH: 08-17, Pagi: 08-20, Malam: 20-08)
-$currentHour = (int)date('H');
-if ($currentHour >= 8 && $currentHour < 17) {
-    $suggestedShift = 'oh';
-} elseif ($currentHour >= 17 && $currentHour < 20) {
-    $suggestedShift = 'pagi';
-} else {
-    $suggestedShift = 'malam';
+// Pastikan zona waktu konsisten ke Waktu Indonesia Barat (WIB)
+if (date_default_timezone_get() !== 'Asia/Jakarta') {
+    date_default_timezone_set('Asia/Jakarta');
 }
-$todayDate = date('Y-m-d');
 
-// Filter parameters
-$filterDate = trim($_GET['date'] ?? $todayDate);
-$filterShiftType = strtolower(trim($_GET['shift_type'] ?? ''));
-if (empty($filterShiftType)) {
-    $filterShiftType = $suggestedShift;
-}
-if (!in_array($filterShiftType, ['oh', 'pagi', 'malam'])) {
-    $filterShiftType = 'pagi';
+// Deteksi shift operasional dan tanggal berdasarkan jam nyata WIB
+$currentHour = (int)date('G'); // 0 - 23 WIB
+$currentTimeFormatted = date('H:i') . ' WIB';
+
+if ($currentHour >= 8 && $currentHour < 20) {
+    // 08:00 - 19:59 WIB: Shift Pagi
+    $realtimeShift = 'pagi';
+    $realtimeDate = date('Y-m-d');
+} elseif ($currentHour >= 20) {
+    // 20:00 - 23:59 WIB: Shift Malam (dimulai hari ini)
+    $realtimeShift = 'malam';
+    $realtimeDate = date('Y-m-d');
+} else {
+    // 00:00 - 07:59 WIB: Masih jam Shift Malam (dimulai kemarin pukul 20:00)
+    $realtimeShift = 'malam';
+    $realtimeDate = date('Y-m-d', strtotime('-1 day'));
 }
 
 $filterUserId = $isAdmin ? (int)($_GET['user_id'] ?? $userId) : $userId;
+
+// Cek apakah ada sesi shift aktif untuk teknisi ini saat dini hari (00:00 - 07:59)
+if ($currentHour < 8 && !isset($_GET['date'])) {
+    try {
+        $chkActive = $pdo->prepare("
+            SELECT shift_date FROM daily_shifts 
+            WHERE user_id = ? AND shift_type = 'malam' AND status = 'active' 
+            ORDER BY id DESC LIMIT 1
+        ");
+        $chkActive->execute([$filterUserId]);
+        $foundDate = $chkActive->fetchColumn();
+        if ($foundDate) {
+            $realtimeDate = $foundDate;
+        }
+    } catch (Exception $e) {}
+}
+
+// Filter parameters: jika pengguna tidak menentukan di GET, gunakan hasil deteksi real-time
+$filterDate = trim($_GET['date'] ?? $realtimeDate);
+$filterShiftType = strtolower(trim($_GET['shift_type'] ?? $realtimeShift));
+if (!in_array($filterShiftType, ['oh', 'pagi', 'malam'])) {
+    $filterShiftType = $realtimeShift;
+}
 $selectedShiftId = (int)($_GET['shift_id'] ?? 0);
 
 // Load default settings
@@ -330,6 +355,19 @@ include __DIR__ . '/includes/header.php';
     <!-- Left Column: Shift Banner & Activity Timeline -->
     <div class="daily-content-col">
       
+      <?php if ($filterShiftType !== $realtimeShift && $filterShiftType !== 'oh'): ?>
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: #92400e;">
+            <?= app_icon('clock', 16, '#f59e0b') ?>
+            <span>Anda sedang melihat <strong><?= htmlspecialchars($shiftInfo['name']) ?></strong>. Jam operasional saat ini: <strong><?= $realtimeShift === 'malam' ? 'Shift Malam (20:00 - 08:00 WIB)' : 'Shift Pagi (08:00 - 20:00 WIB)' ?></strong> (<?= $currentTimeFormatted ?>).</span>
+          </div>
+          <a href="daily_activity" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+            <?= app_icon('arrow-right', 12) ?>
+            <span>Beralih ke Shift <?= ucfirst($realtimeShift) ?> Aktif</span>
+          </a>
+        </div>
+      <?php endif; ?>
+
       <?php if ($currentShift): ?>
         <!-- Shift Header Banner (Active or Completed Session) -->
         <div class="daily-shift-card">
@@ -1080,6 +1118,12 @@ include __DIR__ . '/includes/header.php';
 </style>
 
 <script>
+// Data Real-Time Shift & Jam Operasional NOC (WIB)
+var REALTIME_SHIFT = <?= json_encode($realtimeShift) ?>;
+var REALTIME_SHIFT_NAME = <?= json_encode($realtimeShift === 'malam' ? 'Shift Malam (20:00 - 08:00 WIB)' : 'Shift Pagi (08:00 - 20:00 WIB)') ?>;
+var REALTIME_TIME = <?= json_encode($currentTimeFormatted) ?>;
+var REALTIME_DATE = <?= json_encode($realtimeDate) ?>;
+
 // Array to hold files & camera captures to upload
 var queuedFiles = [];
 var queuedBase64 = [];
@@ -1089,6 +1133,29 @@ document.addEventListener('DOMContentLoaded', function() {
   var btnOpen = document.getElementById('btn_open_activity_modal');
   var btnClose = document.getElementById('btn_close_activity_modal');
   var btnCancel = document.getElementById('btn_cancel_activity');
+
+  // Smart Mismatch Confirmation saat pengguna submit filter form
+  var filterForm = document.querySelector('.daily-filter-form');
+  if (filterForm) {
+    filterForm.addEventListener('submit', function(e) {
+      var selectShift = filterForm.querySelector('select[name="shift_type"]');
+      var inputDate = filterForm.querySelector('input[name="date"]');
+      if (selectShift) {
+        var val = selectShift.value;
+        if (val !== REALTIME_SHIFT && val !== 'oh') {
+          var targetName = val === 'malam' ? 'Shift Malam' : 'Shift Pagi';
+          var dateVal = inputDate ? inputDate.value : '';
+          var confirmMsg = 'Konfirmasi Pemilihan Shift:\n\n' +
+            'Saat ini adalah jam operasional ' + REALTIME_SHIFT_NAME + ' (' + REALTIME_TIME + ').\n\n' +
+            'Apakah Anda yakin ingin memilih ' + targetName + (dateVal ? ' (' + dateVal + ')' : '') + '?';
+          if (!confirm(confirmMsg)) {
+            e.preventDefault();
+            return false;
+          }
+        }
+      }
+    });
+  }
 
   function openModal() {
     var shiftExists = btnOpen ? btnOpen.getAttribute('data-shift-exists') : '0';
@@ -1145,6 +1212,17 @@ document.addEventListener('DOMContentLoaded', function() {
       var shiftDate = this.getAttribute('data-date');
       var shiftType = this.getAttribute('data-type');
       var userId = this.getAttribute('data-user');
+
+      // Validasi pintar: peringatan jika membuka shift yang tidak sesuai jam aktif saat ini
+      if (shiftType !== REALTIME_SHIFT && shiftType !== 'oh') {
+        var targetName = shiftType === 'malam' ? 'Shift Malam (20:00 - 08:00 WIB)' : 'Shift Pagi (08:00 - 20:00 WIB)';
+        var confirmMsg = 'PERINGATAN SHIFT:\n\n' +
+          'Saat ini adalah jam operasional ' + REALTIME_SHIFT_NAME + ' (' + REALTIME_TIME + ').\n\n' +
+          'Apakah Anda yakin ingin MEMBUKA sesi ' + targetName + ' untuk tanggal ' + shiftDate + '?';
+        if (!confirm(confirmMsg)) {
+          return;
+        }
+      }
 
       this.disabled = true;
       var origText = this.innerHTML;

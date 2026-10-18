@@ -19,14 +19,6 @@ include __DIR__ . '/includes/header.php';
 
 <main class="container has-sticky-bar">
 
-  <!-- Mobile Quick Jump Bar -->
-  <div class="mobile-quick-jump no-print">
-    <a href="#sec_admin" class="quick-jump-chip">1. Info Site</a>
-    <a href="#sec_checklist" class="quick-jump-chip">2. Checklist Teknis</a>
-    <a href="#sec_photos" class="quick-jump-chip">3. Foto Dokumentasi</a>
-    <a href="#sec_submit" class="quick-jump-chip">4. Simpan Laporan</a>
-  </div>
-
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
     <div>
       <span style="font-size: 0.8rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Modul PM Outdoor</span>
@@ -43,6 +35,18 @@ include __DIR__ . '/includes/header.php';
       </button>
       <a href="./" class="btn btn-secondary btn-sm" style="min-height: 40px; display: inline-flex; align-items: center;">&larr; Batal / Kembali</a>
     </div>
+  </div>
+
+  <!-- Form Section Quick Jump Bar -->
+  <div class="form-quick-jump no-print">
+    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-subtle); display: inline-flex; align-items: center; gap: 4px; padding-right: 4px;">
+      <?= app_icon('compass', 13) ?>
+      <span>Pintasan:</span>
+    </span>
+    <a href="#sec_admin" class="quick-jump-chip"><span class="chip-step">1</span><span>Info Site</span></a>
+    <a href="#sec_checklist" class="quick-jump-chip"><span class="chip-step">2</span><span>Checklist Teknis</span></a>
+    <a href="#sec_photos" class="quick-jump-chip"><span class="chip-step">3</span><span>Foto Dokumentasi</span></a>
+    <a href="#sec_submit" class="quick-jump-chip"><span class="chip-step">4</span><span>Simpan Laporan</span></a>
   </div>
 
   <!-- Offline Draft Restore Banner -->

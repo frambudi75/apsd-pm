@@ -4,6 +4,25 @@ Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (
 
 ---
 
+### [Versi 2.7.7] - 2026-10-18
+
+#### Ditambahkan
+* **Penetapan Global Zona Waktu Asia/Jakarta (WIB) (`config/database.php`)**:
+  - Memastikan seluruh perhitungan waktu, tanggal, pencatatan logbook, dan stempel jam di aplikasi selalu akurat dan sinkron dengan Waktu Indonesia Barat (WIB).
+* **Deteksi Otomatis Jenis Shift & Tanggal Real-Time NOC (`daily_activity.php`)**:
+  - Sistem otomatis memilih Shift Pagi saat teknisi membuka logbook di rentang jam 08:00 - 19:59 WIB dengan tanggal hari ini.
+  - Sistem otomatis memilih Shift Malam saat diakses pada jam 20:00 - 23:59 WIB (tanggal hari ini) dan 00:00 - 07:59 WIB dini hari (mengaitkan otomatis ke sesi Shift Malam yang dimulai kemarin).
+* **Proteksi Pintar Pencegahan Salah Pilih Shift (Smart Mismatch Warning)**:
+  - Dialog konfirmasi pencegahan saat teknisi mencoba memilih atau membuka shift yang tidak sesuai dengan jam nyata operasional saat itu.
+  - Spanduk peringatan visual yang informatif jika teknisi sedang melihat data shift di luar jam operasional aktif, lengkap dengan tombol 1-klik untuk kembali ke shift aktif saat ini.
+* **Pembaruan Versi PWA Service Worker (`sw.js`)**:
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v2.7.7` untuk invalidasi cache browser seluler teknisi.
+* **Redesain Modern Pintasan Formulir PM (`form_indoor.php`, `form_outdoor.php`, `assets/css/app.css`)**:
+  - Menghilangkan tampilan link biru default peramban pada pintasan navigasi formulir di desktop.
+  - Memindahkan posisi bilah pintasan ke bawah judul formulir dan merancang ulang sebagai bilah navigasi pil elegan (`quick-jump-chip`) dengan nomor langkah, efek hover aksen teal, dan dukungan dark mode.
+
+---
+
 ### [Versi 2.7.6] - 2026-10-18
 
 #### Ditambahkan

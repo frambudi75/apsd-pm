@@ -899,6 +899,86 @@ body {
   gap: 0.4rem;
 }
 
+/* ========================================================
+   Form Quick Jump Section Navigator (PM Forms)
+   ======================================================== */
+.mobile-quick-jump,
+.form-quick-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-theme="dark"] .mobile-quick-jump,
+[data-theme="dark"] .form-quick-jump {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.quick-jump-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  min-height: 36px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quick-jump-chip .chip-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-main);
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.quick-jump-chip:hover {
+  color: var(--primary);
+  background: var(--primary-subtle);
+  border-color: var(--primary-border);
+  text-decoration: none !important;
+}
+
+.quick-jump-chip:hover .chip-step {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.quick-jump-chip:active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.quick-jump-chip:active .chip-step {
+  background: #ffffff;
+  color: var(--primary);
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   body {
@@ -1144,8 +1224,8 @@ body {
   }
 
   /* Mobile Quick Jump Section Chips */
-  .mobile-quick-jump {
-    display: flex;
+  .mobile-quick-jump,
+  .form-quick-jump {
     position: sticky;
     top: 52px;
     z-index: 30;
@@ -1153,35 +1233,27 @@ body {
     backdrop-filter: blur(8px);
     padding: 0.5rem 0.65rem;
     margin: -0.25rem -0.65rem 1rem -0.65rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
     border-bottom: 1px solid var(--border);
     gap: 0.5rem;
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
+    box-shadow: none;
   }
 
-  .mobile-quick-jump::-webkit-scrollbar {
+  [data-theme="dark"] .mobile-quick-jump,
+  [data-theme="dark"] .form-quick-jump {
+    background: rgba(24, 24, 27, 0.95);
+    border-bottom-color: var(--border);
+  }
+
+  .mobile-quick-jump::-webkit-scrollbar,
+  .form-quick-jump::-webkit-scrollbar {
     display: none;
-  }
-
-  .quick-jump-chip {
-    display: inline-block;
-    background: var(--bg-alt);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 0.35rem 0.85rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-decoration: none;
-    min-height: 36px;
-    line-height: 22px;
-  }
-
-  .quick-jump-chip:active {
-    background: var(--primary);
-    color: #ffffff;
-    border-color: var(--primary);
   }
 
   /* Mobile Typography Scaling for Daily Activity, PM Forms, and General Pages */

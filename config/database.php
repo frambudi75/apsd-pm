@@ -9,6 +9,24 @@ if (date_default_timezone_get() !== 'Asia/Jakarta') {
     date_default_timezone_set('Asia/Jakarta');
 }
 
+// Load local .env configuration if present
+$envPath = __DIR__ . '/../.env';
+if (file_exists($envPath)) {
+    $envLines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    foreach ($envLines as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($envKey, $envVal) = explode('=', $line, 2);
+            $envKey = trim($envKey);
+            $envVal = trim($envVal, " \t\n\r\0\x0B\"'");
+            putenv("{$envKey}={$envVal}");
+            $_ENV[$envKey] = $envVal;
+            $_SERVER[$envKey] = $envVal;
+        }
+    }
+}
+
 function get_db_connection() {
     static $pdo = null;
     if ($pdo !== null) {

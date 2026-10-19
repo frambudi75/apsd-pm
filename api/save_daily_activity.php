@@ -104,6 +104,8 @@ try {
     $stmt->execute([$shiftId, $userId, $activityTime, $category, $location, $title, $description]);
     $activityId = (int)$pdo->lastInsertId();
 
+    require_once __DIR__ . '/../includes/image_compressor.php';
+
     // 3. Process Photo Attachments
     $uploadDir = __DIR__ . '/../uploads/daily/' . $shiftId;
     if (!is_dir($uploadDir)) {
@@ -136,6 +138,9 @@ try {
                     $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
                     if (file_put_contents($destPath, $data)) {
+                        if (function_exists('compress_and_save_image')) {
+                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                        }
                         $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                     }
                 }
@@ -150,6 +155,9 @@ try {
                     $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
                     if (move_uploaded_file($tmpName, $destPath)) {
+                        if (function_exists('compress_and_save_image')) {
+                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                        }
                         $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                     }
                 }
@@ -179,6 +187,9 @@ try {
                     $newFilename = 'act_' . $activityId . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
                     if (move_uploaded_file($tmpName, $destPath)) {
+                        if (function_exists('compress_and_save_image')) {
+                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                        }
                         $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                         $stmtPhoto = $pdo->prepare("
                             INSERT INTO daily_activity_photos (activity_id, photo_path, caption, caption_2)
@@ -206,6 +217,9 @@ try {
                         $newFilename = 'cam_' . $activityId . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                         $destPath = $uploadDir . '/' . $newFilename;
                         if (file_put_contents($destPath, $data)) {
+                            if (function_exists('compress_and_save_image')) {
+                                compress_and_save_image($destPath, $destPath, 1600, 82);
+                            }
                             $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                             $stmtPhoto = $pdo->prepare("
                                 INSERT INTO daily_activity_photos (activity_id, photo_path, caption, caption_2)

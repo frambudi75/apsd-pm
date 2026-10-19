@@ -93,7 +93,50 @@ try {
     }
     echo "- Pembersihan temp files selesai ({$cleanedFiles} files dihapus).\n";
 
-    // 3. Deactivate Expired Shares
+    // 3. Optimize Large Photos (> 700 KB) in uploads/
+    require_once __DIR__ . '/includes/image_compressor.php';
+    $optimizedPhotos = 0;
+    $photoFreed = 0;
+    $scanPhotos = function(string $dir) use (&$scanPhotos, &$optimizedPhotos, &$photoFreed): void {
+        if (!is_dir($dir)) return;
+        $items = scandir($dir);
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..' || $item === 'temp' || $item === '.gitignore' || $item === '.htaccess') continue;
+            $fullPath = $dir . '/' . $item;
+            if (is_dir($fullPath)) {
+                $scanPhotos($fullPath);
+            } elseif (is_file($fullPath)) {
+                $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $sz = (int)filesize($fullPath);
+                    if ($sz > 716800) {
+                        $tmp = $fullPath . '.opt.tmp';
+                        if (compress_and_save_image($fullPath, $tmp, 1600, 82)) {
+                            $newSz = (int)filesize($tmp);
+                            if ($newSz > 0 && $newSz < $sz) {
+                                rename($tmp, $fullPath);
+                                $photoFreed += ($sz - $newSz);
+                                $optimizedPhotos++;
+                            } else {
+                                @unlink($tmp);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    $uploadsBase = realpath(__DIR__ . '/uploads');
+    if ($uploadsBase && is_dir($uploadsBase)) {
+        $scanPhotos($uploadsBase . '/reports');
+        $scanPhotos($uploadsBase . '/daily');
+    }
+    if ($optimizedPhotos > 0) {
+        $freedBytes += $photoFreed;
+        echo "- Optimasi foto selesai ({$optimizedPhotos} foto dikompresi, hemat: {$photoFreed} bytes).\n";
+    }
+
+    // 4. Deactivate Expired Shares
     try {
         if ($driver === 'sqlite') {
             $stmtExp = $pdo->prepare("

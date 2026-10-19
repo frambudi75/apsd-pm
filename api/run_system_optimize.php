@@ -160,7 +160,59 @@ try {
         'detail' => "Berhasil membersihkan {$cleanedFilesCount} berkas sementara kadaluwarsa (" . format_bytes_opt($cleanedBytes) . " dibebaskan)."
     ];
 
-    // 3. EXPIRED EXTERNAL SHARES MAINTENANCE
+    // 3. STORAGE & PHOTO OPTIMIZATION (Optimasi Foto Berukuran > 700 KB)
+    require_once __DIR__ . '/../includes/image_compressor.php';
+    $optimizedPhotosCount = 0;
+    $photoFreedBytes = 0;
+
+    $scanAndOptimizeImages = function(string $dir) use (&$scanAndOptimizeImages, &$optimizedPhotosCount, &$photoFreedBytes): void {
+        if (!is_dir($dir)) return;
+        $items = scandir($dir);
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..' || $item === 'temp' || $item === '.gitignore' || $item === '.htaccess') continue;
+            $fullPath = $dir . '/' . $item;
+            if (is_dir($fullPath)) {
+                $scanAndOptimizeImages($fullPath);
+            } elseif (is_file($fullPath)) {
+                $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $origSize = (int)filesize($fullPath);
+                    // Jika ukuran file foto melebihi 700 KB, lakukan optimasi kompresi ulang
+                    if ($origSize > 716800) {
+                        $tempOptimized = $fullPath . '.opt.tmp';
+                        if (compress_and_save_image($fullPath, $tempOptimized, 1600, 82)) {
+                            $newSize = (int)filesize($tempOptimized);
+                            if ($newSize > 0 && $newSize < $origSize) {
+                                rename($tempOptimized, $fullPath);
+                                $photoFreedBytes += ($origSize - $newSize);
+                                $optimizedPhotosCount++;
+                            } else {
+                                @unlink($tempOptimized);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    $uploadsBase = realpath(__DIR__ . '/../uploads');
+    if ($uploadsBase && is_dir($uploadsBase)) {
+        $scanAndOptimizeImages($uploadsBase . '/reports');
+        $scanAndOptimizeImages($uploadsBase . '/daily');
+    }
+
+    $totalFreedBytes += $photoFreedBytes;
+
+    $steps[] = [
+        'name' => 'Optimasi & Kompresi Foto Fisik (uploads/reports/ & daily/)',
+        'status' => 'success',
+        'detail' => ($optimizedPhotosCount > 0)
+            ? "Berhasil mengompresi {$optimizedPhotosCount} foto berukuran besar (" . format_bytes_opt($photoFreedBytes) . " kapasitas dibebaskan)."
+            : "Seluruh foto fisik telah berada pada rasio kompresi optimal (&le; 700 KB per foto)."
+    ];
+
+    // 4. EXPIRED EXTERNAL SHARES MAINTENANCE
     $expiredSharesCount = 0;
     try {
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);

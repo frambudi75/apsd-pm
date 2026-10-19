@@ -9,7 +9,7 @@ if (date_default_timezone_get() !== 'Asia/Jakarta') {
     date_default_timezone_set('Asia/Jakarta');
 }
 
-// Load local .env configuration if present
+// Load local .env configuration if present (only for variables not already defined in system/docker environment)
 $envPath = __DIR__ . '/../.env';
 if (file_exists($envPath)) {
     $envLines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
@@ -20,9 +20,11 @@ if (file_exists($envPath)) {
             list($envKey, $envVal) = explode('=', $line, 2);
             $envKey = trim($envKey);
             $envVal = trim($envVal, " \t\n\r\0\x0B\"'");
-            putenv("{$envKey}={$envVal}");
-            $_ENV[$envKey] = $envVal;
-            $_SERVER[$envKey] = $envVal;
+            if (getenv($envKey) === false) {
+                putenv("{$envKey}={$envVal}");
+                $_ENV[$envKey] = $envVal;
+                $_SERVER[$envKey] = $envVal;
+            }
         }
     }
 }

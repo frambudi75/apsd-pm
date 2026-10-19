@@ -63,12 +63,15 @@ function connect_mysql(): PDO {
     for ($i = 0; $i < $maxRetries; $i++) {
         try {
             $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
-            $pdo = new PDO($dsn, $dbUser, $dbPass, [
+            $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_TIMEOUT => 5,
-                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
-            ]);
+                PDO::ATTR_TIMEOUT => 5
+            ];
+            if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+                $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+            }
+            $pdo = new PDO($dsn, $dbUser, $dbPass, $options);
             break;
         } catch (PDOException $e) {
             // Error 1049: Unknown database - try creating it
@@ -76,11 +79,14 @@ function connect_mysql(): PDO {
                 try {
                     $rootPdo = new PDO("mysql:host={$dbHost};port={$dbPort};charset=utf8mb4", $dbUser, $dbPass);
                     $rootPdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                    $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                    $rootOptions = [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
-                    ]);
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                    ];
+                    if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+                        $rootOptions[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+                    }
+                    $pdo = new PDO($dsn, $dbUser, $dbPass, $rootOptions);
                     break;
                 } catch (Exception $ex) {
                     // Retry on next loop
@@ -913,6 +919,7 @@ function seed_default_settings_if_empty(PDO $pdo) {
             ['report_left_logo_path', 'assets/img/logo_ias.png', 'File Logo PDF Laporan (Kop Sebelah Kiri)', 'branding'],
             ['discord_webhook_noc', '', 'Webhook URL Saluran NOC', 'notification'],
             ['discord_webhook_security', '', 'Webhook URL Saluran Keamanan', 'notification'],
+            ['discord_webhook_backup', '', 'Webhook URL Saluran Cadangan', 'notification'],
             ['discord_notify_shift_complete', '1', 'Notif Discord Shift Selesai', 'notification'],
             ['discord_notify_doc_upload', '1', 'Notif Discord Upload Dokumen', 'notification'],
             ['discord_notify_system_optimize', '1', 'Notif Discord Auto Optimise', 'notification'],

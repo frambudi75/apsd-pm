@@ -49,9 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_system_setting('activity_categories', $activityCategories);
         set_system_setting('document_categories', $documentCategories);
 
-        // Discord Dual-Channel Settings (Safe update: don't wipe out unless explicitly cleared)
+        // Discord Multi-Channel Settings (Safe update: don't wipe out unless explicitly cleared)
         $discordNoc = trim($_POST['discord_webhook_noc'] ?? '');
         $discordSec = trim($_POST['discord_webhook_security'] ?? '');
+        $discordBkp = trim($_POST['discord_webhook_backup'] ?? '');
         $notifyShift = isset($_POST['discord_notify_shift_complete']) ? '1' : '0';
         $notifyDoc = isset($_POST['discord_notify_doc_upload']) ? '1' : '0';
         $notifyOpt = isset($_POST['discord_notify_system_optimize']) ? '1' : '0';
@@ -67,6 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_system_setting('discord_webhook_security', '');
         } elseif ($discordSec !== '') {
             set_system_setting('discord_webhook_security', $discordSec);
+        }
+
+        if (!empty($_POST['clear_discord_webhook_backup'])) {
+            set_system_setting('discord_webhook_backup', '');
+        } elseif ($discordBkp !== '') {
+            set_system_setting('discord_webhook_backup', $discordBkp);
         }
 
         set_system_setting('discord_notify_shift_complete', $notifyShift);
@@ -211,6 +218,7 @@ $curAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
 $curReportLeftLogo = get_system_setting('report_left_logo_path', 'assets/img/logo_ias.png');
 $curDiscordNoc = get_system_setting('discord_webhook_noc', '');
 $curDiscordSec = get_system_setting('discord_webhook_security', '');
+$curDiscordBkp = get_system_setting('discord_webhook_backup', '');
 $curNotifyShift = get_system_setting('discord_notify_shift_complete', '1');
 $curNotifyDoc = get_system_setting('discord_notify_doc_upload', '1');
 $curNotifyOpt = get_system_setting('discord_notify_system_optimize', '1');
@@ -586,23 +594,23 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
-    <!-- Section 5: Integrasi Notifikasi Discord (Dual-Channel) -->
-    <div class="settings-card">
+    <!-- Section 5: Integrasi Notifikasi Discord (Saluran Terpisah) -->
+    <div class="settings-card" id="discord_backup">
       <div class="settings-card-header">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(88, 101, 242, 0.12); color: #5865f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <?= app_icon('message-circle', 20) ?>
           </div>
           <div>
-            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Integrasi Notifikasi Discord (Saluran Terpisah)</h4>
-            <p style="font-size: 0.78rem; color: var(--text-subtle); margin: 2px 0 0 0;">Kirim notifikasi otomatis ke saluran terpisah agar aktivitas operasional teknisi dan pengawasan keamanan tidak tercampur.</p>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Integrasi Notifikasi Discord (3 Saluran Terpisah)</h4>
+            <p style="font-size: 0.78rem; color: var(--text-subtle); margin: 2px 0 0 0;">Kirim notifikasi otomatis ke saluran terpisah agar aktivitas operasional teknisi, audit keamanan, dan arsip pencadangan tidak tercampur.</p>
           </div>
         </div>
-        <span class="user-role-badge role-admin" style="font-size: 0.72rem; background: rgba(88, 101, 242, 0.12); color: #5865f2; border: 1px solid rgba(88, 101, 242, 0.25);">Discord Webhook</span>
+        <span class="user-role-badge role-admin" style="font-size: 0.72rem; background: rgba(88, 101, 242, 0.12); color: #5865f2; border: 1px solid rgba(88, 101, 242, 0.25);">Discord Multi-Channel</span>
       </div>
 
       <div class="settings-card-body">
-        <div class="settings-grid-2">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 1rem;">
           
           <!-- Channel 1: NOC & Operasional Laporan -->
           <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
@@ -610,7 +618,7 @@ include __DIR__ . '/includes/header.php';
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                 <label class="form-label" style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
                   <?= app_icon('clock', 15, 'text-primary') ?>
-                  <span>Saluran 1: Operasional NOC &amp; Laporan Tim</span>
+                  <span>Saluran 1: Operasional NOC</span>
                 </label>
                 <span class="badge" style="background: var(--primary-subtle); color: var(--primary); font-size: 0.7rem; font-weight: 700;">NOC Channel</span>
               </div>
@@ -630,10 +638,10 @@ include __DIR__ . '/includes/header.php';
                 <?php if (!empty($curDiscordNoc)): ?>
                   <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.72rem; color: var(--status-ok, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan di server
+                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan
                     </span>
                     <button type="button" class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="clearWebhook('noc')">
-                      Hapus Webhook
+                      Hapus
                     </button>
                     <input type="hidden" name="clear_discord_webhook_noc" id="clear_discord_webhook_noc" value="0">
                   </div>
@@ -656,7 +664,7 @@ include __DIR__ . '/includes/header.php';
 
             <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
               <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_test_discord_noc" onclick="testDiscordWebhook('noc')">
-                <?= app_icon('refresh', 14) ?> Uji Webhook NOC
+                <?= app_icon('refresh', 14) ?> Uji Saluran NOC
               </button>
               <div id="status_discord_noc" style="font-size: 0.74rem;"></div>
             </div>
@@ -668,7 +676,7 @@ include __DIR__ . '/includes/header.php';
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
                 <label class="form-label" style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
                   <?= app_icon('shield', 15, '', '#dc2626') ?>
-                  <span>Saluran 2: Keamanan &amp; Pemeliharaan Admin</span>
+                  <span>Saluran 2: Keamanan Sistem</span>
                 </label>
                 <span class="badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626; font-size: 0.7rem; font-weight: 700;">Security Channel</span>
               </div>
@@ -688,10 +696,10 @@ include __DIR__ . '/includes/header.php';
                 <?php if (!empty($curDiscordSec)): ?>
                   <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.72rem; color: var(--status-ok, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan di server
+                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan
                     </span>
                     <button type="button" class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="clearWebhook('security')">
-                      Hapus Webhook
+                      Hapus
                     </button>
                     <input type="hidden" name="clear_discord_webhook_security" id="clear_discord_webhook_security" value="0">
                   </div>
@@ -714,9 +722,59 @@ include __DIR__ . '/includes/header.php';
 
             <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
               <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_test_discord_sec" onclick="testDiscordWebhook('security')">
-                <?= app_icon('shield', 14) ?> Uji Webhook Security
+                <?= app_icon('shield', 14) ?> Uji Saluran Keamanan
               </button>
               <div id="status_discord_sec" style="font-size: 0.74rem;"></div>
+            </div>
+          </div>
+
+          <!-- Channel 3: Saluran Cadangan & Disaster Recovery Vault -->
+          <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+                  <?= app_icon('package', 15, '', '#0284c7') ?>
+                  <span>Saluran 3: Cadangan &amp; Arsip Sistem</span>
+                </label>
+                <span class="badge" style="background: rgba(14, 165, 233, 0.12); color: #0284c7; font-size: 0.7rem; font-weight: 700;">Backup Vault</span>
+              </div>
+
+              <div style="font-size: 0.74rem; color: var(--text-subtle); margin-bottom: 0.75rem;">
+                Saluran khusus untuk mengarsipkan cadangan basis data (.sql) dan paket berkas sistem multi-batch (&le; 20 MB per batch).
+              </div>
+
+              <div style="margin-bottom: 0.85rem;">
+                <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px; display: block;">
+                  Webhook URL Saluran Cadangan:
+                </label>
+                <div class="settings-input-group">
+                  <span class="settings-input-icon"><?= app_icon('globe', 16) ?></span>
+                  <input type="url" name="discord_webhook_backup" id="discord_webhook_backup" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curDiscordBkp) ?>" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+                <?php if (!empty($curDiscordBkp)): ?>
+                  <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.72rem; color: var(--status-ok, #10b981); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('check-circle', 12) ?> Webhook aktif tersimpan
+                    </span>
+                    <button type="button" class="btn btn-link btn-sm text-danger p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="clearWebhook('backup')">
+                      Hapus
+                    </button>
+                    <input type="hidden" name="clear_discord_webhook_backup" id="clear_discord_webhook_backup" value="0">
+                  </div>
+                <?php endif; ?>
+              </div>
+
+              <!-- Info Box -->
+              <div style="padding: 0.65rem 0.85rem; background: rgba(14, 165, 233, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(14, 165, 233, 0.2); font-size: 0.74rem; color: #0369a1; line-height: 1.45; margin-bottom: 1rem;">
+                <strong>Pemisahan Saluran:</strong> Menyimpan berkas cadangan di saluran khusus mencegah saluran percakapan atau audit keamanan penuh oleh berkas arsip biner berukuran besar. Jika dikosongkan, cadangan akan dialihkan ke Saluran 2.
+              </div>
+            </div>
+
+            <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_test_discord_bkp" onclick="testDiscordWebhook('backup')">
+                <?= app_icon('package', 14) ?> Uji Saluran Cadangan
+              </button>
+              <div id="status_discord_bkp" style="font-size: 0.74rem;"></div>
             </div>
           </div>
 
@@ -916,9 +974,16 @@ function previewSelectedImage(input, targetId) {
 }
 
 function testDiscordWebhook(channel) {
-  var urlInput = document.getElementById(channel === 'security' ? 'discord_webhook_security' : 'discord_webhook_noc');
-  var btn = document.getElementById(channel === 'security' ? 'btn_test_discord_sec' : 'btn_test_discord_noc');
-  var statusDiv = document.getElementById(channel === 'security' ? 'status_discord_sec' : 'status_discord_noc');
+  var idMap = {
+    noc: { url: 'discord_webhook_noc', btn: 'btn_test_discord_noc', status: 'status_discord_noc' },
+    security: { url: 'discord_webhook_security', btn: 'btn_test_discord_sec', status: 'status_discord_sec' },
+    backup: { url: 'discord_webhook_backup', btn: 'btn_test_discord_bkp', status: 'status_discord_bkp' }
+  };
+
+  var conf = idMap[channel] || idMap.noc;
+  var urlInput = document.getElementById(conf.url);
+  var btn = document.getElementById(conf.btn);
+  var statusDiv = document.getElementById(conf.status);
 
   if (!urlInput || !btn || !statusDiv) return;
 
@@ -964,11 +1029,17 @@ function testDiscordWebhook(channel) {
 
 function clearWebhook(channel) {
   if (!confirm('Apakah Anda yakin ingin menghapus konfigurasi webhook Discord ini?')) return;
-  var input = document.getElementById(channel === 'security' ? 'discord_webhook_security' : 'discord_webhook_noc');
-  var clearFlag = document.getElementById(channel === 'security' ? 'clear_discord_webhook_security' : 'clear_discord_webhook_noc');
+  var idMap = {
+    noc: { url: 'discord_webhook_noc', clear: 'clear_discord_webhook_noc', status: 'status_discord_noc' },
+    security: { url: 'discord_webhook_security', clear: 'clear_discord_webhook_security', status: 'status_discord_sec' },
+    backup: { url: 'discord_webhook_backup', clear: 'clear_discord_webhook_backup', status: 'status_discord_bkp' }
+  };
+  var conf = idMap[channel] || idMap.noc;
+  var input = document.getElementById(conf.url);
+  var clearFlag = document.getElementById(conf.clear);
   if (input) input.value = '';
   if (clearFlag) clearFlag.value = '1';
-  var statusDiv = document.getElementById(channel === 'security' ? 'status_discord_sec' : 'status_discord_noc');
+  var statusDiv = document.getElementById(conf.status);
   if (statusDiv) statusDiv.innerHTML = '<span style="color: var(--text-subtle);">Webhook akan dihapus saat form disimpan.</span>';
 }
 </script>

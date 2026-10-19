@@ -57,8 +57,11 @@ scan_uploads_stats($uploadsDir, $uploadsCount, $uploadsTotalBytes);
 $uploadsSizeFormatted = format_backup_bytes($uploadsTotalBytes);
 
 // 3. Status Webhook Discord
+$backupWebhook = get_system_setting('discord_webhook_backup', '');
 $securityWebhook = get_system_setting('discord_webhook_security', '');
-$isDiscordReady = !empty($securityWebhook) && filter_var($securityWebhook, FILTER_VALIDATE_URL);
+$activeWebhook = !empty($backupWebhook) ? $backupWebhook : $securityWebhook;
+$isDiscordReady = !empty($activeWebhook) && filter_var($activeWebhook, FILTER_VALIDATE_URL);
+$discordChannelType = !empty($backupWebhook) ? 'Saluran Khusus Cadangan' : (!empty($securityWebhook) ? 'Saluran Keamanan (Fallback)' : 'Belum Disetel');
 
 // 4. Riwayat Berkas Cadangan Lokal
 $backups = get_backup_history();
@@ -142,11 +145,11 @@ include __DIR__ . '/includes/header.php';
       <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; padding: 1.15rem 1.25rem;">
         <div>
           <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.03em;">Saluran Cadangan Discord</span>
-          <p style="font-size: 1.35rem; font-weight: 800; color: <?= $isDiscordReady ? '#0284c7' : '#dc2626' ?>; margin: 0.35rem 0 0.15rem 0;">
+          <p style="font-size: 1.25rem; font-weight: 800; color: <?= $isDiscordReady ? '#0284c7' : '#dc2626' ?>; margin: 0.35rem 0 0.15rem 0;">
             <?= $isDiscordReady ? 'Siap Digunakan' : 'Belum Disetel' ?>
           </p>
           <span style="font-size: 0.72rem; color: var(--text-subtle);">
-            <?= $isDiscordReady ? 'Maksimal 25 MB per batch' : 'Isi Webhook di Pengaturan' ?>
+            <?= htmlspecialchars($discordChannelType) ?>
           </span>
         </div>
         <div class="stat-icon-wrapper" style="width: 44px; height: 44px; border-radius: 12px; background: <?= $isDiscordReady ? '#e0f2fe' : '#fee2e2' ?>; color: <?= $isDiscordReady ? '#0284c7' : '#dc2626' ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -386,6 +389,19 @@ function logToConsole(msg, color = '#38bdf8') {
   box.scrollTop = box.scrollHeight;
 }
 
+async function safeFetchJson(url, options) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Bersihkan tag HTML jika terjadi output error server
+    let cleanText = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+    if (cleanText.length > 250) cleanText = cleanText.substring(0, 250) + '...';
+    throw new Error(cleanText || ('Respons server tidak valid (Status HTTP ' + res.status + ')'));
+  }
+}
+
 function startBackupProcess(type, target) {
   const isDiscord = (target === 'discord');
   const label = type === 'db' ? 'Basis Data Saja' : (type === 'files' ? 'Berkas Unggahan' : 'Cadangan Penuh Sistem');
@@ -416,12 +432,11 @@ function startBackupProcess(type, target) {
   logToConsole('Inisialisasi modul pencadangan (' + label + ')...', '#94a3b8');
 
   // Step 1: Create Backup on Server
-  fetch('api/run_backup', {
+  safeFetchJson('api/run_backup.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ action: 'create', type: type })
   })
-  .then(res => res.json())
   .then(res => {
     if (!res.success) {
       throw new Error(res.message || 'Gagal membuat cadangan');
@@ -436,12 +451,11 @@ function startBackupProcess(type, target) {
       logToConsole('Memulai pengiriman arsip ke Saluran Discord...', '#38bdf8');
       title.textContent = 'Mengirim Berkas Cadangan ke Discord...';
 
-      return fetch('api/run_backup', {
+      return safeFetchJson('api/run_backup.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ action: 'send_discord', filename: data.filename })
       })
-      .then(dRes => dRes.json())
       .then(dRes => {
         clearInterval(consoleTimer);
         spinner.style.display = 'none';
@@ -467,7 +481,7 @@ function startBackupProcess(type, target) {
       logToConsole('Memulai pengunduhan berkas ke komputer...', '#4ade80');
       
       // Trigger browser download via window.location
-      window.location.href = 'api/run_backup?action=download&filename=' + encodeURIComponent(data.filename);
+      window.location.href = 'api/run_backup.php?action=download&filename=' + encodeURIComponent(data.filename);
 
       setTimeout(() => {
         window.location.reload();
@@ -509,12 +523,11 @@ function sendExistingToDiscord(filename) {
 
   logToConsole('Mempersiapkan pengiriman berkas: ' + filename, '#38bdf8');
 
-  fetch('api/run_backup', {
+  safeFetchJson('api/run_backup.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ action: 'send_discord', filename: filename })
   })
-  .then(res => res.json())
   .then(res => {
     clearInterval(consoleTimer);
     spinner.style.display = 'none';
@@ -534,7 +547,7 @@ function sendExistingToDiscord(filename) {
     spinner.style.display = 'none';
     title.textContent = 'Kesalahan Jaringan';
     logToConsole('ERROR: ' + err.message, '#f87171');
-    alert('Terjadi kesalahan jaringan:\n' + err.message);
+    alert('Terjadi kesalahan:\n' + err.message);
   });
 }
 
@@ -543,12 +556,11 @@ function deleteBackup(filename) {
     return;
   }
 
-  fetch('api/run_backup', {
+  safeFetchJson('api/run_backup.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ action: 'delete', filename: filename })
   })
-  .then(res => res.json())
   .then(res => {
     if (res.success) {
       alert(res.message);

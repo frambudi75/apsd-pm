@@ -184,6 +184,171 @@ function export_database_sql(string $outputPath): bool {
 }
 
 /**
+ * Helper rekursif untuk menambahkan folder ke ZIP (ZipArchive)
+ */
+function add_dir_to_zip(ZipArchive $zip, string $dirPath, string $zipPath): void {
+    $files = scandir($dirPath);
+    foreach ($files as $file) {
+        if ($file === '.' || $file === '..' || $file === '.gitignore' || $file === '.htaccess') {
+            continue;
+        }
+        $fullPath = $dirPath . '/' . $file;
+        $inZipPath = $zipPath . '/' . $file;
+
+        if (is_dir($fullPath)) {
+            if ($file === 'temp') continue;
+            $zip->addEmptyDir($inZipPath);
+            add_dir_to_zip($zip, $fullPath, $inZipPath);
+        } elseif (is_file($fullPath)) {
+            $zip->addFile($fullPath, $inZipPath);
+        }
+    }
+}
+
+/**
+ * Pembuat arsip ZIP mandiri tanpa dependensi ekstensi eksternal (Pure PHP Fallback)
+ * Menggunakan format standar PKZIP 2.0 yang kompatibel penuh dengan Windows, macOS, dan Linux.
+ */
+class SimpleZipArchive {
+    private $fp;
+    private $entries = [];
+    private $offset = 0;
+
+    public function __construct(string $filePath) {
+        $this->fp = fopen($filePath, 'wb');
+        if (!$fp = $this->fp) {
+            throw new Exception("Tidak dapat membuka file tujuan untuk penulisan: {$filePath}");
+        }
+    }
+
+    public function addFile(string $realPath, string $zipPath): void {
+        if (!file_exists($realPath) || !is_file($realPath)) return;
+        $data = file_get_contents($realPath);
+        $this->addFromString($zipPath, $data);
+    }
+
+    public function addFromString(string $zipPath, string $data): void {
+        $zipPath = str_replace('\\', '/', $zipPath);
+        $zipPath = ltrim($zipPath, '/');
+
+        $uncompressedSize = strlen($data);
+        $crc32 = crc32($data);
+
+        $compressionMethod = 0; // STORE (tanpa kompresi)
+        $compressedData = $data;
+
+        if (function_exists('gzdeflate')) {
+            $deflated = gzdeflate($data, 6);
+            if ($deflated !== false && strlen($deflated) < $uncompressedSize) {
+                $compressedData = $deflated;
+                $compressionMethod = 8; // DEFLATE
+            }
+        }
+
+        $compressedSize = strlen($compressedData);
+
+        // Waktu MS-DOS
+        $time = time();
+        $dtime = ((date('H', $time) << 11) | (date('i', $time) << 5) | (date('s', $time) >> 1)) & 0xFFFF;
+        $ddate = (((date('Y', $time) - 1980) << 9) | (date('m', $time) << 5) | date('d', $time)) & 0xFFFF;
+
+        // Local File Header
+        $localHeader = pack('VvvvvvVVVvv',
+            0x04034b50,        // Local file header signature
+            20,                // Version needed to extract (2.0)
+            0,                 // General purpose bit flag
+            $compressionMethod,// Compression method
+            $dtime,            // Last mod file time
+            $ddate,            // Last mod file date
+            $crc32,            // CRC-32
+            $compressedSize,   // Compressed size
+            $uncompressedSize, // Uncompressed size
+            strlen($zipPath),  // File name length
+            0                  // Extra field length
+        );
+
+        $localHeaderOffset = $this->offset;
+        fwrite($this->fp, $localHeader . $zipPath . $compressedData);
+        $this->offset += strlen($localHeader) + strlen($zipPath) + $compressedSize;
+
+        $this->entries[] = [
+            'name' => $zipPath,
+            'method' => $compressionMethod,
+            'dtime' => $dtime,
+            'ddate' => $ddate,
+            'crc32' => $crc32,
+            'cSize' => $compressedSize,
+            'uSize' => $uncompressedSize,
+            'offset' => $localHeaderOffset
+        ];
+    }
+
+    public function addDirRecursive(string $dirPath, string $zipPath): void {
+        if (!is_dir($dirPath)) return;
+        $items = scandir($dirPath);
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..' || $item === '.gitignore' || $item === '.htaccess' || $item === 'temp') {
+                continue;
+            }
+            $fullPath = $dirPath . '/' . $item;
+            $inZip = $zipPath ? ($zipPath . '/' . $item) : $item;
+            if (is_dir($fullPath)) {
+                $this->addDirRecursive($fullPath, $inZip);
+            } elseif (is_file($fullPath)) {
+                $this->addFile($fullPath, $inZip);
+            }
+        }
+    }
+
+    public function close(): void {
+        if (!$this->fp) return;
+
+        $centralDirStart = $this->offset;
+        $centralDirSize = 0;
+
+        foreach ($this->entries as $e) {
+            $cdRecord = pack('VvvvvvvVVVvvvvvVV',
+                0x02014b50,    // Central file header signature
+                20,            // Version made by (2.0)
+                20,            // Version needed to extract (2.0)
+                0,             // General purpose bit flag
+                $e['method'],  // Compression method
+                $e['dtime'],   // Last mod file time
+                $e['ddate'],   // Last mod file date
+                $e['crc32'],   // CRC-32
+                $e['cSize'],   // Compressed size
+                $e['uSize'],   // Uncompressed size
+                strlen($e['name']), // File name length
+                0,             // Extra field length
+                0,             // File comment length
+                0,             // Disk number start
+                0,             // Internal file attributes
+                32,            // External file attributes (normal file)
+                $e['offset']   // Relative offset of local header
+            );
+            $fullRecord = $cdRecord . $e['name'];
+            fwrite($this->fp, $fullRecord);
+            $centralDirSize += strlen($fullRecord);
+        }
+
+        // End of Central Directory Record
+        $eocd = pack('VvvvvVVv',
+            0x06054b50,         // End of central dir signature
+            0,                  // Number of this disk
+            0,                  // Disk with start of central directory
+            count($this->entries), // Total entries on this disk
+            count($this->entries), // Total entries
+            $centralDirSize,    // Size of central directory
+            $centralDirStart,   // Offset of start of central directory
+            0                   // ZIP file comment length
+        );
+        fwrite($this->fp, $eocd);
+        fclose($this->fp);
+        $this->fp = null;
+    }
+}
+
+/**
  * Buat cadangan arsip sesuai tipe: 'db', 'files', atau 'full'
  */
 function create_system_backup(string $type = 'full'): array {
@@ -196,7 +361,7 @@ function create_system_backup(string $type = 'full'): array {
     $finalPath = '';
 
     if ($type === 'db') {
-        // Database dump only (dikompres gz jika ekstensi zlib aktif)
+        // Database dump only (dikompres gz jika fungsi gzencode aktif)
         $rawSql = $tempDir . "/temp_db_{$timestamp}.sql";
         export_database_sql($rawSql);
 
@@ -216,17 +381,25 @@ function create_system_backup(string $type = 'full'): array {
         // Files only (folder uploads)
         $finalFilename = "backup_apsd_files_{$timestamp}.zip";
         $finalPath = BACKUP_DIR . '/' . $finalFilename;
-
-        $zip = new ZipArchive();
-        if ($zip->open($finalPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new Exception("Gagal membuat arsip ZIP berkas unggahan.");
-        }
-
         $uploadsDir = realpath(__DIR__ . '/../uploads');
-        if ($uploadsDir && is_dir($uploadsDir)) {
-            add_dir_to_zip($zip, $uploadsDir, 'uploads');
+
+        if (class_exists('ZipArchive')) {
+            $zip = new ZipArchive();
+            if ($zip->open($finalPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception("Gagal membuat arsip ZIP berkas unggahan.");
+            }
+            if ($uploadsDir && is_dir($uploadsDir)) {
+                add_dir_to_zip($zip, $uploadsDir, 'uploads');
+            }
+            $zip->close();
+        } else {
+            // Fallback mandiri tanpa ekstensi ZipArchive
+            $zip = new SimpleZipArchive($finalPath);
+            if ($uploadsDir && is_dir($uploadsDir)) {
+                $zip->addDirRecursive($uploadsDir, 'uploads');
+            }
+            $zip->close();
         }
-        $zip->close();
 
     } else {
         // Full System Backup: Database + Uploads + Manifest
@@ -236,22 +409,7 @@ function create_system_backup(string $type = 'full'): array {
         $tempSql = $tempDir . "/database_{$timestamp}.sql";
         export_database_sql($tempSql);
 
-        $zip = new ZipArchive();
-        if ($zip->open($finalPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            @unlink($tempSql);
-            throw new Exception("Gagal membuat arsip ZIP cadangan penuh sistem.");
-        }
-
-        // 1. Masukkan file SQL database
-        $zip->addFile($tempSql, 'database/database.sql');
-
-        // 2. Masukkan seluruh file uploads
         $uploadsDir = realpath(__DIR__ . '/../uploads');
-        if ($uploadsDir && is_dir($uploadsDir)) {
-            add_dir_to_zip($zip, $uploadsDir, 'uploads');
-        }
-
-        // 3. Masukkan manifest info
         $manifest = [
             'app_title' => get_system_setting('app_title', 'APSD PM NOC KNO'),
             'app_version' => APP_VERSION,
@@ -260,8 +418,29 @@ function create_system_backup(string $type = 'full'): array {
             'db_driver' => get_db_connection()->getAttribute(PDO::ATTR_DRIVER_NAME),
             'system_info' => PHP_OS . ' | PHP ' . PHP_VERSION
         ];
-        $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
-        $zip->close();
+
+        if (class_exists('ZipArchive')) {
+            $zip = new ZipArchive();
+            if ($zip->open($finalPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                @unlink($tempSql);
+                throw new Exception("Gagal membuat arsip ZIP cadangan penuh sistem.");
+            }
+            $zip->addFile($tempSql, 'database/database.sql');
+            if ($uploadsDir && is_dir($uploadsDir)) {
+                add_dir_to_zip($zip, $uploadsDir, 'uploads');
+            }
+            $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
+            $zip->close();
+        } else {
+            // Fallback mandiri tanpa ekstensi ZipArchive
+            $zip = new SimpleZipArchive($finalPath);
+            $zip->addFile($tempSql, 'database/database.sql');
+            if ($uploadsDir && is_dir($uploadsDir)) {
+                $zip->addDirRecursive($uploadsDir, 'uploads');
+            }
+            $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
+            $zip->close();
+        }
 
         @unlink($tempSql);
     }
@@ -285,29 +464,6 @@ function create_system_backup(string $type = 'full'): array {
         'sha256' => $sha256,
         'created_at' => date('Y-m-d H:i:s')
     ];
-}
-
-/**
- * Helper rekursif untuk menambahkan folder ke ZIP
- */
-function add_dir_to_zip(ZipArchive $zip, string $dirPath, string $zipPath): void {
-    $files = scandir($dirPath);
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..' || $file === '.gitignore' || $file === '.htaccess') {
-            continue;
-        }
-        $fullPath = $dirPath . '/' . $file;
-        $inZipPath = $zipPath . '/' . $file;
-
-        if (is_dir($fullPath)) {
-            // Hindari memasukkan temp uploads yang sudah expired
-            if ($file === 'temp') continue;
-            $zip->addEmptyDir($inZipPath);
-            add_dir_to_zip($zip, $fullPath, $inZipPath);
-        } elseif (is_file($fullPath)) {
-            $zip->addFile($fullPath, $inZipPath);
-        }
-    }
 }
 
 /**
@@ -399,14 +555,17 @@ function send_backup_to_discord(string $backupFileName, ?string $customWebhookUr
 
     $webhookUrl = trim((string)$customWebhookUrl);
     if (empty($webhookUrl)) {
-        // Ambil dari webhook saluran Keamanan & Pemeliharaan sistem
-        $webhookUrl = get_system_setting('discord_webhook_security', '');
+        // Ambil dari webhook khusus saluran Cadangan, atau fallback ke saluran Keamanan & Pemeliharaan sistem
+        $webhookUrl = get_system_setting('discord_webhook_backup', '');
+        if (empty($webhookUrl)) {
+            $webhookUrl = get_system_setting('discord_webhook_security', '');
+        }
     }
 
     if (empty($webhookUrl)) {
         return [
             'success' => false,
-            'message' => 'URL Webhook Discord belum dikonfigurasi. Silakan isi Webhook Keamanan di Pengaturan Sistem terlebih dahulu.'
+            'message' => 'URL Webhook Discord belum dikonfigurasi. Silakan atur Webhook Saluran Cadangan atau Keamanan di Pengaturan Sistem terlebih dahulu.'
         ];
     }
 

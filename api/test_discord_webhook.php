@@ -41,7 +41,39 @@ $appSubtitle = get_system_setting('app_subtitle', 'Sistem PM & NOC');
 $currentUser = current_user();
 $shouldSave = isset($_POST['save']) ? ($_POST['save'] === '1' || $_POST['save'] === 'true') : true;
 
-if ($channelType === 'security') {
+if ($channelType === 'backup') {
+    $payload = [
+        'username' => $appTitle . ' [Backup Bot]',
+        'embeds' => [
+            [
+                'title' => '📦 Uji Coba Saluran Cadangan & Pemulihan Sistem',
+                'description' => 'Koneksi Discord Webhook untuk saluran cadangan basis data dan berkas sistem (Disaster Recovery Vault) berhasil terhubung dengan sempurna!',
+                'color' => 0x0284c7, // Biru cerah
+                'fields' => [
+                    [
+                        'name' => '👤 Penguji',
+                        'value' => htmlspecialchars($currentUser['full_name'] ?? 'Superadmin') . ' (@' . htmlspecialchars($currentUser['username'] ?? 'superadmin') . ')',
+                        'inline' => true
+                    ],
+                    [
+                        'name' => '📦 Saluran',
+                        'value' => 'Arsip Cadangan Sistem & Berkas Multi-Batch',
+                        'inline' => true
+                    ],
+                    [
+                        'name' => '⏱️ Waktu Server',
+                        'value' => date('d/m/Y H:i:s') . ' WIB',
+                        'inline' => false
+                    ]
+                ],
+                'footer' => [
+                    'text' => $appTitle . ' • Disaster Recovery Vault'
+                ],
+                'timestamp' => date('c')
+            ]
+        ]
+    ];
+} elseif ($channelType === 'security') {
     $payload = [
         'username' => $appTitle . ' [Security Bot]',
         'embeds' => [
@@ -112,7 +144,7 @@ $res = send_discord_payload($webhookUrl, $payload);
 if (!empty($res['success'])) {
     // Automatically persist the valid webhook URL to system_settings so it never gets lost
     if ($shouldSave) {
-        $settingKey = ($channelType === 'security') ? 'discord_webhook_security' : 'discord_webhook_noc';
+        $settingKey = ($channelType === 'backup') ? 'discord_webhook_backup' : (($channelType === 'security') ? 'discord_webhook_security' : 'discord_webhook_noc');
         set_system_setting($settingKey, $webhookUrl);
     }
 

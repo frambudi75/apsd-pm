@@ -66,7 +66,8 @@ function connect_mysql(): PDO {
             $pdo = new PDO($dsn, $dbUser, $dbPass, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_TIMEOUT => 5
+                PDO::ATTR_TIMEOUT => 5,
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
             ]);
             break;
         } catch (PDOException $e) {
@@ -77,7 +78,8 @@ function connect_mysql(): PDO {
                     $rootPdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                     $pdo = new PDO($dsn, $dbUser, $dbPass, [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
                     ]);
                     break;
                 } catch (Exception $ex) {

@@ -60,10 +60,18 @@ try {
             'user_document_external_shares',
             'audit_logs'
         ];
+        $optimizedCount = 0;
         foreach ($tables as $t) {
-            @$pdo->exec("OPTIMIZE TABLE `{$t}`");
+            try {
+                $stmt = $pdo->query("OPTIMIZE TABLE `{$t}`");
+                if ($stmt) {
+                    $stmt->fetchAll();
+                    $stmt->closeCursor();
+                }
+                $optimizedCount++;
+            } catch (Exception $e) {}
         }
-        echo "- MySQL OPTIMIZE TABLE selesai.\n";
+        echo "- MySQL OPTIMIZE TABLE selesai ({$optimizedCount} tabel dioptimasi).\n";
     }
 
     // 2. Clean Temp Files (> 24 hours)
@@ -87,11 +95,19 @@ try {
 
     // 3. Deactivate Expired Shares
     try {
-        $stmtExp = $pdo->prepare("
-            UPDATE user_document_external_shares 
-            SET is_active = 0, updated_at = datetime('now', 'localtime') 
-            WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at < datetime('now', 'localtime')
-        ");
+        if ($driver === 'sqlite') {
+            $stmtExp = $pdo->prepare("
+                UPDATE user_document_external_shares 
+                SET is_active = 0, updated_at = datetime('now', 'localtime') 
+                WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at < datetime('now', 'localtime')
+            ");
+        } else {
+            $stmtExp = $pdo->prepare("
+                UPDATE user_document_external_shares 
+                SET is_active = 0, updated_at = NOW() 
+                WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at < NOW()
+            ");
+        }
         $stmtExp->execute();
         $expiredLinks = $stmtExp->rowCount();
     } catch (Exception $e) {}

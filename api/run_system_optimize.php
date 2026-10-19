@@ -85,18 +85,45 @@ try {
             'audit_logs'
         ];
 
+        $dbSizeBefore = 0;
+        try {
+            $dbSizeBefore = (int)$pdo->query("
+                SELECT SUM(data_length + index_length) 
+                FROM information_schema.TABLES 
+                WHERE table_schema = DATABASE()
+            ")->fetchColumn();
+        } catch (Exception $e) {}
+
         $optimizedCount = 0;
         foreach ($tables as $tbl) {
             try {
-                $pdo->exec("OPTIMIZE TABLE `{$tbl}`");
+                $stmt = $pdo->query("OPTIMIZE TABLE `{$tbl}`");
+                if ($stmt) {
+                    $stmt->fetchAll();
+                    $stmt->closeCursor();
+                }
                 $optimizedCount++;
             } catch (Exception $e) {}
         }
 
+        $dbSizeAfter = 0;
+        try {
+            $dbSizeAfter = (int)$pdo->query("
+                SELECT SUM(data_length + index_length) 
+                FROM information_schema.TABLES 
+                WHERE table_schema = DATABASE()
+            ")->fetchColumn();
+        } catch (Exception $e) {}
+
+        $dbDiff = $dbSizeBefore - $dbSizeAfter;
+        if ($dbDiff > 0) {
+            $totalFreedBytes += $dbDiff;
+        }
+
         $steps[] = [
-            'name' => 'Optimasi Tabel Database (MySQL OPTIMIZE TABLE)',
+            'name' => 'Defragmentasi Tabel & Indeks (MySQL OPTIMIZE TABLE)',
             'status' => 'success',
-            'detail' => "Berhasil mengoptimasi {$optimizedCount} tabel sistem utama."
+            'detail' => "Berhasil mengoptimasi {$optimizedCount} tabel sistem utama. Kapasitas DB: " . format_bytes_opt($dbSizeAfter) . ($dbDiff > 0 ? ' (hemat ' . format_bytes_opt($dbDiff) . ')' : ' (struktur tabel & indeks optimal)')
         ];
     }
 

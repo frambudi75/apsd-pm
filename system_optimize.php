@@ -244,7 +244,7 @@ include __DIR__ . '/includes/header.php';
           <span style="color: #059669; margin-top: 2px; flex-shrink: 0;"><?= app_icon('check-circle', 16) ?></span>
           <div style="font-size: 0.82rem;">
             <strong style="color: var(--text-main); display: block;">Defragmentasi Basis Data</strong>
-            <span style="color: var(--text-subtle);">Menjalankan SQLite VACUUM &amp; WAL truncate untuk mengembalikan ruang kosong fisik disk.</span>
+            <span style="color: var(--text-subtle);"><?= $dbDriver === 'mysql' ? 'Menjalankan MySQL OPTIMIZE TABLE untuk defragmentasi tabel dan reorganisasi indeks.' : 'Menjalankan SQLite VACUUM &amp; WAL truncate untuk mengembalikan ruang kosong fisik disk.' ?></span>
           </div>
         </div>
 
@@ -305,7 +305,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
           <code id="cmd_windows" style="font-size: 0.78rem; color: var(--text-main); word-break: break-all;">
-            C:\xampp\php\php.exe C:\xampp\htdocs\apsd\cron_optimize.php
+            C:\xampp\php\php.exe <?= htmlspecialchars(__DIR__) ?>\cron_optimize.php
           </code>
           <button class="btn btn-sm btn-outline-secondary" onclick="copyText('cmd_windows')" style="padding: 2px 10px; font-size: 0.75rem; flex-shrink: 0;" title="Salin Perintah">
             Salin
@@ -319,7 +319,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
           <code id="cmd_linux" style="font-size: 0.78rem; color: var(--text-main); word-break: break-all;">
-            0 2 * * 0 php /var/www/html/cron_optimize.php &gt; /dev/null 2&gt;&amp;1
+            0 2 * * 0 docker compose exec -T web php cron_optimize.php &gt; /dev/null 2&gt;&amp;1
           </code>
           <button class="btn btn-sm btn-outline-secondary" onclick="copyText('cmd_linux')" style="padding: 2px 10px; font-size: 0.75rem; flex-shrink: 0;" title="Salin Perintah">
             Salin

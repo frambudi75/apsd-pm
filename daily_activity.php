@@ -1738,28 +1738,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- Keterangan 1 (di atas foto) -->
       <div>
-        <label class="form-label" style="font-size: 0.75rem; color: var(--text-subtle); margin-bottom: 3px; font-weight: 700; display: flex; justify-content: space-between;">
+        <label class="form-label" style="font-size: 0.76rem; color: var(--text-subtle); margin-bottom: 4px; font-weight: 700; display: flex; justify-content: space-between;">
           <span>Keterangan Foto 1 (Judul / Objek)</span>
           <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">(Contoh: KWH Multi Panel)</span>
         </label>
-        <input type="text" class="form-control slot-input-cap1" placeholder="Ketik judul / nama objek foto..." value="${initialData.caption || ''}" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600;">
+        <input type="text" class="form-control slot-input-cap1" placeholder="Ketik judul / nama objek foto..." value="${initialData.caption || ''}" style="min-height: 42px; padding: 0.5rem 0.75rem; font-size: 0.9rem; font-weight: 600;">
       </div>
 
       <!-- Image Preview Box (tengah) -->
-      <div class="photo-preview-box slot-box-preview" style="width: 100%; height: 160px; background-color: var(--bg-alt); border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer;">
+      <div class="photo-preview-box slot-box-preview" style="width: 100%; height: 165px; background-color: var(--bg-alt); border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer;">
         <img class="photo-preview-img slot-img-preview" alt="Preview Foto" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: none; margin: auto;">
         <div class="slot-box-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-subtle);">
           <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span style="font-size: 0.75rem; font-weight: 600;">Ambil Kamera / Pilih Foto</span>
+          <span style="font-size: 0.78rem; font-weight: 600;">Ambil Kamera / Pilih Foto</span>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="photo-btn-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-        <button type="button" class="btn btn-primary btn-sm btn-slot-cam" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; font-weight: 600;">
+      <div class="photo-btn-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button type="button" class="btn btn-primary btn-slot-cam" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; font-size: 0.84rem; font-weight: 600;">
           📷 Kamera Live
         </button>
-        <button type="button" class="btn btn-secondary btn-sm btn-slot-gal" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; font-weight: 600;">
+        <button type="button" class="btn btn-secondary btn-slot-gal" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; font-size: 0.84rem; font-weight: 600;">
           📁 Galeri File
         </button>
       </div>
@@ -1770,11 +1770,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- Keterangan 2 (di bawah foto) -->
       <div>
-        <label class="form-label" style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 3px; margin-bottom: 3px; font-weight: 700; display: flex; justify-content: space-between;">
+        <label class="form-label" style="font-size: 0.76rem; color: var(--text-subtle); margin-top: 4px; margin-bottom: 4px; font-weight: 700; display: flex; justify-content: space-between;">
           <span>Keterangan Foto 2 (Catatan / Rincian / Status)</span>
           <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">(Contoh: Stand Meter 12450 kWh, Normal)</span>
         </label>
-        <input type="text" class="form-control slot-input-cap2" placeholder="Ketik catatan rincian kondisi, parameter, atau hasil cek..." value="${initialData.caption_2 || ''}" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem;">
+        <input type="text" class="form-control slot-input-cap2" placeholder="Ketik catatan rincian kondisi, parameter, atau hasil cek..." value="${initialData.caption_2 || ''}" style="min-height: 42px; padding: 0.5rem 0.75rem; font-size: 0.9rem;">
       </div>
     `;
 

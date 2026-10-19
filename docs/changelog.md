@@ -2,6 +2,37 @@
 
 Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (PM) PT Angkasa Pura Sarana Digital.
 
+### [Versi 2.9.0] - 2026-10-19
+
+#### Ditambahkan
+* **Pusat Cadangan & Pemulihan Sistem Terpusat (`backup.php`, `includes/backup_helper.php`, `api/run_backup.php`)**:
+  - Halaman terpadu Disaster Recovery Vault khusus Superadmin untuk memonitor kapasitas basis data, total penyimpanan berkas fisik, status webhook Discord, dan riwayat arsip lokal.
+  - Tiga pilihan tindakan pencadangan terstruktur:
+    1. Basis data saja (`.sql.gz` / `.sql`) dengan pengekstrak SQL mandiri mencakup 15 tabel dan seluruh relasi.
+    2. Berkas fisik unggahan (`.zip`) mencakup foto checklist PM, dokumentasi shift harian, dan brankas dokumen.
+    3. Cadangan penuh sistem (`.zip`) menggabungkan dump SQL, direktori unggahan, dan berkas `manifest.json` integritas sistem.
+* **Mesin Pengarsipan ZIP Mandiri Pure PHP SimpleZipArchive (`includes/backup_helper.php`)**:
+  - Mesin pembuat arsip ZIP berbasis format standar PKZIP 2.0 yang ditulis murni menggunakan PHP tanpa ketergantungan pada ekstensi PHP `ZipArchive` maupun alat CLI Linux.
+  - Berfungsi sebagai *automatic fallback* yang menjaga proses pencadangan tetap berhasil 100% pada lingkungan container atau server yang belum mengaktifkan ekstensi `zip`.
+  - Berkas arsip terverifikasi kompatibel penuh dengan Windows Explorer, macOS Archive Utility, dan Linux `unzip`.
+* **Pengarsipan Multi-Batch & Pemecahan Berkas Discord Webhook (`includes/backup_helper.php`)**:
+  - Algoritma pemecahan berkas otomatis (*chunking*) untuk arsip yang melebihi batas unggah webhook Discord (&le; 20 MB per bagian).
+  - Notifikasi pembuka informatif dengan verifikasi hash integritas SHA-256.
+  - Pengiriman setiap bagian berkas secara sekuensial dengan jeda anti-rate limit Discord.
+  - Notifikasi penutup otomatis berisi panduan perintah rekonstruksi/penggabungan berkas satu baris untuk terminal Windows (`copy /b`) dan Linux (`cat`).
+* **Pemisahan Saluran Webhook Cadangan Mandiri / Saluran 3 (`settings.php`, `api/test_discord_webhook.php`, `includes/backup_helper.php`)**:
+  - Menghadirkan saluran ke-3 resmi: **Saluran Cadangan & Arsip Sistem** (`discord_webhook_backup`) di Pengaturan Sistem.
+  - Mengisolasi berkas arsip berukuran besar dari saluran percakapan operasional NOC (Saluran 1) dan saluran audit keamanan (Saluran 2).
+  - Dilengkapi tombol pengujian mandiri (*Uji Saluran Cadangan*), tombol hapus webhook, dan mekanisme *fail-safe fallback* ke Saluran 2 jika saluran cadangan belum disetel.
+* **Otomatisasi Cron Cadangan Berkala & Migrasi Basis Data (`cron_backup.php`, `database/migrate_sqlite_to_mysql.php`, `Dockerfile`, `docker-compose.yml`)**:
+  - Skrip eksekusi pencadangan otomatis di latar belakang melalui CLI (`cron_backup.php`).
+  - Skrip migrasi terautomasi SQLite ke MySQL/MariaDB dengan verifikasi struktur dan pemindahan seluruh baris data.
+  - Integrasi volume persisten `./backups:/var/www/html/backups` pada Docker Compose.
+* **Pembaruan Service Worker PWA (`sw.js`)**:
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v2.9.0` untuk cache-busting aset dan pembaruan antarmuka.
+
+---
+
 ### [Versi 2.8.1] - 2026-10-18
 
 #### Diperbaiki

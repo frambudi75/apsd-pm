@@ -339,12 +339,42 @@ include __DIR__ . '/includes/header.php';
     <div class="settings-card-body" style="padding: 1.5rem;">
       <div style="position: relative; padding-left: 20px; border-left: 2px solid var(--border);">
         
-        <!-- v2.7.0 -->
+        <!-- v2.9.0 -->
         <div style="margin-bottom: 1.75rem; position: relative;">
           <div style="position: absolute; left: -26px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid var(--bg-surface);"></div>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.7.0</strong>
+            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.9.0</strong>
             <span class="badge" style="background: rgba(0, 128, 128, 0.12); color: var(--primary); font-size: 0.7rem; font-weight: 700;">Rilis Terbaru</span>
+            <span style="font-size: 0.75rem; color: var(--text-subtle);">19 Oktober 2026</span>
+          </div>
+          <ul style="font-size: 0.78rem; color: var(--text-subtle); margin: 6px 0 0 0; padding-left: 18px; line-height: 1.5;">
+            <li><strong>Pusat Cadangan &amp; Pemulihan Sistem (Disaster Recovery Vault)</strong>: Modul terpadu pencadangan basis data (dump SQL mandiri), pengemasan berkas unggahan, serta riwayat arsip lokal berkeamanan tinggi.</li>
+            <li><strong>Mesin Kompresi Mandiri (*Pure PHP SimpleZipArchive*)</strong>: Dukungan pembuatan berkas ZIP terkompresi PKZIP 2.0 tanpa ketergantungan ekstensi server eksternal, kompatibel penuh di seluruh sistem operasi.</li>
+            <li><strong>Pengarsipan Multi-Batch Discord</strong>: Pemecahan berkas otomatis menjadi beberapa batch (&le; 20 MB per batch) dengan verifikasi hash SHA-256 dan instruksi rekonstruksi penggabungan berkas.</li>
+            <li><strong>Integrasi 3 Saluran Discord</strong>: Pemisahan saluran independen untuk Saluran 1 (Operasional NOC), Saluran 2 (Keamanan Admin), dan Saluran 3 (Cadangan &amp; Arsip).</li>
+            <li><strong>Migrasi Basis Data MySQL &amp; Auto-Optimise</strong>: Skrip migrasi terautomasi SQLite ke MySQL/MariaDB serta pemeliharaan berkala terjadwal.</li>
+          </ul>
+        </div>
+
+        <!-- v2.8.0 & v2.8.1 -->
+        <div style="margin-bottom: 1.75rem; position: relative;">
+          <div style="position: absolute; left: -26px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #0284c7; border: 2px solid var(--bg-surface);"></div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.8.1</strong>
+            <span style="font-size: 0.75rem; color: var(--text-subtle);">18 Oktober 2026</span>
+          </div>
+          <ul style="font-size: 0.78rem; color: var(--text-subtle); margin: 6px 0 0 0; padding-left: 18px; line-height: 1.5;">
+            <li>Peningkatan keandalan alur keluar sistem (logout), invalidasi sesi tuntas, dan tombol cepat di bilah atas.</li>
+            <li>Refaktor dialog serah terima shift dan hapus logbook ke modal antarmuka kustom yang responsif.</li>
+            <li>Penegakan SOP shift tak tertutup dengan deteksi shift aktif sebelumnya dan lockout shift kosong.</li>
+          </ul>
+        </div>
+
+        <!-- v2.7.0 -->
+        <div style="margin-bottom: 1.75rem; position: relative;">
+          <div style="position: absolute; left: -26px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #059669; border: 2px solid var(--bg-surface);"></div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.7.0</strong>
             <span style="font-size: 0.75rem; color: var(--text-subtle);">17 Oktober 2026</span>
           </div>
           <ul style="font-size: 0.78rem; color: var(--text-subtle); margin: 6px 0 0 0; padding-left: 18px; line-height: 1.5;">

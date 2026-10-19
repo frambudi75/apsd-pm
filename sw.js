@@ -3,7 +3,7 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v2.8.1';
+const CACHE_NAME = 'iass-pm-v2.9.0';
 const STATIC_ASSETS = [
   './',
   'manifest.json',

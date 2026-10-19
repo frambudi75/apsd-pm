@@ -6,13 +6,13 @@
  */
 
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.8.1');
+    define('APP_VERSION', 'v2.9.0');
 }
 
 if (!defined('APP_BUILD_DATE')) {
-    define('APP_BUILD_DATE', '18 Okt 2026');
+    define('APP_BUILD_DATE', '19 Okt 2026');
 }
 
 if (!defined('APP_RELEASE_TITLE')) {
-    define('APP_RELEASE_TITLE', 'Peningkatan Keandalan Logout, Modal Konfirmasi & Pembersihan Sesi PWA');
+    define('APP_RELEASE_TITLE', 'Disaster Recovery Vault, Multi-Batch Backup Discord & Saluran Arsip Mandiri');
 }

@@ -89,19 +89,19 @@ try {
     }
 
     // 2. Insert Activity Record
-    $stmt = $pdo->prepare("
-        INSERT INTO daily_activities (shift_id, user_id, activity_time, category, location, title, description, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
-    ");
-    try {
-        $stmt->execute([$shiftId, $userId, $activityTime, $category, $location, $title, $description]);
-    } catch (Exception $ex) {
+    $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+    if ($driver === 'sqlite') {
+        $stmt = $pdo->prepare("
+            INSERT INTO daily_activities (shift_id, user_id, activity_time, category, location, title, description, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+        ");
+    } else {
         $stmt = $pdo->prepare("
             INSERT INTO daily_activities (shift_id, user_id, activity_time, category, location, title, description, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
         ");
-        $stmt->execute([$shiftId, $userId, $activityTime, $category, $location, $title, $description]);
     }
+    $stmt->execute([$shiftId, $userId, $activityTime, $category, $location, $title, $description]);
     $activityId = (int)$pdo->lastInsertId();
 
     // 3. Process Photo Attachments

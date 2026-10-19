@@ -17,5 +17,13 @@ fi
 sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf 2>/dev/null || true
 a2enmod rewrite headers 2>/dev/null || true
 
+# Export container environment variables for background cron tasks
+printenv | grep -E '^(DB_|REDIS_|APP_|PATH=)' > /etc/environment 2>/dev/null || true
+
+# Start background cron service if installed
+if command -v cron >/dev/null 2>&1; then
+    service cron start 2>/dev/null || /etc/init.d/cron start 2>/dev/null || true
+fi
+
 # Execute CMD (default: apache2-foreground)
 exec "$@"

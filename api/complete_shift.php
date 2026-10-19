@@ -67,21 +67,21 @@ try {
     }
 
     // Mark shift completed
-    try {
+    $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+    if ($driver === 'sqlite') {
         $stmtUp = $pdo->prepare("
             UPDATE daily_shifts 
             SET status = 'completed', notes = ?, completed_at = datetime('now', 'localtime') 
             WHERE id = ?
         ");
-        $stmtUp->execute([$notes, $shiftId]);
-    } catch (Exception $ex) {
+    } else {
         $stmtUp = $pdo->prepare("
             UPDATE daily_shifts 
             SET status = 'completed', notes = ?, completed_at = NOW() 
             WHERE id = ?
         ");
-        $stmtUp->execute([$notes, $shiftId]);
     }
+    $stmtUp->execute([$notes, $shiftId]);
 
     log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
 

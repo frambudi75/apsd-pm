@@ -102,16 +102,15 @@ function log_audit_event(
         $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? substr(trim($_SERVER['HTTP_USER_AGENT']), 0, 250) : null;
         $targetIdStr = $targetId !== null ? (string)$targetId : null;
 
-        $stmt = $pdo->prepare("
-            INSERT INTO audit_logs (
-                user_id, username, user_role, action_type, action_name,
-                target_type, target_id, description, ip_address, user_agent, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
-        ");
-
-        // Adapt datetime syntax for MySQL if applicable
-        $dbConnection = strtolower(getenv('DB_CONNECTION') ?: 'sqlite');
-        if ($dbConnection === 'mysql') {
+        $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->prepare("
+                INSERT INTO audit_logs (
+                    user_id, username, user_role, action_type, action_name,
+                    target_type, target_id, description, ip_address, user_agent, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+            ");
+        } else {
             $stmt = $pdo->prepare("
                 INSERT INTO audit_logs (
                     user_id, username, user_role, action_type, action_name,

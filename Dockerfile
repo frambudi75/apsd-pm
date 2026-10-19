@@ -2,6 +2,7 @@ FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    cron \
     libsqlite3-dev \
     sqlite3 \
     libpng-dev \
@@ -52,6 +53,11 @@ COPY . /var/www/html/
 RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/temp \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 777 /var/www/html/database /var/www/html/uploads
+
+# Configure auto-optimize cron job (every Sunday at 02:00)
+RUN echo "0 2 * * 0 root /usr/local/bin/php /var/www/html/cron_optimize.php > /proc/1/fd/1 2>&1" > /etc/cron.d/apsd-cron \
+    && chmod 0644 /etc/cron.d/apsd-cron \
+    && crontab /etc/cron.d/apsd-cron
 
 # Expose internal Apache port
 EXPOSE 80

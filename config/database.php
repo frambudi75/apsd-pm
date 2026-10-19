@@ -295,11 +295,13 @@ function init_mysql_schema(PDO $pdo) {
             activity_id INT NOT NULL,
             photo_path VARCHAR(255) NOT NULL,
             caption VARCHAR(255) NULL,
+            caption_2 VARCHAR(255) NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_actphoto_act (activity_id),
             FOREIGN KEY (activity_id) REFERENCES daily_activities(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+    try { $pdo->exec("ALTER TABLE daily_activity_photos ADD COLUMN caption_2 VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 11. Table system_settings (System Preferences & Default Leader)
     $pdo->exec("
@@ -604,11 +606,13 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
             activity_id INTEGER NOT NULL,
             photo_path VARCHAR(255) NOT NULL,
             caption VARCHAR(255) NULL,
+            caption_2 VARCHAR(255) NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (activity_id) REFERENCES daily_activities(id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_actphoto_act ON daily_activity_photos(activity_id);
     ");
+    try { $pdo->exec("ALTER TABLE daily_activity_photos ADD COLUMN caption_2 VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 12. Table system_settings (System Preferences & Default Leader)
     $pdo->exec("

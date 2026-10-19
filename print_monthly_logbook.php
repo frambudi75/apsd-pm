@@ -455,7 +455,12 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
                     <div class="photo-thumb-wrap">
                       <img src="<?= htmlspecialchars($p['photo_path']) ?>" alt="Foto Dokumentasi">
                       <?php if (!empty($p['caption'])): ?>
-                        <div class="photo-caption-text"><?= htmlspecialchars($p['caption']) ?></div>
+                        <div class="photo-caption-text">
+                          <strong style="color: #0f172a;"><?= htmlspecialchars($p['caption']) ?></strong>
+                          <?php if (!empty($p['caption_2'])): ?>
+                            <div style="font-size: 6.5pt; color: #475569; margin-top: 1px; line-height: 1.2;"><?= htmlspecialchars($p['caption_2']) ?></div>
+                          <?php endif; ?>
+                        </div>
                       <?php endif; ?>
                     </div>
                   <?php endforeach; ?>

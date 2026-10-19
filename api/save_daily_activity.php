@@ -113,7 +113,61 @@ try {
 
     $savedPhotosCount = 0;
 
-    // A. Handle Multipart File Uploads
+    // A. Structured Photo Items: activity_photos (array of slots with caption 1 & caption 2)
+    $structuredPhotos = $_POST['activity_photos'] ?? [];
+    if (is_array($structuredPhotos) && !empty($structuredPhotos)) {
+        foreach ($structuredPhotos as $idx => $meta) {
+            $cap1 = trim($meta['caption'] ?? '');
+            if (empty($cap1)) {
+                $cap1 = $title; // Fallback to activity title if empty
+            }
+            $cap2 = trim($meta['caption_2'] ?? '');
+
+            $savedPath = null;
+
+            // 1. Check if base64 provided (from camera modal / live preview)
+            $b64 = $meta['base64'] ?? ($_POST['activity_photo_base64'][$idx] ?? '');
+            if (!empty($b64) && preg_match('/^data:image\/(\w+);base64,/', $b64, $type)) {
+                $data = substr($b64, strpos($b64, ',') + 1);
+                $data = base64_decode($data);
+                if ($data !== false) {
+                    $ext = strtolower($type[1]);
+                    if ($ext === 'jpeg') $ext = 'jpg';
+                    $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
+                    $destPath = $uploadDir . '/' . $newFilename;
+                    if (file_put_contents($destPath, $data)) {
+                        $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
+                    }
+                }
+            }
+
+            // 2. Check if file uploaded via multipart
+            if (!$savedPath && isset($_FILES['activity_photo_files']['name'][$idx]) && $_FILES['activity_photo_files']['error'][$idx] === UPLOAD_ERR_OK) {
+                $tmpName = $_FILES['activity_photo_files']['tmp_name'][$idx];
+                $origName = $_FILES['activity_photo_files']['name'][$idx];
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
+                    $destPath = $uploadDir . '/' . $newFilename;
+                    if (move_uploaded_file($tmpName, $destPath)) {
+                        $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
+                    }
+                }
+            }
+
+            // Insert into daily_activity_photos if photo saved
+            if ($savedPath) {
+                $stmtPhoto = $pdo->prepare("
+                    INSERT INTO daily_activity_photos (activity_id, photo_path, caption, caption_2)
+                    VALUES (?, ?, ?, ?)
+                ");
+                $stmtPhoto->execute([$activityId, $savedPath, $cap1, $cap2]);
+                $savedPhotosCount++;
+            }
+        }
+    }
+
+    // B. Legacy fallback: Handle Multipart File Uploads (photos[])
     if (isset($_FILES['photos']) && is_array($_FILES['photos']['name'])) {
         $count = count($_FILES['photos']['name']);
         for ($i = 0; $i < $count; $i++) {
@@ -127,8 +181,8 @@ try {
                     if (move_uploaded_file($tmpName, $destPath)) {
                         $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                         $stmtPhoto = $pdo->prepare("
-                            INSERT INTO daily_activity_photos (activity_id, photo_path, caption)
-                            VALUES (?, ?, ?)
+                            INSERT INTO daily_activity_photos (activity_id, photo_path, caption, caption_2)
+                            VALUES (?, ?, ?, NULL)
                         ");
                         $stmtPhoto->execute([$activityId, $relPath, $title]);
                         $savedPhotosCount++;
@@ -138,7 +192,7 @@ try {
         }
     }
 
-    // B. Handle Base64 Uploads (e.g. from in-app camera or canvas watermark)
+    // C. Legacy fallback: Handle Base64 Uploads (base64_photos)
     if (!empty($_POST['base64_photos'])) {
         $base64List = json_decode($_POST['base64_photos'], true);
         if (is_array($base64List)) {
@@ -154,8 +208,8 @@ try {
                         if (file_put_contents($destPath, $data)) {
                             $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                             $stmtPhoto = $pdo->prepare("
-                                INSERT INTO daily_activity_photos (activity_id, photo_path, caption)
-                                VALUES (?, ?, ?)
+                                INSERT INTO daily_activity_photos (activity_id, photo_path, caption, caption_2)
+                                VALUES (?, ?, ?, NULL)
                             ");
                             $stmtPhoto->execute([$activityId, $relPath, $title]);
                             $savedPhotosCount++;

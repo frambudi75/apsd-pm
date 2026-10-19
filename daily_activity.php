@@ -811,10 +811,23 @@ include __DIR__ . '/includes/header.php';
                     <?= app_icon('camera', 13) ?>
                     <span>DOKUMENTASI FOTO (<?= count($act['photos']) ?>):</span>
                   </div>
-                  <div class="activity-photos-grid">
-                    <?php foreach ($act['photos'] as $photo): ?>
-                      <div class="activity-photo-item" onclick="viewPhotoFull('<?= htmlspecialchars($photo['photo_path']) ?>', '<?= htmlspecialchars($act['title']) ?>')">
-                        <img src="<?= htmlspecialchars($photo['photo_path']) ?>" alt="Foto Kegiatan" loading="lazy">
+                  <div class="activity-photos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;">
+                    <?php foreach ($act['photos'] as $pIdx => $photo): 
+                      $cap1 = !empty($photo['caption']) ? $photo['caption'] : $act['title'];
+                      $cap2 = $photo['caption_2'] ?? '';
+                    ?>
+                      <div class="activity-photo-card" style="border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-card); display: flex; flex-direction: column; box-shadow: var(--shadow-xs);">
+                        <div style="padding: 4px 8px; font-size: 0.73rem; font-weight: 700; color: var(--text-main); background: var(--bg-alt); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= htmlspecialchars($cap1) ?>">
+                          <?= htmlspecialchars($cap1) ?>
+                        </div>
+                        <div class="activity-photo-item" style="cursor: pointer; aspect-ratio: 4/3; position: relative;" onclick="viewPhotoFull('<?= htmlspecialchars($photo['photo_path']) ?>', '<?= htmlspecialchars(addslashes($cap1)) ?>', '<?= htmlspecialchars(addslashes($cap2)) ?>')">
+                          <img src="<?= htmlspecialchars($photo['photo_path']) ?>" alt="Foto Kegiatan" loading="lazy">
+                        </div>
+                        <?php if (!empty($cap2)): ?>
+                          <div style="padding: 4px 8px; font-size: 0.7rem; color: var(--text-muted); background: var(--bg-card); border-top: 1px solid var(--border); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="<?= htmlspecialchars($cap2) ?>">
+                            <?= htmlspecialchars($cap2) ?>
+                          </div>
+                        <?php endif; ?>
                       </div>
                     <?php endforeach; ?>
                   </div>
@@ -1058,29 +1071,23 @@ include __DIR__ . '/includes/header.php';
             <textarea name="description" class="form-control" rows="4" placeholder="Jelaskan secara rinci apa yang dilakukan, parameter yang dicek, tindakan perbaikan, atau status perangkat..." required></textarea>
           </div>
 
-          <!-- Row 5: Multi-photo Attachment -->
+          <!-- Row 5: Flexible Photo Slots with Keterangan 1 & Keterangan 2 -->
           <div class="mb-2">
-            <label class="form-label" style="font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-              <span>Lampiran Dokumentasi Foto</span>
-              <span style="font-size: 0.72rem; color: var(--text-subtle);">Bisa 1 atau banyak foto</span>
-            </label>
-            
-            <div style="display: flex; gap: 8px; margin-bottom: 0.75rem; flex-wrap: wrap;">
-              <label for="input_daily_photos" class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                <?= app_icon('file-text', 14) ?>
-                <span>Pilih dari Galeri / File</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+              <label class="form-label mb-0" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
+                Lampiran Dokumentasi Foto Kegiatan
               </label>
-              <input type="file" id="input_daily_photos" accept="image/*" multiple style="display: none;">
-
-              <button type="button" class="btn btn-primary-soft btn-sm" id="btn_take_camera_photo" style="display: inline-flex; align-items: center; gap: 6px;">
-                <?= app_icon('camera', 14) ?>
-                <span>Ambil Foto Kamera</span>
-              </button>
-              <input type="file" id="input_daily_camera" accept="image/*" capture="environment" style="display: none;">
+              <span style="font-size: 0.72rem; color: var(--text-subtle);">Bebas tambah foto (fleksibel)</span>
             </div>
 
-            <!-- Photos Preview Grid -->
-            <div id="photos_preview_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px;"></div>
+            <!-- Dynamic Photo Slots Container -->
+            <div id="daily_photo_slots_container" style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem;"></div>
+
+            <!-- Tombol Tambah Slot Foto -->
+            <button type="button" class="btn btn-secondary btn-sm" id="btn_add_photo_slot" style="width: 100%; border: 1.5px dashed var(--border-strong); padding: 0.55rem 1rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+              <?= app_icon('plus', 14) ?>
+              <span>+ Tambah Slot Foto Dokumentasi</span>
+            </button>
           </div>
 
         </div>
@@ -1168,9 +1175,13 @@ include __DIR__ . '/includes/header.php';
 
 <!-- Modal: View Photo Fullscreen -->
 <div id="photo_viewer_modal" class="modal-backdrop-custom" style="display: none;" onclick="this.style.display='none'">
-  <div style="max-width: 90vw; max-height: 90vh; margin: auto; position: relative;">
-    <img id="full_photo_img" src="" alt="Foto Full" style="max-width: 100%; max-height: 85vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain;">
-    <div id="full_photo_caption" style="color: #ffffff; text-align: center; margin-top: 8px; font-size: 0.9rem; font-weight: 600;"></div>
+  <div style="max-width: 90vw; max-height: 90vh; margin: auto; position: relative;" onclick="event.stopPropagation()">
+    <button type="button" class="modal-close-btn" onclick="document.getElementById('photo_viewer_modal').style.display='none'" style="position: absolute; top: -38px; right: 0; color: #fff; font-size: 1.8rem; background: transparent; border: none; cursor: pointer;">&times;</button>
+    <img id="full_photo_img" src="" alt="Foto Full" style="max-width: 100%; max-height: 75vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; display: block; margin: auto;">
+    <div style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(6px); padding: 0.75rem 1rem; border-radius: 8px; margin-top: 8px; text-align: center; color: #fff;">
+      <div id="full_photo_caption" style="font-size: 0.95rem; font-weight: 700; color: #ffffff;"></div>
+      <div id="full_photo_caption_2" style="font-size: 0.82rem; color: #94a3b8; margin-top: 3px; display: none;"></div>
+    </div>
   </div>
 </div>
 
@@ -1696,78 +1707,162 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Multi-photo File Picker
-  var photoInput = document.getElementById('input_daily_photos');
-  var previewContainer = document.getElementById('photos_preview_container');
+  // Dynamic Photo Slots Management for Daily Activity
+  var photoSlotsContainer = document.getElementById('daily_photo_slots_container');
+  var btnAddPhotoSlot = document.getElementById('btn_add_photo_slot');
+  var slotCounter = 0;
+  var slotStore = {};
 
-  if (photoInput) {
-    photoInput.addEventListener('change', function(e) {
-      var files = Array.from(e.target.files);
-      files.forEach(function(file) {
-        queuedFiles.push(file);
-        renderPreview(file, 'file', queuedFiles.length - 1);
-      });
-      photoInput.value = '';
-    });
-  }
+  function createPhotoSlot(initialData) {
+    initialData = initialData || {};
+    var slotId = 'slot_' + (++slotCounter);
+    slotStore[slotId] = { file: null, base64: null };
 
-  function renderPreview(source, type, index) {
-    var box = document.createElement('div');
-    box.className = 'photo-preview-box';
-    box.id = 'preview_' + type + '_' + index;
+    var card = document.createElement('div');
+    card.className = 'photo-slot-card';
+    card.id = 'card_' + slotId;
+    card.setAttribute('data-slot-id', slotId);
+    card.style.cssText = 'border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-card); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem;';
 
-    var img = document.createElement('img');
-    if (type === 'file') {
-      img.src = URL.createObjectURL(source);
-    } else {
-      img.src = source;
+    var currentSlotsCount = photoSlotsContainer ? (photoSlotsContainer.querySelectorAll('.photo-slot-card').length + 1) : 1;
+
+    card.innerHTML = `
+      <div class="photo-slot-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <span class="photo-code-badge slot-badge-num" style="background: var(--primary); color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px;">
+          Foto #${currentSlotsCount}
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-slot" style="padding: 2px 8px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;" title="Hapus slot foto ini">
+          &times; Hapus Foto
+        </button>
+      </div>
+
+      <!-- Keterangan 1 (di atas foto) -->
+      <div>
+        <label class="form-label" style="font-size: 0.75rem; color: var(--text-subtle); margin-bottom: 3px; font-weight: 700; display: flex; justify-content: space-between;">
+          <span>Keterangan Foto 1 (Judul / Objek)</span>
+          <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">(Contoh: KWH Multi Panel)</span>
+        </label>
+        <input type="text" class="form-control slot-input-cap1" placeholder="Ketik judul / nama objek foto..." value="${initialData.caption || ''}" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 600;">
+      </div>
+
+      <!-- Image Preview Box (tengah) -->
+      <div class="photo-preview-box slot-box-preview" style="width: 100%; height: 160px; background-color: var(--bg-alt); border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer;">
+        <img class="photo-preview-img slot-img-preview" alt="Preview Foto" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: none; margin: auto;">
+        <div class="slot-box-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-subtle);">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span style="font-size: 0.75rem; font-weight: 600;">Ambil Kamera / Pilih Foto</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="photo-btn-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+        <button type="button" class="btn btn-primary btn-sm btn-slot-cam" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; font-weight: 600;">
+          📷 Kamera Live
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm btn-slot-gal" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; font-weight: 600;">
+          📁 Galeri File
+        </button>
+      </div>
+
+      <!-- Hidden inputs -->
+      <input type="file" accept="image/*" class="slot-hidden-file" style="display: none;">
+      <input type="file" accept="image/*" capture="environment" class="slot-hidden-cam" style="display: none;">
+
+      <!-- Keterangan 2 (di bawah foto) -->
+      <div>
+        <label class="form-label" style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 3px; margin-bottom: 3px; font-weight: 700; display: flex; justify-content: space-between;">
+          <span>Keterangan Foto 2 (Catatan / Rincian / Status)</span>
+          <span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">(Contoh: Stand Meter 12450 kWh, Normal)</span>
+        </label>
+        <input type="text" class="form-control slot-input-cap2" placeholder="Ketik catatan rincian kondisi, parameter, atau hasil cek..." value="${initialData.caption_2 || ''}" style="min-height: 36px; padding: 0.35rem 0.6rem; font-size: 0.85rem;">
+      </div>
+    `;
+
+    photoSlotsContainer.appendChild(card);
+
+    var previewBox = card.querySelector('.slot-box-preview');
+    var previewImg = card.querySelector('.slot-img-preview');
+    var placeholder = card.querySelector('.slot-box-placeholder');
+    var btnCam = card.querySelector('.btn-slot-cam');
+    var btnGal = card.querySelector('.btn-slot-gal');
+    var fileInput = card.querySelector('.slot-hidden-file');
+    var camInput = card.querySelector('.slot-hidden-cam');
+    var btnRemove = card.querySelector('.btn-remove-slot');
+
+    function setPreview(src, fileObj, base64Str) {
+      previewImg.src = src;
+      previewImg.style.display = 'block';
+      placeholder.style.display = 'none';
+      previewBox.style.borderColor = 'var(--primary)';
+      card.classList.add('slot-filled');
+      slotStore[slotId].file = fileObj || null;
+      slotStore[slotId].base64 = base64Str || null;
     }
 
-    var removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn-remove-preview';
-    removeBtn.innerHTML = '&times;';
-    removeBtn.onclick = function() {
-      box.remove();
-      if (type === 'file') {
-        queuedFiles[index] = null;
-      } else {
-        queuedBase64[index] = null;
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        setPreview(URL.createObjectURL(file), file, null);
       }
-    };
-
-    box.appendChild(img);
-    box.appendChild(removeBtn);
-    previewContainer.appendChild(box);
-  }
-
-  // Camera direct capture & picker trigger
-  var btnCamera = document.getElementById('btn_take_camera_photo');
-  var cameraInput = document.getElementById('input_daily_camera');
-
-  if (cameraInput) {
-    cameraInput.addEventListener('change', function(e) {
-      var files = Array.from(e.target.files);
-      files.forEach(function(file) {
-        queuedFiles.push(file);
-        renderPreview(file, 'file', queuedFiles.length - 1);
-      });
-      cameraInput.value = '';
     });
-  }
 
-  if (btnCamera && cameraInput) {
-    btnCamera.addEventListener('click', function() {
+    camInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        setPreview(URL.createObjectURL(file), file, null);
+      }
+    });
+
+    btnGal.addEventListener('click', function() {
+      fileInput.click();
+    });
+
+    btnCam.addEventListener('click', function() {
       if (typeof openCameraModal === 'function') {
         window.dailyCameraCallback = function(dataUrl) {
-          queuedBase64.push(dataUrl);
-          renderPreview(dataUrl, 'base64', queuedBase64.length - 1);
+          setPreview(dataUrl, null, dataUrl);
         };
-        openCameraModal('daily_activity', 'Foto Kegiatan Shift');
+        openCameraModal('daily_activity', 'Foto Kegiatan #' + currentSlotsCount);
       } else {
-        cameraInput.click();
+        camInput.click();
       }
     });
+
+    previewBox.addEventListener('click', function() {
+      fileInput.click();
+    });
+
+    btnRemove.addEventListener('click', function() {
+      card.remove();
+      delete slotStore[slotId];
+      renumberSlots();
+    });
+
+    renumberSlots();
+  }
+
+  function renumberSlots() {
+    if (!photoSlotsContainer) return;
+    var cards = photoSlotsContainer.querySelectorAll('.photo-slot-card');
+    cards.forEach(function(c, i) {
+      var badge = c.querySelector('.slot-badge-num');
+      if (badge) badge.textContent = 'Foto #' + (i + 1);
+      var btnDel = c.querySelector('.btn-remove-slot');
+      if (btnDel) {
+        btnDel.style.display = (cards.length > 1) ? 'inline-flex' : 'none';
+      }
+    });
+  }
+
+  if (btnAddPhotoSlot) {
+    btnAddPhotoSlot.addEventListener('click', function() {
+      createPhotoSlot();
+    });
+  }
+
+  // Initialize first slot
+  if (photoSlotsContainer && photoSlotsContainer.children.length === 0) {
+    createPhotoSlot();
   }
 
   // Form Submission via AJAX
@@ -1782,16 +1877,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
       var formData = new FormData(form);
 
-      // Append queued files
-      queuedFiles.forEach(function(f) {
-        if (f) formData.append('photos[]', f);
-      });
+      // Collect structured photo slots
+      var slotCards = photoSlotsContainer ? photoSlotsContainer.querySelectorAll('.photo-slot-card') : [];
+      var photoIdx = 0;
+      slotCards.forEach(function(card) {
+        var slotId = card.getAttribute('data-slot-id');
+        var cap1Input = card.querySelector('.slot-input-cap1');
+        var cap2Input = card.querySelector('.slot-input-cap2');
+        var cap1 = cap1Input ? cap1Input.value.trim() : '';
+        var cap2 = cap2Input ? cap2Input.value.trim() : '';
+        var data = slotStore[slotId] || {};
 
-      // Append queued base64 photos
-      var validBase64 = queuedBase64.filter(function(b) { return b !== null; });
-      if (validBase64.length > 0) {
-        formData.append('base64_photos', JSON.stringify(validBase64));
-      }
+        if (data.file || data.base64 || cap1 || cap2) {
+          formData.append('activity_photos[' + photoIdx + '][caption]', cap1);
+          formData.append('activity_photos[' + photoIdx + '][caption_2]', cap2);
+          if (data.file) {
+            formData.append('activity_photo_files[' + photoIdx + ']', data.file);
+          } else if (data.base64) {
+            formData.append('activity_photos[' + photoIdx + '][base64]', data.base64);
+          }
+          photoIdx++;
+        }
+      });
 
       fetch('api/save_daily_activity.php', {
         method: 'POST',
@@ -2009,13 +2116,18 @@ if (btnConfirmDelete) {
 }
 
 // Full Photo Viewer
-function viewPhotoFull(src, caption) {
+function viewPhotoFull(src, caption, caption2) {
   var modal = document.getElementById('photo_viewer_modal');
   var img = document.getElementById('full_photo_img');
   var cap = document.getElementById('full_photo_caption');
+  var cap2 = document.getElementById('full_photo_caption_2');
   if (modal && img) {
     img.src = src;
     if (cap) cap.textContent = caption || '';
+    if (cap2) {
+      cap2.textContent = caption2 || '';
+      cap2.style.display = caption2 ? 'block' : 'none';
+    }
     modal.style.display = 'flex';
   }
 }

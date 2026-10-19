@@ -654,7 +654,7 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
             ?>
               <div class="photo-doc-card">
                 <div class="photo-doc-tag">
-                  <span>📷 Dokumentasi <?= $curActNum ?>.<?= $curPNum ?></span>
+                  <span>📷 Foto <?= $curActNum ?>.<?= $curPNum ?>: <strong><?= htmlspecialchars(!empty($p['caption']) ? $p['caption'] : 'Dokumentasi') ?></strong></span>
                   <?php if (!empty($p['created_at'])): ?>
                     <span style="float: right; color: #64748b; font-weight: 400;"><?= date('H:i', strtotime($p['created_at'])) ?> WIB</span>
                   <?php endif; ?>
@@ -663,7 +663,14 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
                   <img src="<?= htmlspecialchars($p['photo_path']) ?>" alt="Foto Dokumentasi <?= $curActNum ?>.<?= $curPNum ?>">
                 </div>
                 <div class="photo-doc-caption">
-                  <?= htmlspecialchars(!empty($p['caption']) ? $p['caption'] : $act['title']) ?>
+                  <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">
+                    <?= htmlspecialchars(!empty($p['caption']) ? $p['caption'] : $act['title']) ?>
+                  </div>
+                  <?php if (!empty($p['caption_2'])): ?>
+                    <div style="font-size: 7.2pt; color: #475569; line-height: 1.25; margin-top: 2px;">
+                      <?= htmlspecialchars($p['caption_2']) ?>
+                    </div>
+                  <?php endif; ?>
                 </div>
               </div>
             <?php endforeach; ?>

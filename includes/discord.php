@@ -16,7 +16,7 @@ require_once __DIR__ . '/../config/database.php';
 /**
  * Kirim raw payload HTTP POST ke URL Webhook Discord
  */
-function send_discord_payload(string $webhookUrl, array $payload, ?string $filePath = null, string $fileName = 'attachment.pdf'): array {
+function send_discord_payload(string $webhookUrl, array $payload, ?string $filePath = null, string $fileName = 'attachment.pdf', int $timeoutSeconds = 15): array {
     $webhookUrl = trim($webhookUrl);
     if (empty($webhookUrl) || !filter_var($webhookUrl, FILTER_VALIDATE_URL)) {
         return ['success' => false, 'message' => 'URL Webhook Discord tidak valid atau kosong.'];
@@ -31,8 +31,8 @@ function send_discord_payload(string $webhookUrl, array $payload, ?string $fileP
         curl_setopt($ch, CURLOPT_URL, $webhookUrl);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, max(15, $timeoutSeconds));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 

@@ -30,6 +30,8 @@ database/*.sqlite-journal
 # Environment & Backup files
 .env
 database/*.bak
+backups/*
+!backups/.gitkeep
 
 # User reference files
 hasil contoh/

@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure & install PHP extensions (GD with FreeType & JPEG, PDO SQLite, PDO MySQL, EXIF)
+# Configure & install PHP extensions (GD with FreeType & JPEG, PDO SQLite, PDO MySQL, EXIF, ZIP)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite exif
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite exif zip
 
 # Install Redis extension via PECL
 RUN pecl install redis \
@@ -51,10 +51,10 @@ RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
 # Copy application files
 COPY . /var/www/html/
 
-# Set initial permissions for database and uploads directories
-RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/temp \
+# Set initial permissions for database, uploads, and backups directories
+RUN mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/temp /var/www/html/backups \
     && chown -R www-data:www-data /var/www/html \
-    && chmod -R 777 /var/www/html/database /var/www/html/uploads
+    && chmod -R 777 /var/www/html/database /var/www/html/uploads /var/www/html/backups
 
 # Configure auto-optimize cron job (every Sunday at 02:00)
 RUN echo "0 2 * * 0 root /usr/local/bin/php /var/www/html/cron_optimize.php > /proc/1/fd/1 2>&1" > /etc/cron.d/apsd-cron \

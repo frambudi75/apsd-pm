@@ -225,6 +225,13 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
             </a>
           </li>
           <li>
+            <a href="backup" class="sidebar-nav-item <?= ($curPage === 'backup.php') ? 'active' : '' ?>" title="Pusat Cadangan Basis Data &amp; Berkas Sistem">
+              <span class="sidebar-nav-icon"><?= app_icon('package', 18) ?></span>
+              <span>Cadangan Sistem</span>
+              <span class="sidebar-nav-badge" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3);">Vault</span>
+            </a>
+          </li>
+          <li>
             <a href="sites" class="sidebar-nav-item <?= ($curPage === 'sites.php') ? 'active' : '' ?>" title="Data Master Site &amp; Tower">
               <span class="sidebar-nav-icon"><?= app_icon('map-pin', 18) ?></span>
               <span>Data Master Site</span>

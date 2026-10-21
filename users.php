@@ -21,7 +21,7 @@ $successMsg = '';
 $errorMsg = '';
 
 // Handle POST actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = $_POST['action'] ?? '';
 
     // 1. TAMBAH PENGGUNA BARU

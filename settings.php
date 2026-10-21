@@ -14,7 +14,7 @@ $pdo = get_db_connection();
 $successMsg = '';
 $errorMsg = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     try {
         $defaultLeader = trim($_POST['default_team_leader'] ?? '');
         $leaderRole = trim($_POST['default_leader_role'] ?? '');

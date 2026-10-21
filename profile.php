@@ -27,7 +27,7 @@ if (!$userData) {
 }
 
 // Tangani aksi form POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = trim($_POST['action'] ?? '');
 
     // 1. UPDATE INFORMASI PROFIL

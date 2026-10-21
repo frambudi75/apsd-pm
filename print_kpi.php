@@ -522,7 +522,7 @@ if ($isSingleUserMode) {
             </div>
             <div style="font-size: 7.5pt; color: #475569; margin-top: 2px;">
               Username: <strong>@<?= htmlspecialchars($targetUser['username']) ?></strong> &bull; 
-              Role: <strong><?= ($targetUser['role'] === 'superadmin' ? 'Super Administrator' : ($targetUser['role'] === 'admin' ? 'Administrator' : 'Teknisi Jaga NOC')) ?></strong> &bull; 
+              Jabatan: <strong><?= ($targetUser['role'] === 'superadmin' ? 'Super Administrator' : ($targetUser['role'] === 'admin' ? 'Administrator' : 'Teknisi Jaga NOC')) ?></strong> &bull; 
               Penempatan: <strong>Unit NOC Kualanamu</strong>
             </div>
           </td>
@@ -532,7 +532,7 @@ if ($isSingleUserMode) {
               <?= $totalScore ?> <span style="font-size: 8pt; color: #64748b;">/ 100</span>
             </div>
             <div style="display: inline-block; background: #008080; color: #ffffff; font-weight: 800; font-size: 7.5pt; padding: 1px 8px; border-radius: 3px;">
-              PREDIKAT: GRADE <?= $grade ?>
+              PREDIKAT: <?= $grade ?> (<?= ($grade === 'A' ? 'SANGAT BAIK' : ($grade === 'B' ? 'BAIK' : ($grade === 'C' ? 'CUKUP' : 'PERLU PEMBINAAN'))) ?>)
             </div>
           </td>
         </tr>
@@ -629,7 +629,7 @@ if ($isSingleUserMode) {
               <?= $totalScore ?>
             </td>
             <td style="text-align: center; font-size: 8pt; color: #008080;">
-              GRADE <?= $grade ?>
+              PREDIKAT <?= $grade ?>
             </td>
           </tr>
         </tbody>
@@ -684,13 +684,13 @@ if ($isSingleUserMode) {
       <table class="formal-table">
         <thead>
           <tr>
-            <th style="width: 32px; text-align: center;">Rank</th>
+            <th style="width: 35px; text-align: center;">Peringkat</th>
             <th>Nama Personel / Teknisi Jaga</th>
-            <th style="width: 90px;">Role / Jabatan</th>
+            <th style="width: 95px;">Jabatan / Peran</th>
             <th style="width: 100px; text-align: center;">Metrik Sistem (60%)</th>
-            <th style="width: 100px; text-align: center;">Review Leader (40%)</th>
+            <th style="width: 110px; text-align: center;">Penilaian Atasan (40%)</th>
             <th style="width: 80px; text-align: center;">Total Skor</th>
-            <th style="width: 65px; text-align: center;">Predikat</th>
+            <th style="width: 70px; text-align: center;">Predikat</th>
             <th style="width: 85px; text-align: center;">Status Rapor</th>
           </tr>
         </thead>
@@ -720,10 +720,10 @@ if ($isSingleUserMode) {
                 <?= $t['total_score'] ?>
               </td>
               <td style="text-align: center; font-weight: 800; color: <?= ($t['grade'] === 'A' ? '#059669' : ($t['grade'] === 'B' ? '#0284c7' : '#d97706')) ?>;">
-                GRADE <?= $t['grade'] ?>
+                Predikat <?= $t['grade'] ?>
               </td>
               <td style="text-align: center; font-size: 7pt; font-weight: 700; color: <?= ($t['status'] === 'published' ? '#059669' : '#64748b') ?>;">
-                <?= ($t['status'] === 'published' ? 'TERKIRIM' : 'DRAFT') ?>
+                <?= ($t['status'] === 'published' ? 'TERKIRIM' : 'DRAF') ?>
               </td>
             </tr>
           <?php endforeach; ?>

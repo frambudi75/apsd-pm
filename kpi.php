@@ -622,10 +622,10 @@ include __DIR__ . '/includes/header.php';
           </div>
         </div>
 
-        <!-- Pilar 5: Review Leader (Otomatis & Bisa Diubah) -->
+        <!-- Pilar 5: Penilaian Atasan (Otomatis & Bisa Diubah) -->
         <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; background: #f8fafc;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 0.82rem; color: var(--text-main);">5. Review Leader / Supervisor</strong>
+            <strong style="font-size: 0.82rem; color: var(--text-main);">5. Penilaian Atasan / Supervisor</strong>
             <span style="background: rgba(239, 68, 68, 0.15); color: #dc2626; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 40%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
@@ -641,9 +641,9 @@ include __DIR__ . '/includes/header.php';
             <span style="background: #e2e8f0; color: var(--text-main); font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Standar</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            &bull; <strong style="color: #059669;">A (90 – 100)</strong>: Sangat Baik / Unggul<br>
-            &bull; <strong style="color: #0284c7;">B (80 – 89.9)</strong>: Baik / Sesuai Standar SOP<br>
-            &bull; <strong style="color: #d97706;">C (70 – 79.9)</strong>: Cukup / Perlu Peningkatan<br>
+            &bull; <strong style="color: #059669;">A (90 - 100)</strong>: Sangat Baik / Unggul<br>
+            &bull; <strong style="color: #0284c7;">B (80 - 89.9)</strong>: Baik / Sesuai Standar SOP<br>
+            &bull; <strong style="color: #d97706;">C (70 - 79.9)</strong>: Cukup / Perlu Peningkatan<br>
             &bull; <strong style="color: #dc2626;">D (&lt; 70)</strong>: Perlu Pembinaan Teknis
           </div>
         </div>
@@ -681,14 +681,14 @@ include __DIR__ . '/includes/header.php';
         <table class="table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
           <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 0.75rem; text-transform: uppercase;">
-              <th style="padding: 10px 12px; text-align: center; width: 45px;">Rank</th>
+              <th style="padding: 10px 12px; text-align: center; width: 55px;">Peringkat</th>
               <th style="padding: 10px 12px;">Personel / Teknisi</th>
               <th style="padding: 10px 12px; text-align: center; width: 110px;">Metrik Sistem (60%)</th>
-              <th style="padding: 10px 12px; text-align: center; width: 110px;">Review Leader (40%)</th>
+              <th style="padding: 10px 12px; text-align: center; width: 120px;">Penilaian Atasan (40%)</th>
               <th style="padding: 10px 12px; text-align: center; width: 95px;">Total Skor</th>
-              <th style="padding: 10px 12px; text-align: center; width: 85px;">Predikat</th>
+              <th style="padding: 10px 12px; text-align: center; width: 90px;">Predikat</th>
               <th style="padding: 10px 12px; text-align: center; width: 110px;">Status Rapor</th>
-              <th style="padding: 10px 12px; text-align: right; width: 230px;">Aksi Admin</th>
+              <th style="padding: 10px 12px; text-align: right; width: 230px;">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -734,7 +734,7 @@ include __DIR__ . '/includes/header.php';
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
                   <span style="background: <?= $gradeBg ?>; color: <?= $gradeColor ?>; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 0.78rem;">
-                    Grade <?= $grd ?>
+                    Predikat <?= $grd ?>
                   </span>
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
@@ -744,15 +744,15 @@ include __DIR__ . '/includes/header.php';
                     </span>
                   <?php else: ?>
                     <span style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                      <?= app_icon('lock', 11) ?> Draft Saja
+                      <?= app_icon('lock', 11) ?> Draf Internal
                     </span>
                   <?php endif; ?>
                 </td>
                 <td style="padding: 10px 12px; text-align: right;">
                   <div style="display: inline-flex; align-items: center; gap: 4px;">
                     <!-- Tombol Nilai / Manual Override -->
-                    <button type="button" class="btn btn-sm btn-secondary" onclick='openReviewModal(<?= json_encode($item) ?>)' style="padding: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700;" title="Input / ubah nilai indikator manual">
-                      <?= app_icon('edit', 12) ?> Nilai / Edit
+                    <button type="button" class="btn btn-sm btn-secondary" onclick='openReviewModal(<?= json_encode($item) ?>)' style="padding: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700;" title="Input / koreksi nilai indikator manual">
+                      <?= app_icon('edit', 12) ?> Nilai / Koreksi
                     </button>
 
                     <!-- Tombol Toggle Publish / Tarik -->
@@ -964,7 +964,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);">
       <div>
         <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0; color: var(--text-main);" id="modalRevTitle">
-          Penilaian &amp; Override Manual KPI
+          Penilaian &amp; Koreksi Manual KPI
         </h3>
         <div style="font-size: 0.74rem; color: var(--text-subtle); margin-top: 2px;">
           Tahun Anggaran: <?= $filterYear ?> &bull; <span style="color: #059669; font-weight: 700;">Nilai dapat disesuaikan manual</span>
@@ -973,7 +973,7 @@ include __DIR__ . '/includes/header.php';
       <button type="button" onclick="closeReviewModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-subtle); cursor: pointer;">&times;</button>
     </div>
 
-    <form method="POST" action="">
+    <form method="POST" action="" novalidate id="formReview">
       <input type="hidden" name="action" value="save_review">
       <input type="hidden" name="user_id" id="revUserId" value="0">
 
@@ -982,69 +982,69 @@ include __DIR__ . '/includes/header.php';
         <!-- Section 1: Skor Metrik Sistem (Bisa Diedit Manual) -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
           <div style="font-size: 0.82rem; font-weight: 800; color: #008080; text-transform: uppercase;">
-            1. Metrik Operasional Sistem (Maks 60 Poin):
+            1. Metrik Operasional Sistem (Maksimal 60 Poin):
           </div>
-          <button type="button" class="btn btn-sm" onclick="resetToAutoCalculated()" style="font-size: 0.7rem; padding: 2px 6px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+          <button type="button" class="btn btn-sm" onclick="resetToAutoCalculated()" style="font-size: 0.72rem; padding: 3px 8px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 700;">
             ↺ Isi Nilai Hitungan Sistem
           </button>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
           
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 0.5rem;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 0.5rem;">
             <!-- Shift Score -->
-            <div>
-              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
-                Kehadiran Shift (Maks 15)
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0; color: #1e293b;">
+                Kehadiran Shift (Maksimal 15)
               </label>
-              <input type="number" step="0.1" min="0" max="15" name="shift_score" id="inputShiftScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
-              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
-                Hitungan Sistem: <strong id="autoShiftScore">0</strong>/15 (<span id="autoShiftCount">0</span> shift)
+              <input type="number" step="any" min="0" max="15" name="shift_score" id="inputShiftScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.86rem; font-weight: 700; padding: 0.45rem 0.65rem;">
+              <div style="font-size: 0.7rem; color: #64748b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 6px; margin-top: 2px;">
+                Hitungan Sistem: <strong id="autoShiftScore" style="color: #008080;">0</strong> / 15 (<span id="autoShiftCount">0</span> shift selesai)
               </div>
             </div>
 
             <!-- Logbook Score -->
-            <div>
-              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
-                Volume Logbook (Maks 20)
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0; color: #1e293b;">
+                Volume Logbook (Maksimal 20)
               </label>
-              <input type="number" step="0.1" min="0" max="20" name="activity_score" id="inputActScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
-              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
-                Hitungan Sistem: <strong id="autoActScore">0</strong>/20 (<span id="autoActCount">0</span> kegiatan)
+              <input type="number" step="any" min="0" max="20" name="activity_score" id="inputActScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.86rem; font-weight: 700; padding: 0.45rem 0.65rem;">
+              <div style="font-size: 0.7rem; color: #64748b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 6px; margin-top: 2px;">
+                Hitungan Sistem: <strong id="autoActScore" style="color: #008080;">0</strong> / 20 (<span id="autoActCount">0</span> kegiatan)
               </div>
             </div>
 
             <!-- Photo Score -->
-            <div>
-              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
-                Bukti Foto Fisik (Maks 15)
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0; color: #1e293b;">
+                Bukti Foto Fisik (Maksimal 15)
               </label>
-              <input type="number" step="0.1" min="0" max="15" name="photo_score" id="inputPhotoScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
-              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
-                Hitungan Sistem: <strong id="autoPhotoScore">0</strong>/15 (<span id="autoPhotoCount">0</span> foto)
+              <input type="number" step="any" min="0" max="15" name="photo_score" id="inputPhotoScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.86rem; font-weight: 700; padding: 0.45rem 0.65rem;">
+              <div style="font-size: 0.7rem; color: #64748b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 6px; margin-top: 2px;">
+                Hitungan Sistem: <strong id="autoPhotoScore" style="color: #008080;">0</strong> / 15 (<span id="autoPhotoCount">0</span> foto)
               </div>
             </div>
 
             <!-- PM Score (Fleksibel Rotasi) -->
-            <div>
-              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
-                Partisipasi PM (Maks 10)
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0; color: #1e293b;">
+                Partisipasi PM (Maksimal 10)
               </label>
-              <input type="number" step="0.1" min="0" max="10" name="pm_score" id="inputPmScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
-              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
-                Hitungan Sistem: <strong id="autoPmScore">0</strong>/10 (<span id="autoPmCount">0</span> PM)
+              <input type="number" step="any" min="0" max="10" name="pm_score" id="inputPmScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.86rem; font-weight: 700; padding: 0.45rem 0.65rem;">
+              <div style="font-size: 0.7rem; color: #64748b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 6px; margin-top: 2px;">
+                Hitungan Sistem: <strong id="autoPmScore" style="color: #008080;">0</strong> / 10 (<span id="autoPmCount">0</span> PM)
               </div>
             </div>
           </div>
 
-          <div style="text-align: right; font-size: 0.78rem; font-weight: 800; color: #008080; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px;">
+          <div style="text-align: right; font-size: 0.82rem; font-weight: 800; color: #008080; border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 6px;">
             Subtotal Metrik Sistem: <span id="dispSysTotal">0</span> / 60.0
           </div>
         </div>
 
-        <!-- Section 2: Review Kualitatif Leader (Maks 40 Poin) -->
+        <!-- Section 2: Penilaian Kualitatif Atasan (Maksimal 40 Poin) -->
         <div style="font-size: 0.82rem; font-weight: 800; color: #6366f1; text-transform: uppercase; margin-bottom: 0.5rem;">
-          2. Penilaian Kualitatif Supervisor (Maks 40 Poin):
+          2. Penilaian Kualitatif Atasan (Maksimal 40 Poin):
         </div>
 
         <!-- Aspek 1: SOP Bandara & K3 -->
@@ -1084,12 +1084,12 @@ include __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Total Live Preview -->
-        <div style="background: #f1f5f9; border-radius: 6px; padding: 0.65rem 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="background: #f1f5f9; border-radius: 6px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
           <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Proyeksi Total Nilai Akhir:</span>
-          <div>
-            <strong id="liveTotalScore" style="font-size: 1.15rem; color: #008080;">0</strong>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <strong id="liveTotalScore" style="font-size: 1.2rem; color: #008080;">0</strong>
             <span style="font-size: 0.75rem; color: var(--text-subtle);">/ 100</span>
-            <span id="liveGrade" style="margin-left: 6px; background: #008080; color: #ffffff; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">C</span>
+            <span id="liveGrade" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid #059669; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">Predikat C</span>
           </div>
         </div>
 
@@ -1104,7 +1104,7 @@ include __DIR__ . '/includes/header.php';
           <input type="checkbox" name="send_to_user" id="checkSendUser" value="1" style="width: 17px; height: 17px; cursor: pointer;">
           <label for="checkSendUser" style="margin: 0; font-size: 0.8rem; font-weight: 700; color: #065f46; cursor: pointer;">
             🚀 Langsung Kirim Rapor ke Akun Teknisi Ini
-            <div style="font-size: 0.7rem; font-weight: 400; color: #047857;">Jika tidak dicentang, hasil evaluasi hanya disimpan sebagai Draft internal.</div>
+            <div style="font-size: 0.7rem; font-weight: 400; color: #047857;">Jika tidak dicentang, hasil evaluasi hanya disimpan sebagai Draf internal.</div>
           </label>
         </div>
 
@@ -1154,10 +1154,10 @@ function openReviewModal(item) {
   document.getElementById('autoPmCount').textContent = item.auto_system.pm_count;
 
   // Nilai aktif (bisa nilai tersimpan atau nilai auto sistem)
-  document.getElementById('inputShiftScore').value = item.system.shift_score;
-  document.getElementById('inputActScore').value = item.system.activity_score;
-  document.getElementById('inputPhotoScore').value = item.system.photo_score;
-  document.getElementById('inputPmScore').value = item.system.pm_score;
+  document.getElementById('inputShiftScore').value = (parseFloat(item.system.shift_score) || 0).toString();
+  document.getElementById('inputActScore').value = (parseFloat(item.system.activity_score) || 0).toString();
+  document.getElementById('inputPhotoScore').value = (parseFloat(item.system.photo_score) || 0).toString();
+  document.getElementById('inputPmScore').value = (parseFloat(item.system.pm_score) || 0).toString();
 
   // Nilai kualitatif
   document.getElementById('inputSop').value = item.review.sop || 10;
@@ -1178,10 +1178,10 @@ function closeReviewModal() {
 
 function resetToAutoCalculated() {
   if (!curAutoItem) return;
-  document.getElementById('inputShiftScore').value = curAutoItem.auto_system.shift_score;
-  document.getElementById('inputActScore').value = curAutoItem.auto_system.activity_score;
-  document.getElementById('inputPhotoScore').value = curAutoItem.auto_system.photo_score;
-  document.getElementById('inputPmScore').value = curAutoItem.auto_system.pm_score;
+  document.getElementById('inputShiftScore').value = (parseFloat(curAutoItem.auto_system.shift_score) || 0).toString();
+  document.getElementById('inputActScore').value = (parseFloat(curAutoItem.auto_system.activity_score) || 0).toString();
+  document.getElementById('inputPhotoScore').value = (parseFloat(curAutoItem.auto_system.photo_score) || 0).toString();
+  document.getElementById('inputPmScore').value = (parseFloat(curAutoItem.auto_system.pm_score) || 0).toString();
   updateLiveTotal();
 }
 
@@ -1208,10 +1208,26 @@ function updateLiveTotal() {
   document.getElementById('liveTotalScore').textContent = grandTotal.toFixed(1);
 
   let gr = 'D';
-  if (grandTotal >= 90) gr = 'A';
-  else if (grandTotal >= 80) gr = 'B';
-  else if (grandTotal >= 70) gr = 'C';
-  document.getElementById('liveGrade').textContent = gr;
+  let grColor = '#dc2626';
+  let grBg = 'rgba(220, 38, 38, 0.15)';
+  if (grandTotal >= 90) {
+    gr = 'A';
+    grColor = '#059669';
+    grBg = 'rgba(5, 150, 105, 0.15)';
+  } else if (grandTotal >= 80) {
+    gr = 'B';
+    grColor = '#0284c7';
+    grBg = 'rgba(2, 132, 199, 0.15)';
+  } else if (grandTotal >= 70) {
+    gr = 'C';
+    grColor = '#d97706';
+    grBg = 'rgba(217, 119, 6, 0.15)';
+  }
+  const badgeEl = document.getElementById('liveGrade');
+  badgeEl.textContent = 'Predikat ' + gr;
+  badgeEl.style.color = grColor;
+  badgeEl.style.background = grBg;
+  badgeEl.style.borderColor = grColor;
 }
 <?php endif; ?>
 </script>

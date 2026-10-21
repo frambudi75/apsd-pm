@@ -6,7 +6,7 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/checklist_data.php';
-require_login();
+require_role(['superadmin', 'admin']);
 
 $page_title = 'Statistik & Analitik Laporan';
 $currentUser = current_user();
@@ -365,9 +365,11 @@ include __DIR__ . '/includes/header.php';
           </label>
           <select name="user_id" class="form-control" style="min-height: 38px;">
             <option value="0">-- Semua Anggota Tim --</option>
-            <?php foreach ($technicians as $t): ?>
+            <?php foreach ($technicians as $t): 
+              $roleBadge = ($t['role'] === 'superadmin') ? 'Super Admin' : (($t['role'] === 'admin') ? 'Admin' : 'Teknisi');
+            ?>
               <option value="<?= (int)$t['id'] ?>" <?= ($filterUserId === (int)$t['id']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($t['full_name'] ?: $t['username']) ?> (<?= htmlspecialchars($t['role']) ?>)
+                <?= htmlspecialchars($t['full_name'] ?: $t['username']) ?> (<?= $roleBadge ?>)
               </option>
             <?php endforeach; ?>
           </select>

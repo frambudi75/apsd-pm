@@ -7,7 +7,11 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/signature_helper.php';
 require_once __DIR__ . '/includes/checklist_data.php';
-require_login();
+if (!empty($_GET['pdf_token'])) {
+    require_login();
+} else {
+    require_role(['superadmin', 'admin']);
+}
 
 $pdo = get_db_connection();
 
@@ -783,8 +787,11 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
               <span style="font-size: 7.5pt; color: #64748b; font-weight: 400;">(@<?= htmlspecialchars($tp['username']) ?>)</span>
             </td>
             <td>
-              <span style="text-transform: uppercase; font-size: 7.5pt; font-weight: 700; color: #475569;">
-                <?= htmlspecialchars($tp['role']) ?>
+              <?php 
+              $roleLabel = ($tp['role'] === 'superadmin') ? 'Super Admin' : (($tp['role'] === 'admin') ? 'Admin' : 'Teknisi Jaga NOC');
+              ?>
+              <span style="font-size: 7.2pt; font-weight: 700; color: #475569;">
+                <?= htmlspecialchars($roleLabel) ?>
               </span>
             </td>
             <td style="text-align: center; font-weight: 700;"><?= (int)$tp['shifts_count'] ?> Sesi</td>

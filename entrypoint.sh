@@ -2,7 +2,7 @@
 set -e
 
 # Ensure database, uploads, and backups directory structures exist
-mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/temp /var/www/html/backups
+mkdir -p /var/www/html/database /var/www/html/uploads/reports /var/www/html/uploads/daily /var/www/html/uploads/operators /var/www/html/uploads/branding /var/www/html/uploads/documents /var/www/html/uploads/signatures /var/www/html/uploads/temp /var/www/html/backups
 
 # Fix permissions for database, uploads, and backups on mounted volumes
 chown -R www-data:www-data /var/www/html/database /var/www/html/uploads /var/www/html/backups 2>/dev/null || true

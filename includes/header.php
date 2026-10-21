@@ -169,6 +169,21 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
               <span class="sidebar-nav-badge" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3);">Tim</span>
             </a>
           </li>
+          <li>
+            <a href="kpi" class="sidebar-nav-item <?= ($curPage === 'kpi.php') ? 'active' : '' ?>" title="Penilaian Kinerja &amp; KPI Tim NOC">
+              <span class="sidebar-nav-icon"><?= app_icon('award', 18) ?></span>
+              <span>Penilaian KPI Tim</span>
+              <span class="sidebar-nav-badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);">KPI</span>
+            </a>
+          </li>
+          <?php else: ?>
+          <li>
+            <a href="kpi" class="sidebar-nav-item <?= ($curPage === 'kpi.php') ? 'active' : '' ?>" title="Rapor Evaluasi Kinerja &amp; KPI Saya">
+              <span class="sidebar-nav-icon"><?= app_icon('award', 18) ?></span>
+              <span>Rapor Kinerja KPI</span>
+              <span class="sidebar-nav-badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3);">Kinerjaku</span>
+            </a>
+          </li>
           <?php endif; ?>
         </ul>
       </div>

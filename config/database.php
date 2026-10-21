@@ -166,7 +166,8 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
         'user_documents',
         'user_document_shares',
         'user_document_external_shares',
-        'audit_logs'
+        'audit_logs',
+        'kpi_evaluations'
     ];
 
     $report = [
@@ -373,7 +374,7 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
             if (!empty($report['seeds_restored'])) $details[] = count($report['seeds_restored']) . ' data default dipulihkan (' . implode(', ', $report['seeds_restored']) . ')';
             $report['message'] = "Auto-Repair berhasil: " . implode('; ', $details) . ".";
         } else {
-            $report['message'] = "Seluruh 15 tabel sistem utuh, sehat, dan terverifikasi.";
+            $report['message'] = "Seluruh 16 tabel sistem utuh, sehat, dan terverifikasi.";
         }
 
         $dbVerifiedInProcess = true;
@@ -703,6 +704,43 @@ function init_mysql_schema(PDO $pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    // 16. Table kpi_evaluations (Performance Appraisal & Metrics)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS kpi_evaluations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            period_month VARCHAR(7) NOT NULL,
+            shifts_count INT DEFAULT 0,
+            completed_shifts INT DEFAULT 0,
+            shift_score DECIMAL(5,2) DEFAULT 0.00,
+            activities_count INT DEFAULT 0,
+            activity_score DECIMAL(5,2) DEFAULT 0.00,
+            photos_count INT DEFAULT 0,
+            photo_score DECIMAL(5,2) DEFAULT 0.00,
+            pm_count INT DEFAULT 0,
+            pm_score DECIMAL(5,2) DEFAULT 0.00,
+            system_score DECIMAL(5,2) DEFAULT 0.00,
+            sop_score DECIMAL(5,2) DEFAULT 0.00,
+            troubleshooting_score DECIMAL(5,2) DEFAULT 0.00,
+            response_score DECIMAL(5,2) DEFAULT 0.00,
+            initiative_score DECIMAL(5,2) DEFAULT 0.00,
+            review_score DECIMAL(5,2) DEFAULT 0.00,
+            total_score DECIMAL(5,2) DEFAULT 0.00,
+            grade VARCHAR(5) DEFAULT 'C',
+            feedback_notes TEXT NULL,
+            status ENUM('draft', 'published') DEFAULT 'draft',
+            published_at DATETIME NULL,
+            published_by INT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_period (user_id, period_month),
+            INDEX idx_kpi_user (user_id),
+            INDEX idx_kpi_period (period_month),
+            INDEX idx_kpi_status (status),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     seed_default_sites_if_empty($pdo);
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
@@ -1018,6 +1056,42 @@ function init_sqlite_schema(PDO $pdo, bool $isNew = false) {
         CREATE INDEX IF NOT EXISTS idx_audit_action_type ON audit_logs(action_type);
         CREATE INDEX IF NOT EXISTS idx_audit_action_name ON audit_logs(action_name);
         CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
+    ");
+
+    // 17. Table kpi_evaluations (Performance Appraisal & Metrics)
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS kpi_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            period_month VARCHAR(7) NOT NULL,
+            shifts_count INTEGER DEFAULT 0,
+            completed_shifts INTEGER DEFAULT 0,
+            shift_score REAL DEFAULT 0.0,
+            activities_count INTEGER DEFAULT 0,
+            activity_score REAL DEFAULT 0.0,
+            photos_count INTEGER DEFAULT 0,
+            photo_score REAL DEFAULT 0.0,
+            pm_count INTEGER DEFAULT 0,
+            pm_score REAL DEFAULT 0.0,
+            system_score REAL DEFAULT 0.0,
+            sop_score REAL DEFAULT 0.0,
+            troubleshooting_score REAL DEFAULT 0.0,
+            response_score REAL DEFAULT 0.0,
+            initiative_score REAL DEFAULT 0.0,
+            review_score REAL DEFAULT 0.0,
+            total_score REAL DEFAULT 0.0,
+            grade VARCHAR(5) DEFAULT 'C',
+            feedback_notes TEXT NULL,
+            status VARCHAR(20) DEFAULT 'draft',
+            published_at DATETIME NULL,
+            published_by INTEGER NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_kpi_user_period ON kpi_evaluations(user_id, period_month);
+        CREATE INDEX IF NOT EXISTS idx_kpi_period ON kpi_evaluations(period_month);
+        CREATE INDEX IF NOT EXISTS idx_kpi_status ON kpi_evaluations(status);
     ");
 
     seed_default_sites_if_empty($pdo);

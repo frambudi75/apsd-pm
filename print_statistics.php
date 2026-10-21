@@ -36,10 +36,52 @@ if (!$isAllTime) {
 }
 
 // System settings for signatures & company name
-$leaderName = get_system_setting('default_team_leader', 'Eko Sulistyo');
+$leaderName = get_system_setting('default_team_leader', 'Wahyu Wandira');
 $leaderRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
 $companyName = get_system_setting('company_name', 'IASS SBU ICT KNO');
-$unitName = get_system_setting('unit_name', 'IASS SBU ICT KNO');
+$unitName = get_system_setting('unit_name', 'KNO');
+
+// Custom overrides via query params if provided
+if (!empty($_GET['leader_name'])) {
+    $leaderName = trim($_GET['leader_name']);
+}
+if (!empty($_GET['leader_role'])) {
+    $leaderRole = trim($_GET['leader_role']);
+}
+
+// Current logged-in user / Admin info for reporter signature (left column)
+$currentUser = current_user();
+$adminName = get_system_setting('default_admin_name', '');
+if (empty($adminName)) {
+    if (!empty($currentUser['full_name'])) {
+        $adminName = $currentUser['full_name'];
+    } elseif (!empty($currentUser['username'])) {
+        $adminName = $currentUser['username'];
+    } else {
+        $adminName = 'Administrator NOC';
+    }
+}
+if (!empty($_GET['admin_name'])) {
+    $adminName = trim($_GET['admin_name']);
+}
+
+$adminRole = get_system_setting('default_admin_role', '');
+if (empty($adminRole)) {
+    if (!empty($currentUser['role'])) {
+        if ($currentUser['role'] === 'superadmin') {
+            $adminRole = 'Super Administrator';
+        } elseif ($currentUser['role'] === 'admin') {
+            $adminRole = 'Administrator SBU ICT';
+        } else {
+            $adminRole = 'Petugas Operasional & Pemeliharaan ICT';
+        }
+    } else {
+        $adminRole = 'Administrator SBU ICT';
+    }
+}
+if (!empty($_GET['admin_role'])) {
+    $adminRole = trim($_GET['admin_role']);
+}
 
 // Load technicians list
 $technicians = [];
@@ -680,11 +722,11 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     <table class="sign-table">
       <tr>
         <td>
-          <div>Deli Serdang, <?= date('d') . ' ' . $periodLabel ?></div>
+          <div>Deli Serdang, <?= date('d') . ' ' . ($isAllTime ? ($indoMonths[(int)date('n')] . ' ' . date('Y')) : $periodLabel) ?></div>
           <div style="font-weight: 700; margin-top: 2px;">Dibuat / Dilaporkan oleh,</div>
           <div class="sign-space"></div>
-          <div class="sign-name">Tim Pelaksana Shift NOC</div>
-          <div class="sign-role">Petugas Operasional &amp; Pemeliharaan ICT</div>
+          <div class="sign-name"><?= htmlspecialchars($adminName) ?></div>
+          <div class="sign-role"><?= htmlspecialchars($adminRole) ?></div>
         </td>
         <td>
           <div>Mengetahui &amp; Menyetujui,</div>

@@ -36,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fullName = trim($_POST['full_name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
+        $canEditJabatan = in_array($userData['role'], ['superadmin', 'admin']);
+        $jabatan = $canEditJabatan ? trim($_POST['jabatan'] ?? '') : ($userData['jabatan'] ?? 'Teknisi Jaga NOC');
+        if (empty($jabatan)) $jabatan = $userData['jabatan'] ?: 'Teknisi Jaga NOC';
 
         if (empty($fullName)) {
             $errorMsg = 'Nama lengkap wajib diisi.';
@@ -48,11 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
                 if ($driver === 'sqlite') {
-                    $upd = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, updated_at = datetime('now', 'localtime') WHERE id = ?");
+                    $upd = $pdo->prepare("UPDATE users SET full_name = ?, jabatan = ?, email = ?, phone = ?, updated_at = datetime('now', 'localtime') WHERE id = ?");
                 } else {
-                    $upd = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?");
+                    $upd = $pdo->prepare("UPDATE users SET full_name = ?, jabatan = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?");
                 }
-                $upd->execute([$fullName, $email ?: null, $cleanPhone ?: null, $userId]);
+                $upd->execute([$fullName, $jabatan, $email ?: null, $cleanPhone ?: null, $userId]);
 
                 // Perbarui sesi aktif agar langsung tampil di header & sidebar
                 $_SESSION['full_name'] = $fullName;
@@ -255,6 +258,15 @@ include __DIR__ . '/includes/header.php';
         <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.25rem; text-align: left; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="color: var(--text-subtle); display: flex; align-items: center; gap: 5px;">
+              <?= app_icon('briefcase', 13) ?> Jabatan
+            </span>
+            <span style="font-weight: 700; color: #0284c7;">
+              <?= htmlspecialchars($userData['jabatan'] ?: 'Teknisi Jaga NOC') ?>
+            </span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-subtle); display: flex; align-items: center; gap: 5px;">
               <?= app_icon('mail', 13) ?> Email
             </span>
             <span style="font-weight: 600; color: var(--text-main);">
@@ -351,6 +363,23 @@ include __DIR__ . '/includes/header.php';
                   <input type="text" name="full_name" class="form-control settings-control-iconic" value="<?= htmlspecialchars($userData['full_name']) ?>" required placeholder="Contoh: Budi Santoso">
                 </div>
                 <div class="settings-help-text">Nama lengkap resmi yang akan tercantum di lembar logbook dan tanda tangan laporan.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 700; font-size: 0.82rem;">
+                  Jabatan / Posisi Resmi <?= in_array($userData['role'], ['superadmin', 'admin']) ? '<span style="color: red;">*</span>' : '' ?>
+                </label>
+                <div class="settings-input-group">
+                  <span class="settings-input-icon"><?= app_icon('briefcase', 15) ?></span>
+                  <?php if (in_array($userData['role'], ['superadmin', 'admin'])): ?>
+                    <input type="text" name="jabatan" class="form-control settings-control-iconic" value="<?= htmlspecialchars($userData['jabatan'] ?: 'Teknisi Jaga NOC') ?>" required placeholder="Contoh: Supervisor NOC, Teknisi Jaga NOC">
+                  <?php else: ?>
+                    <input type="text" class="form-control settings-control-iconic" value="<?= htmlspecialchars($userData['jabatan'] ?: 'Teknisi Jaga NOC') ?>" disabled readonly style="background: var(--bg-alt); cursor: not-allowed;">
+                  <?php endif; ?>
+                </div>
+                <div class="settings-help-text">
+                  <?= in_array($userData['role'], ['superadmin', 'admin']) ? 'Jabatan resmi yang dicantumkan pada pengesahan laporan logbook dan PM.' : 'Ditetapkan oleh Administrator / Superadmin melalui menu Kelola Pengguna.' ?>
+                </div>
               </div>
 
               <div class="form-group">

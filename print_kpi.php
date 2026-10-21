@@ -140,6 +140,10 @@ if (empty($leaderSignature)) {
     $leaderSignature = $stmtSpv->fetchColumn() ?: '';
 }
 
+$managerName = trim(get_system_setting('default_manager_name', ''));
+$managerRole = get_system_setting('default_manager_role', 'Manager SBU ICT KNO');
+$managerSignature = get_system_setting('default_manager_signature', '');
+
 $stmtAdmSig = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
 $stmtAdmSig->execute([(int)$currentUser['id']]);
 $adminSignature = $stmtAdmSig->fetchColumn() ?: '';
@@ -644,32 +648,88 @@ if ($isSingleUserMode) {
       </div>
 
       <!-- Tanda Tangan Pengesahan Rapor Individu -->
-      <table class="sign-table">
-        <tr>
-          <td>
-            <div>Deli Serdang, <?= date('d/m/Y') ?></div>
-            <div style="font-weight: 700; margin-top: 2px;">Pegawai / Teknisi yang Dinilai,</div>
-            <div class="sign-space">
-              <?php if (!empty($techSignature)): ?>
-                <?= render_signature_img($techSignature, 'TTD Teknisi') ?>
-              <?php endif; ?>
-            </div>
-            <div class="sign-name"><?= htmlspecialchars($targetUser['full_name'] ?: $targetUser['username']) ?></div>
-            <div class="sign-role">Teknisi Jaga NOC KNO</div>
-          </td>
-          <td>
-            <div>Mengetahui &amp; Menyetujui,</div>
-            <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
-            <div class="sign-space">
-              <?php if (!empty($leaderSignature)): ?>
-                <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
-              <?php endif; ?>
-            </div>
-            <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
-            <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
-          </td>
-        </tr>
-      </table>
+      <?php
+        $targetName = $targetUser['full_name'] ?: $targetUser['username'];
+        $targetJabatan = !empty($targetUser['jabatan']) ? $targetUser['jabatan'] : 'Teknisi Jaga NOC';
+        $isSelfKpi = (strcasecmp(trim($targetName), trim($leaderName)) === 0);
+      ?>
+      <?php if ($isSelfKpi && empty($managerName)): ?>
+        <table class="sign-table" style="max-width: 380px; margin: 12px auto 0 auto;">
+          <tr>
+            <td style="width: 100%; text-align: center;">
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Pegawai / Supervisor yang Dinilai</div>
+              <div class="sign-space">
+                <?php 
+                  $sigToShow = !empty($techSignature) ? $techSignature : $leaderSignature;
+                  if (!empty($sigToShow)): 
+                ?>
+                  <?= render_signature_img($sigToShow, 'TTD Pegawai') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($targetName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($targetJabatan ?: $leaderRole) ?> &bull; <?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php elseif ($isSelfKpi && !empty($managerName)): ?>
+        <table class="sign-table">
+          <tr>
+            <td>
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Pegawai / Supervisor yang Dinilai,</div>
+              <div class="sign-space">
+                <?php 
+                  $sigToShow = !empty($techSignature) ? $techSignature : $leaderSignature;
+                  if (!empty($sigToShow)): 
+                ?>
+                  <?= render_signature_img($sigToShow, 'TTD Pegawai') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($targetName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($targetJabatan ?: $leaderRole) ?></div>
+            </td>
+            <td>
+              <div>Mengetahui &amp; Menyetujui,</div>
+              <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($managerRole) ?></div>
+              <div class="sign-space">
+                <?php if (!empty($managerSignature)): ?>
+                  <?= render_signature_img($managerSignature, 'TTD Manager') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($managerName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php else: ?>
+        <table class="sign-table">
+          <tr>
+            <td>
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Pegawai / Teknisi yang Dinilai,</div>
+              <div class="sign-space">
+                <?php if (!empty($techSignature)): ?>
+                  <?= render_signature_img($techSignature, 'TTD Teknisi') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($targetName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($targetJabatan) ?></div>
+            </td>
+            <td>
+              <div>Mengetahui &amp; Menyetujui,</div>
+              <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
+              <div class="sign-space">
+                <?php if (!empty($leaderSignature)): ?>
+                  <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php endif; ?>
 
     <!-- ============================================== -->
     <!-- TAMPILAN 2: REKAPITULASI KPI SELURUH TIM (A4)   -->
@@ -731,32 +791,86 @@ if ($isSingleUserMode) {
       </table>
 
       <!-- Tanda Tangan Pengesahan Rekap Tim -->
-      <table class="sign-table">
-        <tr>
-          <td>
-            <div>Deli Serdang, <?= date('d/m/Y') ?></div>
-            <div style="font-weight: 700; margin-top: 2px;">Dibuat / Disusun oleh,</div>
-            <div class="sign-space">
-              <?php if (!empty($adminSignature)): ?>
-                <?= render_signature_img($adminSignature, 'TTD Admin') ?>
-              <?php endif; ?>
-            </div>
-            <div class="sign-name"><?= htmlspecialchars($adminName) ?></div>
-            <div class="sign-role"><?= htmlspecialchars($adminRole) ?></div>
-          </td>
-          <td>
-            <div>Mengetahui &amp; Menyetujui,</div>
-            <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
-            <div class="sign-space">
-              <?php if (!empty($leaderSignature)): ?>
-                <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
-              <?php endif; ?>
-            </div>
-            <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
-            <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
-          </td>
-        </tr>
-      </table>
+      <?php 
+        $isSelfSummary = (strcasecmp(trim($adminName), trim($leaderName)) === 0);
+      ?>
+      <?php if ($isSelfSummary && empty($managerName)): ?>
+        <table class="sign-table" style="max-width: 380px; margin: 12px auto 0 auto;">
+          <tr>
+            <td style="width: 100%; text-align: center;">
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Disusun &amp; Disetujui oleh Supervisor / Leader</div>
+              <div class="sign-space">
+                <?php 
+                  $sigToShow = !empty($leaderSignature) ? $leaderSignature : $adminSignature;
+                  if (!empty($sigToShow)): 
+                ?>
+                  <?= render_signature_img($sigToShow, 'TTD Leader') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($leaderRole) ?> &bull; <?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php elseif ($isSelfSummary && !empty($managerName)): ?>
+        <table class="sign-table">
+          <tr>
+            <td>
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Dibuat / Disusun oleh,</div>
+              <div class="sign-space">
+                <?php 
+                  $sigToShow = !empty($adminSignature) ? $adminSignature : $leaderSignature;
+                  if (!empty($sigToShow)): 
+                ?>
+                  <?= render_signature_img($sigToShow, 'TTD Admin') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($adminName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($leaderRole) ?></div>
+            </td>
+            <td>
+              <div>Mengetahui &amp; Menyetujui,</div>
+              <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($managerRole) ?></div>
+              <div class="sign-space">
+                <?php if (!empty($managerSignature)): ?>
+                  <?= render_signature_img($managerSignature, 'TTD Manager') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($managerName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php else: ?>
+        <table class="sign-table">
+          <tr>
+            <td>
+              <div>Deli Serdang, <?= date('d/m/Y') ?></div>
+              <div style="font-weight: 700; margin-top: 2px;">Dibuat / Disusun oleh,</div>
+              <div class="sign-space">
+                <?php if (!empty($adminSignature)): ?>
+                  <?= render_signature_img($adminSignature, 'TTD Admin') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($adminName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($adminRole) ?></div>
+            </td>
+            <td>
+              <div>Mengetahui &amp; Menyetujui,</div>
+              <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
+              <div class="sign-space">
+                <?php if (!empty($leaderSignature)): ?>
+                  <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+                <?php endif; ?>
+              </div>
+              <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
+              <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+            </td>
+          </tr>
+        </table>
+      <?php endif; ?>
 
     <?php endif; ?>
 

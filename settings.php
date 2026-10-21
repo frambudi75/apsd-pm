@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $defaultLeader = trim($_POST['default_team_leader'] ?? '');
         $leaderRole = trim($_POST['default_leader_role'] ?? '');
+        $defaultManager = trim($_POST['default_manager_name'] ?? '');
+        $managerRole = trim($_POST['default_manager_role'] ?? 'Manager SBU ICT KNO');
         $omVendor = trim($_POST['default_om_vendor'] ?? '');
         $waPhone = trim($_POST['whatsapp_target_phone'] ?? '');
         $companyName = trim($_POST['company_name'] ?? '');
@@ -38,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         set_system_setting('default_team_leader', $defaultLeader);
         set_system_setting('default_leader_role', $leaderRole);
+        set_system_setting('default_manager_name', $defaultManager);
+        set_system_setting('default_manager_role', $managerRole);
         set_system_setting('default_om_vendor', $omVendor);
         set_system_setting('whatsapp_target_phone', $waPhone);
         set_system_setting('company_name', $companyName);
@@ -217,6 +221,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // 4. Handle Manager Signature (Upload or Canvas Pad)
+        if (!empty($_POST['reset_manager_signature'])) {
+            $oldMgrSig = get_system_setting('default_manager_signature', '');
+            if (!empty($oldMgrSig)) {
+                delete_signature_file($oldMgrSig);
+            }
+            set_system_setting('default_manager_signature', '');
+        } elseif (!empty($_POST['manager_signature_canvas'])) {
+            $newSig = save_signature_from_base64($_POST['manager_signature_canvas'], 'sig_mgr');
+            if ($newSig) {
+                $oldMgrSig = get_system_setting('default_manager_signature', '');
+                if (!empty($oldMgrSig) && $oldMgrSig !== $newSig) {
+                    delete_signature_file($oldMgrSig);
+                }
+                set_system_setting('default_manager_signature', $newSig);
+            }
+        } elseif (isset($_FILES['manager_signature_file']) && $_FILES['manager_signature_file']['error'] === UPLOAD_ERR_OK) {
+            $newSig = save_signature_from_file($_FILES['manager_signature_file'], 'sig_mgr');
+            if ($newSig) {
+                $oldMgrSig = get_system_setting('default_manager_signature', '');
+                if (!empty($oldMgrSig) && $oldMgrSig !== $newSig) {
+                    delete_signature_file($oldMgrSig);
+                }
+                set_system_setting('default_manager_signature', $newSig);
+            }
+        }
+
         // Synchronize PWA Web App Manifest & App Icons
         require_once __DIR__ . '/includes/pwa.php';
         sync_pwa_manifest_and_icons();
@@ -232,6 +263,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $curLeader = get_system_setting('default_team_leader', 'Wahyu Wandira');
 $curRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
 $curLeaderSig = get_system_setting('default_leader_signature', '');
+$curManager = get_system_setting('default_manager_name', '');
+$curManagerRole = get_system_setting('default_manager_role', 'Manager SBU ICT KNO');
+$curManagerSig = get_system_setting('default_manager_signature', '');
 $curVendor = get_system_setting('default_om_vendor', 'PT. Naer Tunas Indonesia');
 $curWa = get_system_setting('whatsapp_target_phone', '');
 $curCompany = get_system_setting('company_name', 'IASS SBU ICT KNO');
@@ -538,6 +572,136 @@ include __DIR__ . '/includes/header.php';
             <!-- Panel Upload File -->
             <div id="panel_leader_upload" style="display: none;">
               <input type="file" name="leader_signature_file" accept="image/png,image/jpeg,image/webp" class="form-control" style="font-size: 0.8rem;">
+              <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+                Format didukung: PNG (latar belakang transparan sangat disarankan), JPG, atau WebP. Maks 5 MB.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2.1: Manager Unit / Atasan Leader (Opsional) -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.12); color: #6366f1; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <?= app_icon('briefcase', 20) ?>
+          </div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Pengesahan Lanjutan: Manager Unit (Opsional)</h4>
+            <p style="font-size: 0.78rem; color: var(--text-subtle); margin: 2px 0 0 0;">Solusi cerdas saat Team Leader bertugas sebagai teknisi shift agar tidak terjadi tanda tangan ganda.</p>
+          </div>
+        </div>
+        <span class="user-role-badge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1; font-size: 0.72rem;">Opsional / Fleksibel</span>
+      </div>
+
+      <div class="settings-card-body">
+        <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--bg-alt); border-radius: var(--radius-sm); border-left: 4px solid #6366f1; font-size: 0.78rem; color: var(--text-subtle); line-height: 1.5;">
+          <strong style="color: var(--text-main); display: block; margin-bottom: 4px;">Logika Pengesahan Cerdas (Anti Tanda Tangan Ganda):</strong>
+          - <strong>Jika shift dikerjakan Teknisi Biasa:</strong> Tanda tangan kiri: Teknisi (sesuai nama &amp; jabatannya), Tanda tangan kanan: Supervisor / Team Leader.<br>
+          - <strong>Jika shift dikerjakan Supervisor / Leader itu sendiri:</strong>
+            <ul style="margin: 4px 0 0 1.2rem; padding: 0;">
+              <li>Bila Nama Manager <em>diisi</em>: Tanda tangan kiri: Supervisor, Tanda tangan kanan: Manager Unit.</li>
+              <li>Bila Nama Manager <em>dikosongkan</em>: Laporan otomatis beralih ke <strong>Format Pengesahan Tunggal di Tengah</strong> ("Supervisor / Pelaksana Shift"), sehingga nama tidak dobel.</li>
+            </ul>
+        </div>
+
+        <div class="settings-grid-2">
+          <div>
+            <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+              <span>Nama Lengkap Manager Unit</span>
+              <span style="font-size: 0.72rem; color: var(--text-subtle); font-weight: 400;">(Boleh Kosong)</span>
+            </label>
+            <div class="settings-input-group">
+              <span class="settings-input-icon"><?= app_icon('user', 16) ?></span>
+              <input type="text" name="default_manager_name" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curManager) ?>" placeholder="Contoh: Muhammad Reza / Kosongkan">
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+              Atasan langsung dari Team Leader (misal: Manager SBU ICT KNO atau Operation Head).
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 4px;">
+              <span>Jabatan / Posisi Manager</span>
+            </label>
+            <div class="settings-input-group">
+              <span class="settings-input-icon"><?= app_icon('tag', 16) ?></span>
+              <input type="text" name="default_manager_role" class="form-control settings-control-iconic" value="<?= htmlspecialchars($curManagerRole) ?>" placeholder="Contoh: Manager SBU ICT KNO">
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+              Keterangan jabatan resmi manager pada lembar dokumen cetak.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tanda Tangan Digital Manager -->
+        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <label class="form-label" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin: 0;">
+              Tanda Tangan Digital Manager Unit
+            </label>
+            <?php if (!empty($curManagerSig) && file_exists(__DIR__ . '/' . $curManagerSig)): ?>
+              <span class="user-role-badge role-admin" style="font-size: 0.72rem; padding: 2px 8px;">
+                Aktif Terpasang
+              </span>
+            <?php else: ?>
+              <span class="user-role-badge" style="background: var(--bg-alt); color: var(--text-subtle); font-size: 0.72rem; padding: 2px 8px;">
+                Belum Diatur
+              </span>
+            <?php endif; ?>
+          </div>
+          <p style="font-size: 0.76rem; color: var(--text-subtle); margin: 0 0 0.85rem 0;">
+            Digunakan saat laporan dialihkan ke tingkat Manager ketika Leader bertugas sebagai teknisi shift.
+          </p>
+
+          <?php if (!empty($curManagerSig) && file_exists(__DIR__ . '/' . $curManagerSig)): ?>
+            <div style="display: flex; align-items: center; gap: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 12px;">
+              <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 140px; min-height: 60px;">
+                <img src="<?= htmlspecialchars($curManagerSig) ?>?v=<?= time() ?>" alt="TTD Manager" style="max-height: 50px; max-width: 140px; object-fit: contain;">
+              </div>
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Tanda Tangan Manager Aktif</div>
+                <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Diterapkan otomatis pada pengesahan tingkat lanjut.</div>
+                <label style="font-size: 0.76rem; color: #dc2626; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 6px; font-weight: 600;">
+                  <input type="checkbox" name="reset_manager_signature" value="1">
+                  <span>Hapus Tanda Tangan Ini</span>
+                </label>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- Tab Selector: Gores Layar / Upload File -->
+          <div style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+              <button type="button" class="btn btn-sm btn-secondary sig-tab-btn active" id="tab_btn_manager_draw" onclick="switchManagerSigTab('draw')" style="font-size: 0.76rem; font-weight: 700;">
+                Gores di Layar
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary sig-tab-btn" id="tab_btn_manager_upload" onclick="switchManagerSigTab('upload')" style="font-size: 0.76rem; font-weight: 700; opacity: 0.75;">
+                Upload File Gambar
+              </button>
+            </div>
+
+            <!-- Panel Gores Layar Canvas -->
+            <div id="panel_manager_draw">
+              <div style="position: relative; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; width: 100%; height: 140px;">
+                <canvas id="canvas_manager_signature" style="width: 100%; height: 140px; display: block; cursor: crosshair;"></canvas>
+                <div style="position: absolute; bottom: 6px; right: 8px;">
+                  <button type="button" class="btn btn-light btn-xs" id="btn_clear_manager_canvas" style="font-size: 0.7rem; padding: 3px 8px; background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 4px;">
+                    Bersihkan Goresan
+                  </button>
+                </div>
+                <div style="position: absolute; top: 6px; left: 10px; font-size: 0.68rem; color: #94a3b8; pointer-events: none;">
+                  Gores tanda tangan di area ini (Touchscreen / Mouse)
+                </div>
+              </div>
+              <input type="hidden" name="manager_signature_canvas" id="input_manager_signature_canvas" value="">
+            </div>
+
+            <!-- Panel Upload File -->
+            <div id="panel_manager_upload" style="display: none;">
+              <input type="file" name="manager_signature_file" accept="image/png,image/jpeg,image/webp" class="form-control" style="font-size: 0.8rem;">
               <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
                 Format didukung: PNG (latar belakang transparan sangat disarankan), JPG, atau WebP. Maks 5 MB.
               </div>
@@ -1169,6 +1333,26 @@ function switchLeaderSigTab(type) {
   }
 }
 
+var managerSigPad = null;
+function switchManagerSigTab(type) {
+  var btnDraw = document.getElementById('tab_btn_manager_draw');
+  var btnUp = document.getElementById('tab_btn_manager_upload');
+  var pnlDraw = document.getElementById('panel_manager_draw');
+  var pnlUp = document.getElementById('panel_manager_upload');
+
+  if (type === 'draw') {
+    if (btnDraw) btnDraw.style.opacity = '1';
+    if (btnUp) btnUp.style.opacity = '0.75';
+    if (pnlDraw) pnlDraw.style.display = 'block';
+    if (pnlUp) pnlUp.style.display = 'none';
+  } else {
+    if (btnDraw) btnDraw.style.opacity = '0.75';
+    if (btnUp) btnUp.style.opacity = '1';
+    if (pnlDraw) pnlDraw.style.display = 'none';
+    if (pnlUp) pnlUp.style.display = 'block';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var canvasEl = document.getElementById('canvas_leader_signature');
   if (canvasEl && window.SignaturePad) {
@@ -1192,6 +1376,34 @@ document.addEventListener('DOMContentLoaded', function() {
           var inputVal = document.getElementById('input_leader_signature_canvas');
           if (inputVal) {
             inputVal.value = leaderSigPad.toDataURL();
+          }
+        }
+      });
+    }
+  }
+
+  var canvasMgrEl = document.getElementById('canvas_manager_signature');
+  if (canvasMgrEl && window.SignaturePad) {
+    managerSigPad = new window.SignaturePad(canvasMgrEl, {
+      strokeColor: '#0f172a',
+      strokeWidth: 2.5
+    });
+
+    var clearMgrBtn = document.getElementById('btn_clear_manager_canvas');
+    if (clearMgrBtn) {
+      clearMgrBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        managerSigPad.clear();
+      });
+    }
+
+    var formMgrEl = canvasMgrEl.closest('form');
+    if (formMgrEl) {
+      formMgrEl.addEventListener('submit', function() {
+        if (managerSigPad && !managerSigPad.isEmpty()) {
+          var inputMgrVal = document.getElementById('input_manager_signature_canvas');
+          if (inputMgrVal) {
+            inputMgrVal.value = managerSigPad.toDataURL();
           }
         }
       });

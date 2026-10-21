@@ -239,7 +239,8 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
             'users' => [
                 'email' => 'VARCHAR(100) NULL',
                 'phone' => 'VARCHAR(50) NULL',
-                'signature_path' => 'VARCHAR(255) NULL'
+                'signature_path' => 'VARCHAR(255) NULL',
+                'jabatan' => "VARCHAR(100) NULL DEFAULT 'Teknisi Jaga NOC'"
             ],
             'daily_shifts' => [
                 'signature_path' => 'VARCHAR(255) NULL'
@@ -530,6 +531,7 @@ function init_mysql_schema(PDO $pdo) {
     try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN jabatan VARCHAR(100) NULL DEFAULT 'Teknisi Jaga NOC'"); } catch (Exception $e) {}
 
     // 7. Table operators (Master Operator / Tenant)
     $pdo->exec("
@@ -884,6 +886,7 @@ function init_sqlite_schema(PDO $pdo, bool $isNew = false) {
     try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN jabatan VARCHAR(100) NULL DEFAULT 'Teknisi Jaga NOC'"); } catch (Exception $e) {}
 
     // 8. Table operators (Master Operator / Tenant)
     $pdo->exec("

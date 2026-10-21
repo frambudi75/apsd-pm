@@ -17,7 +17,7 @@ if ($shiftId <= 0) {
 
 // Fetch shift record
 $stmt = $pdo->prepare("
-    SELECT s.*, u.full_name AS user_full_name, u.username, u.role AS user_role, u.signature_path AS user_signature_path 
+    SELECT s.*, u.full_name AS user_full_name, u.username, u.role AS user_role, u.jabatan AS user_jabatan, u.signature_path AS user_signature_path 
     FROM daily_shifts s
     LEFT JOIN users u ON s.user_id = u.id
     WHERE s.id = ?
@@ -61,6 +61,17 @@ if (!empty($actIds)) {
 }
 
 $techName = $shift['technician_name'] ?: ($shift['user_full_name'] ?: $shift['username']);
+$techJabatan = !empty($shift['user_jabatan']) ? $shift['user_jabatan'] : 'Teknisi Jaga NOC';
+$leaderName = get_system_setting('default_team_leader', 'Wahyu Wandira');
+$leaderRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
+$managerName = trim(get_system_setting('default_manager_name', ''));
+$managerRole = get_system_setting('default_manager_role', 'Manager SBU ICT KNO');
+$managerSignature = get_system_setting('default_manager_signature', '');
+$unitName = get_system_setting('unit_name', 'KNO');
+
+// Cek apakah teknisi pelaksana shift adalah Leader / Supervisor itu sendiri
+$isSelfDuty = (strcasecmp(trim($techName), trim($leaderName)) === 0);
+
 $shiftInfo = get_shift_info($shift['shift_type']);
 $shiftTypeLabel = $shiftInfo['name'] . ' (' . $shiftInfo['time'] . ')';
 $formattedDate = date('d F Y', strtotime($shift['shift_date']));
@@ -697,32 +708,86 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
     <?php endif; ?>
 
     <!-- Sign-off Verification Section -->
-    <table class="sign-table">
-      <tr>
-        <td>
-          <div>Deli Serdang, <?= htmlspecialchars($formattedDate) ?></div>
-          <div style="font-weight: 700; margin-top: 2px;">Teknisi Jaga Pelaksana</div>
-          <div class="sign-space">
-            <?php if (!empty($techSignature)): ?>
-              <?= render_signature_img($techSignature, 'TTD ' . $techName) ?>
-            <?php endif; ?>
-          </div>
-          <div class="sign-name"><?= htmlspecialchars($techName) ?></div>
-          <div class="sign-role">NOC Support KNO</div>
-        </td>
-        <td>
-          <div>Mengetahui &amp; Menyetujui,</div>
-          <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars(get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO')) ?></div>
-          <div class="sign-space">
-            <?php if (!empty($leaderSignature)): ?>
-              <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
-            <?php endif; ?>
-          </div>
-          <div class="sign-name"><?= htmlspecialchars(get_system_setting('default_team_leader', 'Wahyu Wandira')) ?></div>
-          <div class="sign-role"><?= htmlspecialchars(get_system_setting('unit_name', 'KNO')) ?></div>
-        </td>
-      </tr>
-    </table>
+    <?php if ($isSelfDuty && empty($managerName)): ?>
+      <!-- Mode Mandiri (Supervisor Sendiri Jaga Shift & Tanpa Manager): Pengesahan Tunggal di Tengah -->
+      <table class="sign-table" style="max-width: 380px; margin: 25px auto 0 auto;">
+        <tr>
+          <td style="width: 100%; text-align: center;">
+            <div>Deli Serdang, <?= htmlspecialchars($formattedDate) ?></div>
+            <div style="font-weight: 700; margin-top: 2px;">Supervisor / Pelaksana Shift NOC</div>
+            <div class="sign-space">
+              <?php 
+                $sigToShow = !empty($techSignature) ? $techSignature : $leaderSignature;
+                if (!empty($sigToShow)): 
+              ?>
+                <?= render_signature_img($sigToShow, 'TTD ' . $techName) ?>
+              <?php endif; ?>
+            </div>
+            <div class="sign-name"><?= htmlspecialchars($techName) ?></div>
+            <div class="sign-role"><?= htmlspecialchars($techJabatan ?: $leaderRole) ?> &bull; <?= htmlspecialchars($unitName) ?></div>
+          </td>
+        </tr>
+      </table>
+    <?php elseif ($isSelfDuty && !empty($managerName)): ?>
+      <!-- Mode Eskalasi (Supervisor Jaga Shift & Diteruskan ke Manager Unit) -->
+      <table class="sign-table">
+        <tr>
+          <td>
+            <div>Deli Serdang, <?= htmlspecialchars($formattedDate) ?></div>
+            <div style="font-weight: 700; margin-top: 2px;">Pelaksana Shift / Supervisor Jaga</div>
+            <div class="sign-space">
+              <?php 
+                $sigToShow = !empty($techSignature) ? $techSignature : $leaderSignature;
+                if (!empty($sigToShow)): 
+              ?>
+                <?= render_signature_img($sigToShow, 'TTD ' . $techName) ?>
+              <?php endif; ?>
+            </div>
+            <div class="sign-name"><?= htmlspecialchars($techName) ?></div>
+            <div class="sign-role"><?= htmlspecialchars($techJabatan ?: $leaderRole) ?></div>
+          </td>
+          <td>
+            <div>Mengetahui &amp; Menyetujui,</div>
+            <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($managerRole) ?></div>
+            <div class="sign-space">
+              <?php if (!empty($managerSignature)): ?>
+                <?= render_signature_img($managerSignature, 'TTD Manager') ?>
+              <?php endif; ?>
+            </div>
+            <div class="sign-name"><?= htmlspecialchars($managerName) ?></div>
+            <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+          </td>
+        </tr>
+      </table>
+    <?php else: ?>
+      <!-- Mode Normal: Teknisi Jaga di Kiri, Supervisor / Leader di Kanan -->
+      <table class="sign-table">
+        <tr>
+          <td>
+            <div>Deli Serdang, <?= htmlspecialchars($formattedDate) ?></div>
+            <div style="font-weight: 700; margin-top: 2px;">Teknisi Jaga Pelaksana</div>
+            <div class="sign-space">
+              <?php if (!empty($techSignature)): ?>
+                <?= render_signature_img($techSignature, 'TTD ' . $techName) ?>
+              <?php endif; ?>
+            </div>
+            <div class="sign-name"><?= htmlspecialchars($techName) ?></div>
+            <div class="sign-role"><?= htmlspecialchars($techJabatan) ?></div>
+          </td>
+          <td>
+            <div>Mengetahui &amp; Menyetujui,</div>
+            <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
+            <div class="sign-space">
+              <?php if (!empty($leaderSignature)): ?>
+                <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+              <?php endif; ?>
+            </div>
+            <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
+            <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
+          </td>
+        </tr>
+      </table>
+    <?php endif; ?>
 
   </div>
 

@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add') {
         $username = strtolower(trim($_POST['username'] ?? ''));
         $fullName = trim($_POST['full_name'] ?? '');
+        $jabatan = trim($_POST['jabatan'] ?? 'Teknisi Jaga NOC');
+        if (empty($jabatan)) $jabatan = 'Teknisi Jaga NOC';
         $password = $_POST['password'] ?? '';
         $role = $_POST['role'] ?? 'user';
         $isActive = isset($_POST['is_active']) ? 1 : 0;
@@ -49,12 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $pwdHash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $pdo->prepare("
-                    INSERT INTO users (username, password_hash, full_name, role, is_active)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO users (username, password_hash, full_name, jabatan, role, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$username, $pwdHash, $fullName, $role, $isActive]);
+                $stmt->execute([$username, $pwdHash, $fullName, $jabatan, $role, $isActive]);
                 $newUserId = (int)$pdo->lastInsertId();
-                log_audit_event('AUTH', 'USER_CREATE', 'Tambah pengguna baru: ' . $fullName . ' (@' . $username . ', role: ' . $role . ')', 'user', $newUserId);
+                log_audit_event('AUTH', 'USER_CREATE', 'Tambah pengguna baru: ' . $fullName . ' (' . $jabatan . ', @' . $username . ', role: ' . $role . ')', 'user', $newUserId);
                 $successMsg = 'Pengguna baru "' . htmlspecialchars($fullName) . '" (' . htmlspecialchars($role) . ') berhasil ditambahkan.';
             }
         }
@@ -90,6 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif ($action === 'edit') {
         $targetId = (int)($_POST['user_id'] ?? 0);
         $fullName = trim($_POST['full_name'] ?? '');
+        $jabatan = trim($_POST['jabatan'] ?? 'Teknisi Jaga NOC');
+        if (empty($jabatan)) $jabatan = 'Teknisi Jaga NOC';
         $role = $_POST['role'] ?? 'user';
         $isActive = isset($_POST['is_active']) ? 1 : 0;
 
@@ -114,9 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $isActive = 1;
             }
 
-            $upd = $pdo->prepare("UPDATE users SET full_name = ?, role = ?, is_active = ? WHERE id = ?");
-            $upd->execute([$fullName, $role, $isActive, $targetId]);
-            log_audit_event('AUTH', 'USER_UPDATE', 'Ubah data pengguna: ' . $fullName . ' (@' . $targetUser['username'] . ', role: ' . $role . ', aktif: ' . $isActive . ')', 'user', $targetId);
+            $upd = $pdo->prepare("UPDATE users SET full_name = ?, jabatan = ?, role = ?, is_active = ? WHERE id = ?");
+            $upd->execute([$fullName, $jabatan, $role, $isActive, $targetId]);
+            log_audit_event('AUTH', 'USER_UPDATE', 'Ubah data pengguna: ' . $fullName . ' (' . $jabatan . ', @' . $targetUser['username'] . ', role: ' . $role . ', aktif: ' . $isActive . ')', 'user', $targetId);
             $successMsg = 'Data pengguna "' . htmlspecialchars($fullName) . '" berhasil diperbarui.';
         }
     }
@@ -250,7 +254,7 @@ include __DIR__ . '/includes/header.php';
           <thead>
             <tr>
               <th style="width: 50px;">No</th>
-              <th>Nama Lengkap & Username</th>
+              <th>Nama Lengkap, Jabatan &amp; Username</th>
               <th>Role / Level Akses</th>
               <th>Status</th>
               <th>Terakhir Login</th>
@@ -265,7 +269,7 @@ include __DIR__ . '/includes/header.php';
                 $roleLabel = ($u['role'] === 'superadmin') ? 'Super Admin' : (($u['role'] === 'admin') ? 'Admin' : 'User Biasa');
                 $roleClass = 'role-' . $u['role'];
                 $lastLoginFormatted = $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Belum pernah';
-                $searchMeta = strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . $u['role']);
+                $searchMeta = strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . ($u['jabatan'] ?? '') . ' ' . $u['role']);
               ?>
               <tr class="user-row" data-search="<?= htmlspecialchars($searchMeta) ?>" data-role="<?= htmlspecialchars($u['role']) ?>">
                 <td style="font-weight: 700; color: var(--text-subtle);"><?= $idx + 1 ?></td>
@@ -276,7 +280,10 @@ include __DIR__ . '/includes/header.php';
                       <span style="font-size: 0.7rem; background: var(--bg-alt); color: var(--text-subtle); padding: 2px 6px; border-radius: 4px; margin-left: 4px;">(Anda)</span>
                     <?php endif; ?>
                   </strong>
-                  <span style="font-size: 0.8rem; color: var(--text-subtle);">@<?= htmlspecialchars($u['username']) ?></span>
+                  <div style="font-size: 0.78rem; color: #0284c7; font-weight: 600; margin-top: 1px;">
+                    <?= htmlspecialchars($u['jabatan'] ?: 'Teknisi Jaga NOC') ?>
+                  </div>
+                  <span style="font-size: 0.78rem; color: var(--text-subtle);">@<?= htmlspecialchars($u['username']) ?></span>
                 </td>
                 <td>
                   <span class="user-role-pill <?= $roleClass ?>"><?= $roleLabel ?></span>
@@ -333,7 +340,7 @@ include __DIR__ . '/includes/header.php';
             $roleLabel = ($u['role'] === 'superadmin') ? 'Super Admin' : (($u['role'] === 'admin') ? 'Admin' : 'User Biasa');
             $roleClass = 'role-' . $u['role'];
             $lastLoginFormatted = $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : 'Belum pernah login';
-            $searchMeta = strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . $u['role']);
+            $searchMeta = strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . ($u['jabatan'] ?? '') . ' ' . $u['role']);
             $initials = strtoupper(substr(trim($u['full_name'] ?: $u['username']), 0, 2));
           ?>
           <div class="mobile-user-card user-row" data-search="<?= htmlspecialchars($searchMeta) ?>" data-role="<?= htmlspecialchars($u['role']) ?>">
@@ -348,6 +355,9 @@ include __DIR__ . '/includes/header.php';
                     <?php if ($isSelf): ?>
                       <span style="font-size: 0.7rem; background: var(--bg-alt); color: var(--text-subtle); padding: 2px 6px; border-radius: 4px;">(Anda)</span>
                     <?php endif; ?>
+                  </div>
+                  <div style="font-size: 0.76rem; color: #0284c7; font-weight: 600; margin-top: 1px;">
+                    <?= htmlspecialchars($u['jabatan'] ?: 'Teknisi Jaga NOC') ?>
                   </div>
                   <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 2px;">
                     @<?= htmlspecialchars($u['username']) ?>
@@ -417,6 +427,10 @@ include __DIR__ . '/includes/header.php';
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Nama Lengkap *</label>
           <input type="text" name="full_name" class="form-control" required placeholder="Contoh: Budi Santoso">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Jabatan / Posisi Resmi *</label>
+          <input type="text" name="jabatan" class="form-control" required value="Teknisi Jaga NOC" placeholder="Contoh: Teknisi Jaga NOC, Supervisor NOC">
         </div>
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Username (Login) *</label>
@@ -499,6 +513,10 @@ include __DIR__ . '/includes/header.php';
           <label class="form-label">Nama Lengkap *</label>
           <input type="text" id="edit_fullname" name="full_name" class="form-control" required>
         </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Jabatan / Posisi Resmi *</label>
+          <input type="text" id="edit_jabatan" name="jabatan" class="form-control" required placeholder="Contoh: Teknisi Jaga NOC, Supervisor NOC">
+        </div>
         <?php if ($currentUser['role'] === 'superadmin'): ?>
           <div class="form-group" style="margin-bottom: 1rem;">
             <label class="form-label">Role / Level Akses</label>
@@ -577,6 +595,10 @@ include __DIR__ . '/includes/header.php';
     document.getElementById('edit_user_id').value = user.id;
     document.getElementById('edit_username').value = user.username;
     document.getElementById('edit_fullname').value = user.full_name;
+    const editJab = document.getElementById('edit_jabatan');
+    if (editJab) {
+      editJab.value = user.jabatan || 'Teknisi Jaga NOC';
+    }
     const roleSelect = document.getElementById('edit_role');
     if (roleSelect) {
       roleSelect.value = user.role;

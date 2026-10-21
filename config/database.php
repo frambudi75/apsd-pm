@@ -287,42 +287,21 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
             }
         }
 
-        // 4. Verifikasi & Pemulihan Seeder Default jika tabel kosong / terhapus
+        // 4. Verifikasi & Pemulihan Seeder Default HANYA jika tabel benar-benar kosong (0 baris)
+        // Data produksi yang sudah berjalan TIDAK AKAN PERNAH diubah, disentuh, atau di-reset.
         try {
             $userCount = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
             if ($userCount === 0) {
                 seed_default_users_if_empty($pdo);
-                $report['seeds_restored'][] = 'users (superadmin, admin, teknisi)';
-            } else {
-                // Pastikan akun superadmin aktif dan tidak terhapus
-                $hasSuper = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'superadmin' AND is_active = 1")->fetchColumn();
-                if ($hasSuper === 0) {
-                    $chk = $pdo->prepare("SELECT id FROM users WHERE username = 'superadmin'");
-                    $chk->execute();
-                    if ($chk->fetch()) {
-                        $pdo->exec("UPDATE users SET is_active = 1, role = 'superadmin' WHERE username = 'superadmin'");
-                    } else {
-                        $stmtSuper = $pdo->prepare("
-                            INSERT INTO users (username, password_hash, full_name, role, is_active)
-                            VALUES (?, ?, ?, ?, 1)
-                        ");
-                        $stmtSuper->execute([
-                            'superadmin',
-                            password_hash('admin123', PASSWORD_BCRYPT),
-                            'Super Administrator KNO',
-                            'superadmin'
-                        ]);
-                    }
-                    $report['seeds_restored'][] = 'superadmin account restored';
-                }
+                $report['seeds_restored'][] = 'users (tabel kosong dipulihkan)';
             }
         } catch (Exception $e) {}
 
         try {
             $setCount = (int)$pdo->query("SELECT COUNT(*) FROM system_settings")->fetchColumn();
-            if ($setCount < 5) {
+            if ($setCount === 0) {
                 seed_default_settings_if_empty($pdo);
-                $report['seeds_restored'][] = 'system_settings defaults';
+                $report['seeds_restored'][] = 'system_settings (tabel kosong dipulihkan)';
             }
         } catch (Exception $e) {}
 
@@ -330,7 +309,7 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
             $opCount = (int)$pdo->query("SELECT COUNT(*) FROM operators")->fetchColumn();
             if ($opCount === 0) {
                 seed_default_operators_if_empty($pdo);
-                $report['seeds_restored'][] = 'operators defaults';
+                $report['seeds_restored'][] = 'operators (tabel kosong dipulihkan)';
             }
         } catch (Exception $e) {}
 
@@ -338,7 +317,7 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
             $siteCount = (int)$pdo->query("SELECT COUNT(*) FROM sites")->fetchColumn();
             if ($siteCount === 0) {
                 seed_default_sites_if_empty($pdo);
-                $report['seeds_restored'][] = 'sites defaults';
+                $report['seeds_restored'][] = 'sites (tabel kosong dipulihkan)';
             }
         } catch (Exception $e) {}
 
@@ -1199,6 +1178,11 @@ function get_all_active_operators(PDO $pdo): array {
  */
 function seed_default_settings_if_empty(PDO $pdo) {
     try {
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM system_settings")->fetchColumn();
+        if ($count > 0) {
+            return; // Data pengaturan produksi sudah ada, JANGAN ubah apapun!
+        }
+
         $defaults = [
             ['default_team_leader', 'Eko Sulistyo', 'Nama Default Team Leader / Supervisor', 'leader'],
             ['default_leader_role', 'Supervisor / Team Leader NOC KNO', 'Jabatan / Posisi Leader', 'leader'],

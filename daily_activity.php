@@ -13,6 +13,7 @@ $userId = (int)($currentUser['id'] ?? 0);
 $isAdmin = has_role(['superadmin', 'admin']);
 
 $pdo = get_db_connection();
+$userSignature = $pdo->query("SELECT signature_path FROM users WHERE id = " . $userId)->fetchColumn() ?: null;
 
 // Pastikan zona waktu konsisten ke Waktu Indonesia Barat (WIB)
 if (date_default_timezone_get() !== 'Asia/Jakarta') {
@@ -1208,6 +1209,89 @@ include __DIR__ . '/includes/header.php';
         <textarea id="complete_shift_notes_input" class="form-control" rows="3" placeholder="Masukkan catatan serah terima untuk teknisi shift berikutnya, kondisi perangkat, atau tindak lanjut..."></textarea>
       </div>
 
+      <!-- Verifikasi Tanda Tangan Selesai Shift -->
+      <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.5rem;">
+        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span>Tanda Tangan Pelaksana Shift:</span>
+          <?php if (!empty($userSignature) && file_exists(__DIR__ . '/' . $userSignature)): ?>
+            <span class="user-role-badge role-admin" style="font-size: 0.7rem; padding: 2px 7px;">
+              TTD Akun Siap
+            </span>
+          <?php endif; ?>
+        </label>
+
+        <?php if (!empty($userSignature) && file_exists(__DIR__ . '/' . $userSignature)): ?>
+          <div id="box_shift_profile_sig" style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 4px 10px; display: inline-flex; align-items: center; justify-content: center; min-width: 90px; height: 44px;">
+                  <img src="<?= htmlspecialchars($userSignature) ?>?v=<?= time() ?>" alt="TTD Profil" style="max-height: 38px; max-width: 90px; object-fit: contain;">
+                </div>
+                <div>
+                  <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Gunakan TTD Akun Saya</div>
+                  <div style="font-size: 0.72rem; color: var(--text-subtle);">Otomatis diterapkan ke lembar logbook shift ini.</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-xs" id="btn_toggle_custom_shift_sig" onclick="toggleCustomShiftSig(true)" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 600;">
+                Ganti TTD Khusus
+              </button>
+            </div>
+            <input type="hidden" id="use_profile_shift_sig" value="1">
+          </div>
+        <?php else: ?>
+          <input type="hidden" id="use_profile_shift_sig" value="0">
+        <?php endif; ?>
+
+        <!-- Container Buat / Gores TTD Baru -->
+        <div id="container_custom_shift_sig" style="<?= (!empty($userSignature) && file_exists(__DIR__ . '/' . $userSignature)) ? 'display: none;' : '' ?> background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn btn-xs btn-secondary shift-sig-tab active" id="tab_btn_shift_draw" onclick="switchShiftSigTab('draw')" style="font-size: 0.72rem; font-weight: 700;">
+                Gores di Layar
+              </button>
+              <button type="button" class="btn btn-xs btn-secondary shift-sig-tab" id="tab_btn_shift_upload" onclick="switchShiftSigTab('upload')" style="font-size: 0.72rem; font-weight: 700; opacity: 0.75;">
+                Upload File
+              </button>
+            </div>
+            <?php if (!empty($userSignature) && file_exists(__DIR__ . '/' . $userSignature)): ?>
+              <button type="button" class="btn btn-link btn-xs" onclick="toggleCustomShiftSig(false)" style="font-size: 0.72rem; color: var(--text-muted); text-decoration: none; padding: 0;">
+                Batal (Pakai TTD Akun)
+              </button>
+            <?php endif; ?>
+          </div>
+
+          <!-- Gores Layar Canvas -->
+          <div id="panel_shift_sig_draw">
+            <div style="position: relative; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; width: 100%; height: 130px;">
+              <canvas id="canvas_shift_signature" style="width: 100%; height: 130px; display: block; cursor: crosshair;"></canvas>
+              <div style="position: absolute; bottom: 4px; right: 6px;">
+                <button type="button" class="btn btn-light btn-xs" id="btn_clear_shift_canvas" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 4px;">
+                  Bersihkan
+                </button>
+              </div>
+              <div style="position: absolute; top: 4px; left: 8px; font-size: 0.68rem; color: #94a3b8; pointer-events: none;">
+                Gores tanda tangan di sini (Touch / Mouse)
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload File -->
+          <div id="panel_shift_sig_upload" style="display: none;">
+            <input type="file" id="input_shift_signature_file" accept="image/png,image/jpeg,image/webp" class="form-control form-control-sm" style="font-size: 0.78rem;">
+            <div style="font-size: 0.7rem; color: var(--text-subtle); margin-top: 4px;">
+              Disarankan PNG transparan atau foto tanda tangan di kertas putih.
+            </div>
+          </div>
+
+          <div style="margin-top: 8px;">
+            <label style="font-size: 0.75rem; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="chk_shift_save_to_profile" value="1" checked>
+              <span>Simpan juga sebagai tanda tangan utama di profil saya</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <input type="hidden" id="complete_modal_shift_id" value="">
     </div>
 
@@ -1448,8 +1532,11 @@ function openCompleteShiftModal(shiftId, shiftTitle) {
     if (notesInput) notesInput.value = '';
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    setTimeout(function() {
+      if (window.initShiftSigPad) window.initShiftSigPad();
+    }, 120);
     if (notesInput) {
-      setTimeout(function() { notesInput.focus(); }, 100);
+      setTimeout(function() { notesInput.focus(); }, 150);
     }
   }
 }
@@ -1945,9 +2032,23 @@ document.addEventListener('DOMContentLoaded', function() {
       btnConfirmComplete.disabled = true;
       btnConfirmComplete.innerHTML = '<span>⏳</span> Memproses...';
 
+      var useProfileSig = document.getElementById('use_profile_shift_sig') ? document.getElementById('use_profile_shift_sig').value : '1';
+      var saveToProfile = document.getElementById('chk_shift_save_to_profile') && document.getElementById('chk_shift_save_to_profile').checked ? '1' : '0';
+      var fileInput = document.getElementById('input_shift_signature_file');
+
       var fd = new FormData();
       fd.append('shift_id', shiftId);
       fd.append('notes', notes);
+      fd.append('use_profile_sig', useProfileSig);
+      fd.append('save_to_profile', saveToProfile);
+
+      if (useProfileSig !== '1') {
+        if (window.shiftSigPad && !window.shiftSigPad.isEmpty()) {
+          fd.append('signature_canvas', window.shiftSigPad.toDataURL());
+        } else if (fileInput && fileInput.files && fileInput.files[0]) {
+          fd.append('signature_file', fileInput.files[0]);
+        }
+      }
 
       fetch('api/complete_shift.php', {
         method: 'POST',
@@ -2221,6 +2322,68 @@ function viewPhotoFull(src, caption, caption2) {
   checkHandover();
   setInterval(checkHandover, 30000);
 })();
+</script>
+
+<script src="assets/js/signature-pad.js"></script>
+<script>
+window.shiftSigPad = null;
+
+function switchShiftSigTab(type) {
+  var btnDraw = document.getElementById('tab_btn_shift_draw');
+  var btnUp = document.getElementById('tab_btn_shift_upload');
+  var pnlDraw = document.getElementById('panel_shift_sig_draw');
+  var pnlUp = document.getElementById('panel_shift_sig_upload');
+
+  if (type === 'draw') {
+    if (btnDraw) btnDraw.style.opacity = '1';
+    if (btnUp) btnUp.style.opacity = '0.75';
+    if (pnlDraw) pnlDraw.style.display = 'block';
+    if (pnlUp) pnlUp.style.display = 'none';
+  } else {
+    if (btnDraw) btnDraw.style.opacity = '0.75';
+    if (btnUp) btnUp.style.opacity = '1';
+    if (pnlDraw) pnlDraw.style.display = 'none';
+    if (pnlUp) pnlUp.style.display = 'block';
+  }
+}
+
+function toggleCustomShiftSig(showCustom) {
+  var boxProfile = document.getElementById('box_shift_profile_sig');
+  var boxCustom = document.getElementById('container_custom_shift_sig');
+  var inputUseProfile = document.getElementById('use_profile_shift_sig');
+
+  if (showCustom) {
+    if (boxProfile) boxProfile.style.display = 'none';
+    if (boxCustom) boxCustom.style.display = 'block';
+    if (inputUseProfile) inputUseProfile.value = '0';
+    setTimeout(function() { if (window.initShiftSigPad) window.initShiftSigPad(); }, 50);
+  } else {
+    if (boxProfile) boxProfile.style.display = 'block';
+    if (boxCustom) boxCustom.style.display = 'none';
+    if (inputUseProfile) inputUseProfile.value = '1';
+  }
+}
+
+window.initShiftSigPad = function() {
+  var canvasEl = document.getElementById('canvas_shift_signature');
+  if (canvasEl && window.SignaturePad) {
+    if (!window.shiftSigPad) {
+      window.shiftSigPad = new window.SignaturePad(canvasEl, {
+        strokeColor: '#0f172a',
+        strokeWidth: 2.5
+      });
+      var clearBtn = document.getElementById('btn_clear_shift_canvas');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.shiftSigPad.clear();
+        });
+      }
+    } else {
+      window.shiftSigPad._initCanvas();
+    }
+  }
+};
 </script>
 
 <?php

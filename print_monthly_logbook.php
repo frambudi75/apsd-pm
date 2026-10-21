@@ -6,6 +6,7 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/signature_helper.php';
 require_login();
 
 $pdo = get_db_connection();
@@ -79,10 +80,15 @@ if (!empty($activities)) {
 }
 
 // System settings for signatures & company name
-$leaderName = get_system_setting('default_team_leader', 'Eko Sulistyo');
+$leaderName = get_system_setting('default_team_leader', 'Wahyu Wandira');
 $leaderRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
 $companyName = get_system_setting('company_name', 'IASS SBU ICT KNO');
-$unitName = get_system_setting('unit_name', 'IASS SBU ICT KNO');
+$unitName = get_system_setting('unit_name', 'KNO');
+
+// Digital signatures
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
+$repSignature = $pdo->query("SELECT signature_path FROM users WHERE id = " . $currentUserId)->fetchColumn() ?: null;
+$leaderSignature = get_system_setting('default_leader_signature', '');
 
 $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
 ?>
@@ -304,7 +310,12 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
       font-size: 9pt;
     }
 
-    .sign-space { height: 60px; }
+    .sign-space {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .sign-name {
       font-weight: 800;
       text-decoration: underline;
@@ -485,14 +496,22 @@ $page_title = 'Rekap Daily Activity Unit SBU ICT KNO - Periode ' . $periodLabel;
         <td>
           <div>Deli Serdang, <?= date('d') . ' ' . $periodLabel ?></div>
           <div style="font-weight: 700; margin-top: 2px;">Perwakilan Tim NOC / EOS Duty</div>
-          <div class="sign-space"></div>
+          <div class="sign-space">
+            <?php if (!empty($repSignature)): ?>
+              <?= render_signature_img($repSignature, 'TTD Perwakilan NOC') ?>
+            <?php endif; ?>
+          </div>
           <div class="sign-name">Tim Pelaksana Shift NOC</div>
           <div class="sign-role">Bandara Internasional Kualanamu</div>
         </td>
         <td>
           <div>Mengetahui &amp; Menyetujui,</div>
           <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
-          <div class="sign-space"></div>
+          <div class="sign-space">
+            <?php if (!empty($leaderSignature)): ?>
+              <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+            <?php endif; ?>
+          </div>
           <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
           <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
         </td>

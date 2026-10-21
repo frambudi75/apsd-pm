@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/signature_helper.php';
 require_login();
 
 $pdo = get_db_connection();
@@ -16,7 +17,7 @@ if ($shiftId <= 0) {
 
 // Fetch shift record
 $stmt = $pdo->prepare("
-    SELECT s.*, u.full_name AS user_full_name, u.username, u.role AS user_role 
+    SELECT s.*, u.full_name AS user_full_name, u.username, u.role AS user_role, u.signature_path AS user_signature_path 
     FROM daily_shifts s
     LEFT JOIN users u ON s.user_id = u.id
     WHERE s.id = ?
@@ -27,6 +28,11 @@ $shift = $stmt->fetch();
 if (!$shift) {
     die("Data shift tidak ditemukan.");
 }
+
+// Status shift & verifikasi tanda tangan digital
+$isCompleted = ($shift['status'] === 'completed');
+$techSignature = $isCompleted ? (!empty($shift['signature_path']) ? $shift['signature_path'] : ($shift['user_signature_path'] ?? null)) : null;
+$leaderSignature = get_system_setting('default_leader_signature', '');
 
 // Fetch all activities in this shift
 $stmtAct = $pdo->prepare("
@@ -420,6 +426,9 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
 
     .sign-space {
       height: 65px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .sign-name {
@@ -693,16 +702,24 @@ $pdfFilename = 'Logbook_NOC_' . ucfirst($shift['shift_type']) . '_' . $shift['sh
         <td>
           <div>Deli Serdang, <?= htmlspecialchars($formattedDate) ?></div>
           <div style="font-weight: 700; margin-top: 2px;">Teknisi Jaga Pelaksana</div>
-          <div class="sign-space"></div>
+          <div class="sign-space">
+            <?php if (!empty($techSignature)): ?>
+              <?= render_signature_img($techSignature, 'TTD ' . $techName) ?>
+            <?php endif; ?>
+          </div>
           <div class="sign-name"><?= htmlspecialchars($techName) ?></div>
           <div class="sign-role">NOC Support KNO</div>
         </td>
         <td>
           <div>Mengetahui &amp; Menyetujui,</div>
           <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars(get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO')) ?></div>
-          <div class="sign-space"></div>
-          <div class="sign-name"><?= htmlspecialchars(get_system_setting('default_team_leader', 'Eko Sulistyo')) ?></div>
-          <div class="sign-role"><?= htmlspecialchars(get_system_setting('unit_name', 'IASS SBU ICT KNO')) ?></div>
+          <div class="sign-space">
+            <?php if (!empty($leaderSignature)): ?>
+              <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+            <?php endif; ?>
+          </div>
+          <div class="sign-name"><?= htmlspecialchars(get_system_setting('default_team_leader', 'Wahyu Wandira')) ?></div>
+          <div class="sign-role"><?= htmlspecialchars(get_system_setting('unit_name', 'KNO')) ?></div>
         </td>
       </tr>
     </table>

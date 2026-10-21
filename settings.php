@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/signature_helper.php';
 require_login();
 require_role('superadmin');
 
@@ -189,20 +190,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // 3. Handle Supervisor / Team Leader Signature (Upload or Canvas Pad)
+        if (!empty($_POST['reset_leader_signature'])) {
+            $oldLeaderSig = get_system_setting('default_leader_signature', '');
+            if (!empty($oldLeaderSig)) {
+                delete_signature_file($oldLeaderSig);
+            }
+            set_system_setting('default_leader_signature', '');
+        } elseif (!empty($_POST['leader_signature_canvas'])) {
+            $newSig = save_signature_from_base64($_POST['leader_signature_canvas'], 'sig_spv');
+            if ($newSig) {
+                $oldLeaderSig = get_system_setting('default_leader_signature', '');
+                if (!empty($oldLeaderSig) && $oldLeaderSig !== $newSig) {
+                    delete_signature_file($oldLeaderSig);
+                }
+                set_system_setting('default_leader_signature', $newSig);
+            }
+        } elseif (isset($_FILES['leader_signature_file']) && $_FILES['leader_signature_file']['error'] === UPLOAD_ERR_OK) {
+            $newSig = save_signature_from_file($_FILES['leader_signature_file'], 'sig_spv');
+            if ($newSig) {
+                $oldLeaderSig = get_system_setting('default_leader_signature', '');
+                if (!empty($oldLeaderSig) && $oldLeaderSig !== $newSig) {
+                    delete_signature_file($oldLeaderSig);
+                }
+                set_system_setting('default_leader_signature', $newSig);
+            }
+        }
+
         // Synchronize PWA Web App Manifest & App Icons
         require_once __DIR__ . '/includes/pwa.php';
         sync_pwa_manifest_and_icons();
 
         log_audit_event('SETTINGS', 'SETTINGS_UPDATE', 'Pembaruan konfigurasi identitas sistem & operasional', 'settings', null);
 
-        $successMsg = 'Pengaturan sistem, logo, dan profil PWA aplikasi berhasil diperbarui.';
+        $successMsg = 'Pengaturan sistem, logo, tanda tangan SPV, dan profil PWA aplikasi berhasil diperbarui.';
     } catch (Exception $e) {
         $errorMsg = 'Gagal menyimpan pengaturan: ' . $e->getMessage();
     }
 }
 
-$curLeader = get_system_setting('default_team_leader', 'Eko Sulistyo');
+$curLeader = get_system_setting('default_team_leader', 'Wahyu Wandira');
 $curRole = get_system_setting('default_leader_role', 'Supervisor / Team Leader NOC KNO');
+$curLeaderSig = get_system_setting('default_leader_signature', '');
 $curVendor = get_system_setting('default_om_vendor', 'PT. Naer Tunas Indonesia');
 $curWa = get_system_setting('whatsapp_target_phone', '');
 $curCompany = get_system_setting('company_name', 'IASS SBU ICT KNO');
@@ -440,6 +469,79 @@ include __DIR__ . '/includes/header.php';
           <?= app_icon('info', 16, 'text-primary') ?>
           <div>
             <strong>Pratinjau Pengesahan:</strong> Lembar verifikasi akan mencantumkan pengesahan oleh <strong style="color: var(--primary);"><?= htmlspecialchars($curLeader) ?></strong> (<?= htmlspecialchars($curRole) ?>).
+          </div>
+        </div>
+
+        <!-- Tanda Tangan Digital Supervisor / Team Leader -->
+        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <label class="form-label" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin: 0;">
+              Tanda Tangan Digital Supervisor / Team Leader
+            </label>
+            <?php if (!empty($curLeaderSig) && file_exists(__DIR__ . '/' . $curLeaderSig)): ?>
+              <span class="user-role-badge role-admin" style="font-size: 0.72rem; padding: 2px 8px;">
+                Aktif Terpasang
+              </span>
+            <?php else: ?>
+              <span class="user-role-badge" style="background: var(--bg-alt); color: var(--text-subtle); font-size: 0.72rem; padding: 2px 8px;">
+                Belum Diatur (TTD Basah Manual)
+              </span>
+            <?php endif; ?>
+          </div>
+          <p style="font-size: 0.76rem; color: var(--text-subtle); margin: 0 0 0.85rem 0;">
+            Tanda tangan ini akan otomatis dicantumkan di sisi kanan pengesahan ("Mengetahui &amp; Menyetujui") pada laporan statistik resmi, logbook harian shift, dan logbook bulanan.
+          </p>
+
+          <?php if (!empty($curLeaderSig) && file_exists(__DIR__ . '/' . $curLeaderSig)): ?>
+            <div style="display: flex; align-items: center; gap: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 12px;">
+              <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 140px; min-height: 60px;">
+                <img src="<?= htmlspecialchars($curLeaderSig) ?>?v=<?= time() ?>" alt="TTD Leader" style="max-height: 50px; max-width: 140px; object-fit: contain;">
+              </div>
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Tanda Tangan Aktif Digunakan</div>
+                <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Otomatis diterapkan saat mencetak lembar verifikasi SPV / Team Leader.</div>
+                <label style="font-size: 0.76rem; color: #dc2626; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 6px; font-weight: 600;">
+                  <input type="checkbox" name="reset_leader_signature" value="1">
+                  <span>Hapus Tanda Tangan Ini</span>
+                </label>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- Tab Selector: Gores Layar / Upload File -->
+          <div style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+              <button type="button" class="btn btn-sm btn-secondary sig-tab-btn active" id="tab_btn_leader_draw" onclick="switchLeaderSigTab('draw')" style="font-size: 0.76rem; font-weight: 700;">
+                Gores di Layar
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary sig-tab-btn" id="tab_btn_leader_upload" onclick="switchLeaderSigTab('upload')" style="font-size: 0.76rem; font-weight: 700; opacity: 0.75;">
+                Upload File Gambar
+              </button>
+            </div>
+
+            <!-- Panel Gores Layar Canvas -->
+            <div id="panel_leader_draw">
+              <div style="position: relative; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; width: 100%; height: 140px;">
+                <canvas id="canvas_leader_signature" style="width: 100%; height: 140px; display: block; cursor: crosshair;"></canvas>
+                <div style="position: absolute; bottom: 6px; right: 8px;">
+                  <button type="button" class="btn btn-light btn-xs" id="btn_clear_leader_canvas" style="font-size: 0.7rem; padding: 3px 8px; background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 4px;">
+                    Bersihkan Goresan
+                  </button>
+                </div>
+                <div style="position: absolute; top: 6px; left: 10px; font-size: 0.68rem; color: #94a3b8; pointer-events: none;">
+                  Gores tanda tangan di area ini (Touchscreen / Mouse)
+                </div>
+              </div>
+              <input type="hidden" name="leader_signature_canvas" id="input_leader_signature_canvas" value="">
+            </div>
+
+            <!-- Panel Upload File -->
+            <div id="panel_leader_upload" style="display: none;">
+              <input type="file" name="leader_signature_file" accept="image/png,image/jpeg,image/webp" class="form-control" style="font-size: 0.8rem;">
+              <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+                Format didukung: PNG (latar belakang transparan sangat disarankan), JPG, atau WebP. Maks 5 MB.
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1042,6 +1144,60 @@ function clearWebhook(channel) {
   var statusDiv = document.getElementById(conf.status);
   if (statusDiv) statusDiv.innerHTML = '<span style="color: var(--text-subtle);">Webhook akan dihapus saat form disimpan.</span>';
 }
+</script>
+
+<script src="assets/js/signature-pad.js"></script>
+<script>
+var leaderSigPad = null;
+
+function switchLeaderSigTab(type) {
+  var btnDraw = document.getElementById('tab_btn_leader_draw');
+  var btnUp = document.getElementById('tab_btn_leader_upload');
+  var pnlDraw = document.getElementById('panel_leader_draw');
+  var pnlUp = document.getElementById('panel_leader_upload');
+
+  if (type === 'draw') {
+    if (btnDraw) btnDraw.style.opacity = '1';
+    if (btnUp) btnUp.style.opacity = '0.75';
+    if (pnlDraw) pnlDraw.style.display = 'block';
+    if (pnlUp) pnlUp.style.display = 'none';
+  } else {
+    if (btnDraw) btnDraw.style.opacity = '0.75';
+    if (btnUp) btnUp.style.opacity = '1';
+    if (pnlDraw) pnlDraw.style.display = 'none';
+    if (pnlUp) pnlUp.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var canvasEl = document.getElementById('canvas_leader_signature');
+  if (canvasEl && window.SignaturePad) {
+    leaderSigPad = new window.SignaturePad(canvasEl, {
+      strokeColor: '#0f172a',
+      strokeWidth: 2.5
+    });
+
+    var clearBtn = document.getElementById('btn_clear_leader_canvas');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        leaderSigPad.clear();
+      });
+    }
+
+    var formEl = canvasEl.closest('form');
+    if (formEl) {
+      formEl.addEventListener('submit', function() {
+        if (leaderSigPad && !leaderSigPad.isEmpty()) {
+          var inputVal = document.getElementById('input_leader_signature_canvas');
+          if (inputVal) {
+            inputVal.value = leaderSigPad.toDataURL();
+          }
+        }
+      });
+    }
+  }
+});
 </script>
 
 <?php

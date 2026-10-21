@@ -66,22 +66,53 @@ try {
         }
     }
 
-    // Mark shift completed
+    // Tangani tanda tangan digital pelaksana shift
+    require_once __DIR__ . '/../includes/signature_helper.php';
+    $sigPath = null;
+    $useProfileSig = (int)($_POST['use_profile_sig'] ?? 0);
+    $saveToProfile = (int)($_POST['save_to_profile'] ?? 0);
+
+    if (!empty($_POST['signature_canvas'])) {
+        $sigPath = save_signature_from_base64($_POST['signature_canvas'], 'sig_shift_' . $shiftId);
+    } elseif (isset($_FILES['signature_file']) && $_FILES['signature_file']['error'] === UPLOAD_ERR_OK) {
+        $sigPath = save_signature_from_file($_FILES['signature_file'], 'sig_shift_' . $shiftId);
+    } elseif ($useProfileSig === 1) {
+        $stmtU = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
+        $stmtU->execute([$shift['user_id']]);
+        $sigPath = $stmtU->fetchColumn() ?: null;
+    }
+
+    // Fallback otomatis ke profil teknisi jika shift belum memiliki TTD spesifik
+    if (empty($sigPath)) {
+        $stmtU = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
+        $stmtU->execute([$shift['user_id']]);
+        $sigPath = $stmtU->fetchColumn() ?: null;
+    }
+
+    // Simpan juga ke profil akun pengguna jika diminta atau jika profil belum memiliki TTD
+    if ($sigPath && ($saveToProfile === 1 || empty($currentUser['signature_path']))) {
+        try {
+            $stmtProf = $pdo->prepare("UPDATE users SET signature_path = ? WHERE id = ?");
+            $stmtProf->execute([$sigPath, $shift['user_id']]);
+        } catch (Exception $e) {}
+    }
+
+    // Mark shift completed with signature
     $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     if ($driver === 'sqlite') {
         $stmtUp = $pdo->prepare("
             UPDATE daily_shifts 
-            SET status = 'completed', notes = ?, completed_at = datetime('now', 'localtime') 
+            SET status = 'completed', notes = ?, signature_path = ?, completed_at = datetime('now', 'localtime') 
             WHERE id = ?
         ");
     } else {
         $stmtUp = $pdo->prepare("
             UPDATE daily_shifts 
-            SET status = 'completed', notes = ?, completed_at = NOW() 
+            SET status = 'completed', notes = ?, signature_path = ?, completed_at = NOW() 
             WHERE id = ?
         ");
     }
-    $stmtUp->execute([$notes, $shiftId]);
+    $stmtUp->execute([$notes, $sigPath, $shiftId]);
 
     log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
 

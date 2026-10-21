@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/signature_helper.php';
 require_login();
 
 $page_title = 'Profil Saya';
@@ -103,6 +104,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 $errorMsg = 'Gagal memperbarui password: ' . $e->getMessage();
             }
+        }
+    }
+
+    // 3. UPDATE TANDA TANGAN DIGITAL
+    elseif ($action === 'update_signature') {
+        $activeTab = 'signature';
+        $newSig = null;
+
+        if (!empty($_POST['user_signature_canvas'])) {
+            $newSig = save_signature_from_base64($_POST['user_signature_canvas'], 'sig_user_' . $userId);
+        } elseif (isset($_FILES['user_signature_file']) && $_FILES['user_signature_file']['error'] === UPLOAD_ERR_OK) {
+            $newSig = save_signature_from_file($_FILES['user_signature_file'], 'sig_user_' . $userId);
+        }
+
+        if ($newSig) {
+            if (!empty($userData['signature_path']) && $userData['signature_path'] !== $newSig) {
+                delete_signature_file($userData['signature_path']);
+            }
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $timeSql = ($driver === 'sqlite') ? "datetime('now', 'localtime')" : "NOW()";
+            $upd = $pdo->prepare("UPDATE users SET signature_path = ?, updated_at = {$timeSql} WHERE id = ?");
+            $upd->execute([$newSig, $userId]);
+
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch();
+            $successMsg = 'Tanda tangan digital Anda berhasil disimpan dan siap digunakan.';
+        } else {
+            $errorMsg = 'Gagal menyimpan tanda tangan. Mohon goreskan tanda tangan pada canvas atau pilih file gambar yang valid.';
+        }
+    }
+
+    // 4. HAPUS TANDA TANGAN DIGITAL
+    elseif ($action === 'delete_signature') {
+        $activeTab = 'signature';
+        if (!empty($userData['signature_path'])) {
+            delete_signature_file($userData['signature_path']);
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $timeSql = ($driver === 'sqlite') ? "datetime('now', 'localtime')" : "NOW()";
+            $upd = $pdo->prepare("UPDATE users SET signature_path = NULL, updated_at = {$timeSql} WHERE id = ?");
+            $upd->execute([$userId]);
+
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch();
+            $successMsg = 'Tanda tangan digital Anda telah dihapus.';
         }
     }
 }
@@ -354,6 +399,91 @@ include __DIR__ . '/includes/header.php';
         </div>
       </div>
 
+      <!-- CARD 2: Tanda Tangan Digital Resmi (E-Signature) -->
+      <div class="settings-card" style="margin-bottom: 0;">
+        <div class="settings-card-header">
+          <div class="settings-card-header-icon" style="background: rgba(0, 128, 128, 0.12); color: var(--primary);">
+            <?= app_icon('edit', 18) ?>
+          </div>
+          <div>
+            <h3 class="settings-card-title">Tanda Tangan Digital Resmi</h3>
+            <p class="settings-card-desc">Tanda tangan Anda otomatis dicantumkan saat menyelesaikan sesi shift NOC dan pada lembar cetak laporan resmi.</p>
+          </div>
+        </div>
+        <div class="settings-card-body">
+          <?php if (!empty($userData['signature_path']) && file_exists(__DIR__ . '/' . $userData['signature_path'])): ?>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 140px; min-height: 60px;">
+                  <img src="<?= htmlspecialchars($userData['signature_path']) ?>?v=<?= time() ?>" alt="TTD Saya" style="max-height: 52px; max-width: 140px; object-fit: contain;">
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.88rem; font-weight: 700; color: var(--text-main);">Tanda Tangan Aktif</span>
+                    <span class="user-role-badge role-admin" style="font-size: 0.7rem; padding: 2px 7px;">Siap Digunakan</span>
+                  </div>
+                  <div style="font-size: 0.74rem; color: var(--text-subtle); margin-top: 2px;">Tanda tangan ini otomatis diterapkan pada setiap shift yang Anda selesaikan.</div>
+                </div>
+              </div>
+
+              <form method="POST" action="profile" onsubmit="return confirm('Apakah Anda yakin ingin menghapus tanda tangan digital ini?');" style="margin: 0;">
+                <input type="hidden" name="action" value="delete_signature">
+                <button type="submit" class="btn btn-outline-danger btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.78rem;">
+                  <?= app_icon('trash', 14) ?>
+                  <span>Hapus Tanda Tangan</span>
+                </button>
+              </form>
+            </div>
+          <?php endif; ?>
+
+          <form method="POST" action="profile" enctype="multipart/form-data" id="form_signature">
+            <input type="hidden" name="action" value="update_signature">
+
+            <div style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px;">
+              <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button type="button" class="btn btn-sm btn-secondary sig-user-tab-btn active" id="tab_btn_user_draw" onclick="switchUserSigTab('draw')" style="font-size: 0.76rem; font-weight: 700;">
+                  Gores di Layar
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary sig-user-tab-btn" id="tab_btn_user_upload" onclick="switchUserSigTab('upload')" style="font-size: 0.76rem; font-weight: 700; opacity: 0.75;">
+                  Upload File Gambar
+                </button>
+              </div>
+
+              <!-- Panel Gores Layar Canvas -->
+              <div id="panel_user_draw">
+                <div style="position: relative; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; width: 100%; height: 150px;">
+                  <canvas id="canvas_user_signature" style="width: 100%; height: 150px; display: block; cursor: crosshair;"></canvas>
+                  <div style="position: absolute; bottom: 6px; right: 8px;">
+                    <button type="button" class="btn btn-light btn-xs" id="btn_clear_user_canvas" style="font-size: 0.7rem; padding: 3px 8px; background: rgba(255,255,255,0.92); border: 1px solid #cbd5e1; border-radius: 4px;">
+                      Bersihkan Goresan
+                    </button>
+                  </div>
+                  <div style="position: absolute; top: 6px; left: 10px; font-size: 0.68rem; color: #94a3b8; pointer-events: none;">
+                    Goreskan tanda tangan Anda di area ini (Touchscreen / Mouse)
+                  </div>
+                </div>
+                <input type="hidden" name="user_signature_canvas" id="input_user_signature_canvas" value="">
+              </div>
+
+              <!-- Panel Upload File -->
+              <div id="panel_user_upload" style="display: none;">
+                <input type="file" name="user_signature_file" accept="image/png,image/jpeg,image/webp" class="form-control" style="font-size: 0.8rem;">
+                <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 5px;">
+                  Format didukung: PNG (latar belakang transparan sangat disarankan), JPG, atau WebP. Maks 5 MB.
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 0.55rem 1.4rem;">
+                <?= app_icon('check', 15) ?>
+                <span>Simpan Tanda Tangan Digital</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- CARD 2: Ganti / Reset Password Mandiri -->
       <div class="settings-card" style="margin-bottom: 0;">
         <div class="settings-card-header">
@@ -474,6 +604,60 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (newPwd) newPwd.addEventListener('input', checkMatch);
   if (confPwd) confPwd.addEventListener('input', checkMatch);
+});
+</script>
+
+<script src="assets/js/signature-pad.js"></script>
+<script>
+var userSigPad = null;
+
+function switchUserSigTab(type) {
+  var btnDraw = document.getElementById('tab_btn_user_draw');
+  var btnUp = document.getElementById('tab_btn_user_upload');
+  var pnlDraw = document.getElementById('panel_user_draw');
+  var pnlUp = document.getElementById('panel_user_upload');
+
+  if (type === 'draw') {
+    if (btnDraw) btnDraw.style.opacity = '1';
+    if (btnUp) btnUp.style.opacity = '0.75';
+    if (pnlDraw) pnlDraw.style.display = 'block';
+    if (pnlUp) pnlUp.style.display = 'none';
+  } else {
+    if (btnDraw) btnDraw.style.opacity = '0.75';
+    if (btnUp) btnUp.style.opacity = '1';
+    if (pnlDraw) pnlDraw.style.display = 'none';
+    if (pnlUp) pnlUp.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var canvasEl = document.getElementById('canvas_user_signature');
+  if (canvasEl && window.SignaturePad) {
+    userSigPad = new window.SignaturePad(canvasEl, {
+      strokeColor: '#0f172a',
+      strokeWidth: 2.5
+    });
+
+    var clearBtn = document.getElementById('btn_clear_user_canvas');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        userSigPad.clear();
+      });
+    }
+
+    var formEl = document.getElementById('form_signature');
+    if (formEl) {
+      formEl.addEventListener('submit', function() {
+        if (userSigPad && !userSigPad.isEmpty()) {
+          var inputVal = document.getElementById('input_user_signature_canvas');
+          if (inputVal) {
+            inputVal.value = userSigPad.toDataURL();
+          }
+        }
+      });
+    }
+  }
 });
 </script>
 

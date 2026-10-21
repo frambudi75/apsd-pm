@@ -260,6 +260,7 @@ function init_mysql_schema(PDO $pdo) {
     ");
     try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 7. Table operators (Master Operator / Tenant)
     $pdo->exec("
@@ -296,6 +297,7 @@ function init_mysql_schema(PDO $pdo) {
             INDEX idx_shift_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+    try { $pdo->exec("ALTER TABLE daily_shifts ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 9. Table daily_activities (Individual activities within a shift)
     $pdo->exec("
@@ -571,6 +573,7 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
     ");
     try { $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL"); } catch (Exception $e) {}
     try { $pdo->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL"); } catch (Exception $e) {}
+    try { $pdo->exec("ALTER TABLE users ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 8. Table operators (Master Operator / Tenant)
     $pdo->exec("
@@ -607,6 +610,7 @@ function init_sqlite_schema(PDO $pdo, bool $isNew) {
         CREATE INDEX IF NOT EXISTS idx_shift_type ON daily_shifts(shift_type);
         CREATE INDEX IF NOT EXISTS idx_shift_status ON daily_shifts(status);
     ");
+    try { $pdo->exec("ALTER TABLE daily_shifts ADD COLUMN signature_path VARCHAR(255) NULL"); } catch (Exception $e) {}
 
     // 10. Table daily_activities (Individual activities within a shift)
     $pdo->exec("

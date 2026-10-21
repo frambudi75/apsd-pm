@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/signature_helper.php';
 require_once __DIR__ . '/includes/checklist_data.php';
 require_login();
 
@@ -82,6 +83,12 @@ if (empty($adminRole)) {
 if (!empty($_GET['admin_role'])) {
     $adminRole = trim($_GET['admin_role']);
 }
+
+// Digital signatures
+$stmtAdminSig = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
+$stmtAdminSig->execute([$currentUser['id'] ?? 0]);
+$adminSignature = $stmtAdminSig->fetchColumn() ?: get_system_setting('default_admin_signature', null);
+$leaderSignature = get_system_setting('default_leader_signature', null);
 
 // Load technicians list
 $technicians = [];
@@ -451,7 +458,12 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
       font-size: 8.5pt;
     }
 
-    .sign-space { height: 55px; }
+    .sign-space {
+      height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .sign-name {
       font-weight: 800;
       text-decoration: underline;
@@ -724,14 +736,22 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
         <td>
           <div>Deli Serdang, <?= date('d') . ' ' . ($isAllTime ? ($indoMonths[(int)date('n')] . ' ' . date('Y')) : $periodLabel) ?></div>
           <div style="font-weight: 700; margin-top: 2px;">Dibuat / Dilaporkan oleh,</div>
-          <div class="sign-space"></div>
+          <div class="sign-space">
+            <?php if (!empty($adminSignature)): ?>
+              <?= render_signature_img($adminSignature, 'TTD ' . $adminName) ?>
+            <?php endif; ?>
+          </div>
           <div class="sign-name"><?= htmlspecialchars($adminName) ?></div>
           <div class="sign-role"><?= htmlspecialchars($adminRole) ?></div>
         </td>
         <td>
           <div>Mengetahui &amp; Menyetujui,</div>
           <div style="font-weight: 700; margin-top: 2px;"><?= htmlspecialchars($leaderRole) ?></div>
-          <div class="sign-space"></div>
+          <div class="sign-space">
+            <?php if (!empty($leaderSignature)): ?>
+              <?= render_signature_img($leaderSignature, 'TTD Leader') ?>
+            <?php endif; ?>
+          </div>
           <div class="sign-name"><?= htmlspecialchars($leaderName) ?></div>
           <div class="sign-role"><?= htmlspecialchars($unitName) ?></div>
         </td>

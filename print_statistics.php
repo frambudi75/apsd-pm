@@ -87,8 +87,8 @@ if (!empty($_GET['admin_role'])) {
 // Digital signatures
 $stmtAdminSig = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
 $stmtAdminSig->execute([$currentUser['id'] ?? 0]);
-$adminSignature = $stmtAdminSig->fetchColumn() ?: get_system_setting('default_admin_signature', null);
-$leaderSignature = get_system_setting('default_leader_signature', null);
+$adminSignature = $stmtAdminSig->fetchColumn() ?: get_system_setting('default_admin_signature', '');
+$leaderSignature = get_system_setting('default_leader_signature', '');
 
 // Load technicians list
 $technicians = [];

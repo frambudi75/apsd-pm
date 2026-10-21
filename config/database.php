@@ -1287,7 +1287,7 @@ function clear_system_setting_cache(?string $key = null): void {
 /**
  * Get system setting value by key with optional fallback
  */
-function get_system_setting(string $key, string $default = '', bool $forceRefresh = false): string {
+function get_system_setting(string $key, ?string $default = '', bool $forceRefresh = false): ?string {
     if (!$forceRefresh && isset($GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key])) {
         return $GLOBALS['_SYSTEM_SETTINGS_CACHE'][$key];
     }

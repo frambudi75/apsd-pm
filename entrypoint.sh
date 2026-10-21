@@ -28,5 +28,8 @@ fi
 # Run database auto-repair & self-healing check on startup
 php -r "require_once '/var/www/html/config/database.php'; \$pdo = get_db_connection(); \$res = auto_repair_database(\$pdo, true); echo '[DB Auto-Repair] ' . (\$res['message'] ?? 'OK') . PHP_EOL;" 2>/dev/null || true
 
+# Synchronize PWA Manifest with database branding settings on startup
+php -r "require_once '/var/www/html/config/database.php'; require_once '/var/www/html/includes/pwa.php'; sync_pwa_manifest_and_icons();" 2>/dev/null || true
+
 # Execute CMD (default: apache2-foreground)
 exec "$@"

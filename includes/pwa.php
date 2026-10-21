@@ -72,7 +72,7 @@ function generate_single_pwa_icon(string $sourceFile, int $targetSize, string $d
  */
 function sync_pwa_manifest_and_icons(): bool {
     try {
-        $appTitle = trim(get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO')));
+        $appTitle = trim(get_system_setting('app_title', 'ICT HUB'));
         $appSubtitle = trim(get_system_setting('app_subtitle', 'Sistem PM & NOC'));
         $rawLogo = trim(get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3'));
 

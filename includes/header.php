@@ -13,7 +13,7 @@ if (!isset($page_title)) {
     $page_title = 'Sistem Preventive Maintenance';
 }
 $curPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
-$sysAppTitle = get_system_setting('app_title', get_system_setting('company_name', 'IASS SBU ICT KNO'));
+$sysAppTitle = get_system_setting('app_title', 'ICT HUB');
 $sysAppSubtitle = get_system_setting('app_subtitle', 'Sistem PM & NOC');
 $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3');
 ?>

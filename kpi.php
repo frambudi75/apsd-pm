@@ -854,14 +854,14 @@ include __DIR__ . '/includes/header.php';
               <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-subtle);">/ 100 Poin</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px;">
-              Metrik Sistem: <strong><?= $mySysScore ?>/60</strong> &bull; Review Leader: <strong><?= $myRevScore ?>/40</strong>
+              Metrik Sistem: <strong><?= $mySysScore ?>/60</strong> &bull; Penilaian Atasan: <strong><?= $myRevScore ?>/40</strong>
             </div>
           </div>
 
           <div style="text-align: center; background: <?= $grdBg ?>; border: 2px solid <?= $grdColor ?>; padding: 1rem 1.5rem; border-radius: 12px; min-width: 140px;">
             <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: <?= $grdColor ?>;">Predikat Resmi</div>
             <div style="font-size: 2.2rem; font-weight: 800; color: <?= $grdColor ?>; line-height: 1.1; margin: 2px 0;">
-              GRADE <?= $myGrd ?>
+              PREDIKAT <?= $myGrd ?>
             </div>
             <div style="font-size: 0.72rem; font-weight: 700; color: <?= $grdColor ?>;">
               <?= ($myGrd === 'A') ? 'Sangat Baik' : (($myGrd === 'B') ? 'Baik (Standar SOP)' : (($myGrd === 'C') ? 'Cukup' : 'Perlu Pembinaan')) ?>
@@ -991,7 +991,7 @@ include __DIR__ . '/includes/header.php';
 
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
           
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 0.5rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;">
             <!-- Shift Score -->
             <div style="display: flex; flex-direction: column; gap: 4px;">
               <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0; color: #1e293b;">

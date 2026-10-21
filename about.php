@@ -339,12 +339,27 @@ include __DIR__ . '/includes/header.php';
     <div class="settings-card-body" style="padding: 1.5rem;">
       <div style="position: relative; padding-left: 20px; border-left: 2px solid var(--border);">
         
-        <!-- v2.9.0 -->
+        <!-- v3.0.0 -->
         <div style="margin-bottom: 1.75rem; position: relative;">
           <div style="position: absolute; left: -26px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid var(--bg-surface);"></div>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.9.0</strong>
+            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 3.0.0</strong>
             <span class="badge" style="background: rgba(0, 128, 128, 0.12); color: var(--primary); font-size: 0.7rem; font-weight: 700;">Rilis Terbaru</span>
+            <span style="font-size: 0.75rem; color: var(--text-subtle);">21 Oktober 2026</span>
+          </div>
+          <ul style="font-size: 0.78rem; color: var(--text-subtle); margin: 6px 0 0 0; padding-left: 18px; line-height: 1.5;">
+            <li><strong>Sistem Statistik &amp; Rekapitulasi Laporan Terpadu</strong>: Dasbor analitik eksekutif terpadu menggabungkan metrik PM &amp; Daily Activity NOC, rasio indoor vs outdoor, ritme jam kerja, leaderboard teknisi, dan lembar cetak dokumen resmi A4.</li>
+            <li><strong>Tanda Tangan Digital Resmi (E-Signature)</strong>: Fitur tanda tangan digital ganda (Gores di Layar touchscreen/mouse &amp; Upload File), pengaturan TTD SPV di Pengaturan Sistem, TTD mandiri di Profil Pengguna, serta verifikasi pengesahan saat menyelesaikan sesi shift NOC.</li>
+            <li><strong>Pengesahan Dinamis Admin &amp; Supervisor</strong>: Kolom penandatanganan dokumen resmi otomatis mencantumkan nama dan jabatan Admin pelapor di sisi kiri serta Supervisor/Team Leader di sisi kanan.</li>
+            <li><strong>Optimasi Responsif Seluler &amp; PWA</strong>: Mengatasi kendala daftar rekap laporan terpotong pada layar ponsel dengan kartu sentuh ergonomis dan navigasi sentuh ramah jempol.</li>
+          </ul>
+        </div>
+
+        <!-- v2.9.0 -->
+        <div style="margin-bottom: 1.75rem; position: relative;">
+          <div style="position: absolute; left: -26px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #0284c7; border: 2px solid var(--bg-surface);"></div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <strong style="font-size: 0.92rem; color: var(--text-main);">Versi 2.9.0</strong>
             <span style="font-size: 0.75rem; color: var(--text-subtle);">19 Oktober 2026</span>
           </div>
           <ul style="font-size: 0.78rem; color: var(--text-subtle); margin: 6px 0 0 0; padding-left: 18px; line-height: 1.5;">

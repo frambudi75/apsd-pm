@@ -2,6 +2,35 @@
 
 Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (PM) PT Angkasa Pura Sarana Digital.
 
+### [Versi 3.0.0] - 2026-10-21
+
+#### Ditambahkan
+* **Sistem Tanda Tangan Digital Resmi E-Signature (`settings.php`, `profile.php`, `daily_activity.php`, `api/complete_shift.php`, `includes/signature_helper.php`, `assets/js/signature-pad.js`)**:
+  - Mesin tanda tangan digital ganda: Mendukung gores tanda tangan langsung di layar (*Canvas Touchscreen* & *Mouse*) dan unggah berkas gambar tanda tangan (PNG transparan / JPG).
+  - Pengelolaan tanda tangan digital khusus Supervisor / Team Leader NOC di Pengaturan Sistem (`settings.php`) dengan pratinjau aktif dan fitur reset.
+  - Pengelolaan tanda tangan digital mandiri per akun teknisi/admin di Profil Saya (`profile.php`).
+  - Integrasi tanda tangan saat menyelesaikan sesi shift di Daily Activity (`daily_activity.php` & `api/complete_shift.php`): Otomatis menyematkan tanda tangan akun atau opsi gores/unggah tanda tangan baru seketika.
+  - Penandatanganan otomatis pada seluruh lembar cetak dokumen resmi: Logbook Shift Harian (`print_shift.php`), Rekapitulasi Statistik (`print_statistics.php`), dan Logbook Bulanan (`print_monthly_logbook.php`).
+* **Pusat Statistik & Rekapitulasi Laporan Terpadu (`statistics.php`, `print_statistics.php`, `includes/header.php`, `includes/icons.php`)**:
+  - Halaman dasbor analitik terpadu menghubungkan metrik performa PM (Indoor & Outdoor) dan Daily Activity NOC secara komprehensif.
+  - KPI performa eksekutif, visualisasi ritme jam kerja harian, rasio pekerjaan indoor vs outdoor, breakdown kategori kegiatan, dan leaderboard produktivitas tim teknisi.
+  - Lembar cetak dokumen resmi A4 terstandarisasi (`print_statistics.php`) dengan kop resmi, tabel terstruktur, dan kolom penandatanganan pengesahan.
+* **Pengesahan Dinamis Admin & Supervisor (`print_statistics.php`)**:
+  - Kolom tanda tangan kiri ("Dibuat / Dilaporkan oleh") menampilkan nama dan jabatan Admin pembuat laporan secara otomatis berdasarkan akun login aktif.
+  - Kolom tanda tangan kanan ("Mengetahui & Menyetujui") menampilkan nama dan jabatan Supervisor / Team Leader NOC KNO dari konfigurasi sistem.
+* **Auto-Migration Kolom Tanda Tangan Basis Data (`config/database.php`, `entrypoint.sh`)**:
+  - Penambahan kolom `signature_path` pada tabel `users` dan `daily_shifts` secara terautomasi (MySQL & SQLite).
+  - Penambahan direktori `/var/www/html/uploads/signatures` pada skrip inisialisasi Docker `entrypoint.sh`.
+
+#### Diperbaiki
+* **Optimasi Tampilan Seluler & Desain Kartu Responsif (`daily_reports.php`)**:
+  - Mengatasi kendala teks daftar rekap laporan terpotong pada layar HP dan aplikasi PWA.
+  - Mengimplementasikan kartu sentuh responsif (`.mobile-cards-container`) dengan area sentuh ramah jempol (min-height 42px) dan scrolling horizontal tabel desktop yang bersih.
+* **Pembaruan Service Worker PWA (`sw.js`)**:
+  - Pembaruan `CACHE_NAME` ke `iass-pm-v3.0.0` dan penambahan `assets/js/signature-pad.js` ke daftar aset statis offline.
+
+---
+
 ### [Versi 2.9.0] - 2026-10-19
 
 #### Ditambahkan

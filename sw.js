@@ -3,7 +3,7 @@
  * IASS SBU ICT KNO
  */
 
-const CACHE_NAME = 'iass-pm-v2.9.0';
+const CACHE_NAME = 'iass-pm-v3.0.0';
 const STATIC_ASSETS = [
   './',
   'manifest.json',
@@ -13,6 +13,7 @@ const STATIC_ASSETS = [
   'assets/js/html2pdf.bundle.min.js',
   'assets/js/draft_manager.js',
   'assets/js/qr_scanner.js',
+  'assets/js/signature-pad.js',
   'assets/js/app.js',
   'assets/img/logo_ias.png',
   'assets/img/pwa-icon-192.png',

@@ -48,21 +48,35 @@ Sistem ini dirancang untuk:
 * Tempat penyimpanan terpusat untuk Standar Operasional Prosedur, Instruksi Kerja, dan Service Level Agreement.
 * Upload dokumen PDF/file pendukung, kategorisasi, preview interaktif, dan pencatatan riwayat unduhan.
 
-#### Modul 5: Master Data & Manajemen Pengguna
+#### Modul 5: Master Data, Manajemen Pengguna & Jabatan Resmi
 * **Master Site**: Menyimpan data lokasi, koordinat GPS, alamat, dan spesifikasi tiang.
 * **Master Operator**: Menyimpan daftar tenant seluler (Telkomsel, Indosat, XL, Smartfren) dan logo resmi kop kanan.
-* **User Manager & RBAC**: Pengelolaan pengguna dengan 3 peran (Admin, Supervisor, Teknisi), status akun, reset password, dan tampilan kartu responsif di mobile.
+* **User Manager & Jabatan**: Pengelolaan pengguna dengan 3 peran (Superadmin, Admin, User), penetapan struktur **Jabatan Resmi** kedinasan (misal: *Supervisor NOC KNO*, *Teknisi Jaga NOC*, *Administrator SBU ICT*), status akun, reset password, dan tampilan kartu responsif di mobile.
+* **Profil Mandiri**: Pengelolaan kontak, pembaruan password mandiri, dan pratinjau jabatan di `profile.php`.
 
 #### Modul 6: Keamanan, Audit Log & Pemeliharaan Sistem
 * Rekam jejak seluruh mutasi data dan login/logout via `audit_log.php`.
-* Pemeliharaan database dan performa sistem via `system_optimize.php` dan `cron_optimize.php`.
-* Pengaturan branding dan konfigurasi logo terpusat di `settings.php`.
+* Pusat cadangan & pemulihan sistem (`backup.php`) dengan dump SQL, arsip ZIP, dan integrasi Discord webhook multi-channel.
+* Pemeliharaan database dan performa sistem via `system_optimize.php` dan `cron_optimize.php` dengan fitur self-healing database auto-repair.
+* Pengaturan branding, konfigurasi logo, Team Leader, dan Manager Unit di `settings.php`.
 
 #### Modul 7: Engine Cetak PDF, Berbagi Publik & Batch ZIP
 * Dukungan cetak langsung via Browser (Print Preview presisi A4).
 * Download PDF satu-klik via engine headless browser.
 * Berbagi laporan publik dengan token unik dan masa kedaluwarsa fleksibel (`share.php`).
 * Download batch seluruh laporan bulanan dalam format ZIP (`batch_download_pdf.php`).
+
+#### Modul 8: Tanda Tangan Digital (E-Signature) & Pengesahan Cerdas
+* **Mesin Tanda Tangan Ganda**: Gores layar sentuh/mouse (*Canvas Pad*) dan upload file gambar (PNG transparan / JPG).
+* **Integrasi Penutupan Shift**: Tanda tangan digital otomatis atau gores seketika saat mengakhiri sesi shift NOC.
+* **Logika Pengesahan Cerdas (Anti Duplikasi)**:
+  - Jika Supervisor bertugas sebagai teknisi shift dan tanpa Manager: Tanda tangan otomatis disatukan ke blok tunggal di tengah (*Single Centered Block* bertajuk "Supervisor / Pelaksana Shift NOC"), mengeliminasi tanda tangan ganda yang janggal.
+  - Jika Manager Unit dikonfigurasi: Eskalasi otomatis berjenjang (Kiri: Supervisor, Kanan: Manager Unit).
+  - Jika teknisi biasa bertugas: Tanda tangan kiri menampilkan nama teknisi dengan keterangan jabatannya secara dinamis.
+
+#### Modul 9: Pusat Analitik Statistik Operasional & Evaluasi Kinerja (KPI)
+* **Dasbor Statistik Terpadu (`statistics.php` & `print_statistics.php`)**: Metrik operasional PM Indoor/Outdoor dan logbook shift NOC, rasio kategori pekerjaan, ritme jam kerja, dan leaderboard produktivitas.
+* **Modul Rapor KPI (`kpi.php` & `print_kpi.php`)**: Evaluasi akumulasi kinerja tahunan teknisi berdasarkan formula otomatis (shift, aktivitas, foto, PM) dan penilaian subjektif supervisor, lengkap dengan lembar cetak rapor individu dan rekapitulasi tim.
 
 ---
 

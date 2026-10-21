@@ -53,34 +53,46 @@ Aplikasi web dan Progressive Web App (PWA) terintegrasi untuk input checklist pe
    - Manajemen dokumen referensi kerja: Standar Operasional Prosedur (SOP), Instruksi Kerja (IK), Service Level Agreement (SLA), Drawing/Topologi, dan Manual Panduan.
    - Fitur upload file PDF/dokumen, pencarian, filter kategori, preview dokumen interaktif, dan tracking unduhan.
 
-9. **Manajemen Pengguna & Role-Based Access Control (RBAC)**
-   - Tiga tingkatan peran: Admin, Supervisor, dan Teknisi.
-   - Dashboard adaptif berdasarkan role: metrik eksekutif untuk pimpinan, giliran tugas untuk teknisi.
-   - Tampilan User Manager responsif dengan kartu data pengguna di perangkat seluler (`users.php`).
-   - Manajemen profil mandiri dan ubah password mandiri (`profile.php`).
+9. **Manajemen Pengguna, Jabatan Resmi & RBAC**
+   - Tiga tingkatan peran: Superadmin, Administrator, dan Teknisi Lapangan.
+   - Kolom struktur **Jabatan Resmi** personil (misal: *Supervisor NOC KNO*, *Teknisi Jaga NOC*, *Administrator SBU ICT*) tercatat terstruktur di basis data dan ditampilkan rapi pada tabel desktop serta kartu sentuh seluler (`users.php`).
+   - Manajemen profil mandiri dengan pratinjau jabatan dan penggantian kata sandi mandiri (`profile.php`).
 
-10. **Audit Log & Pemantauan Keamanan**
+10. **Tanda Tangan Digital (E-Signature) & Logika Pengesahan Cerdas**
+    - Mesin tanda tangan ganda: Gores layar sentuh/mouse (*Canvas Pad*) dan upload berkas gambar (PNG transparan / JPG).
+    - Tanda tangan terintegrasi pada penutupan shift (`daily_activity.php`), profil pengguna, pengaturan Team Leader, dan Manager Unit (`settings.php`).
+    - **Logika Cerdas Anti Duplikasi**: Bila Supervisor/Team Leader bertugas sebagai teknisi shift, dokumen otomatis beralih ke format tanda tangan tunggal di tengah (*Single Centered Block*) atau eskalasi ke Manager Unit, sehingga nama yang sama tidak muncul ganda di sisi kiri dan kanan.
+
+11. **Pusat Statistik Operasional & Evaluasi Kinerja (KPI)**
+    - Dasbor analitik terpadu (`statistics.php` & `print_statistics.php`) menghubungkan metrik performa PM dan Daily Activity.
+    - Modul penilaian kinerja tahunan personil (`kpi.php` & `print_kpi.php`) dengan akumulasi skor otomatis sistem (kehadiran shift, kegiatan, foto, PM) dan skor evaluasi kualitatif supervisor.
+
+12. **Audit Log & Pemantauan Keamanan**
     - Pencatatan seluruh aktivitas penting (login, logout, pembuatan laporan, perubahan data, download dokumen, optimasi sistem).
     - Mencatat user ID, IP address, user agent, modul, dan rincian timestamp.
     - Filter berdasarkan aksi, modul, dan rentang tanggal untuk audit kepatuhan.
 
-11. **Optimasi Sistem & Pemeliharaan Database**
-    - Fitur maintenance berkala via UI (`system_optimize.php`) dan script CLI/Cron (`cron_optimize.php`).
-    - Operasi SQLite VACUUM, pembersihan cache sementara, rotasi log lawas, dan verifikasi integritas database.
+13. **Pusat Cadangan & Pemulihan Sistem (Disaster Recovery Vault)**
+    - Manajemen backup terpadu (`backup.php`): Basis data SQL, arsip berkas foto ZIP, dan full system snapshot.
+    - Pengiriman cadangan otomatis ke saluran Discord Webhook terdedikasi dengan pemecahan multi-bagian (*chunking*) dan verifikasi hash SHA-256.
 
-12. **Berbagi Laporan Publik & Batch Download**
+14. **Optimasi Sistem & Pemeliharaan Database**
+    - Fitur maintenance berkala via UI (`system_optimize.php`) dan script CLI/Cron (`cron_optimize.php`).
+    - Auto-repair database: pendeteksian dan pemulihan otomatis struktur tabel yang hilang atau kolom yang mengalami *schema drift*.
+
+15. **Berbagi Laporan Publik & Batch Download**
     - Pembuatan tautan publik aman (`share.php`) dengan token unik dan masa kedaluwarsa fleksibel untuk akses pihak eksternal/klien tanpa login.
     - Download batch seluruh arsip laporan PDF bulanan dalam format ZIP terkompresi (`batch_download_pdf.php`).
 
-13. **Database Indexing & Redis Caching**
-    - Indexing database SQLite pada kolom kunci pencarian (`report_type`, `report_date`, `site_id`, `slot_code`).
+16. **Database Indexing & Redis Caching**
+    - Indexing database pada kolom kunci pencarian (`report_type`, `report_date`, `site_id`, `slot_code`).
     - Redis caching dengan koneksi cepat (non-blocking fallback jika Redis tidak aktif).
     - Auto-invalidation cache saat laporan ditambah atau dihapus.
 
-14. **Docker Containerization (Port 2022)**
+17. **Docker Containerization (Port 2022)**
     - Konfigurasi lengkap `Dockerfile` dan `docker-compose.yml`.
     - Web application berjalan di port `2022` (`http://localhost:2022/`).
-    - Layanan Redis cache terintegrasi dengan restart policy `always`.
+    - Layanan MariaDB, Redis cache, dan volume data terpasang dengan restart policy `always`.
 
 ---
 

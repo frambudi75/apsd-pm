@@ -17,18 +17,22 @@ Dokumen ini menjelaskan struktur arsitektur teknis, alur data, dan komponen modu
        ▼ (HTTP / HTTPS Port 80 atau Port 2022 di Docker)
 [ Apache Web Server / PHP 8.2 ]
        │
-       ├── Authentication & RBAC Layer (Admin, Supervisor, Teknisi)
-       │     └─ Session tracking, password hash bcrypt, profile self-service
+       ├── Authentication & RBAC Layer (Superadmin, Administrator, Teknisi)
+       │     └─ Session tracking, password hash bcrypt, profile self-service, struktur jabatan
        │
        ├── Core Operational Modules:
        │     ├─ PM Generator (form_indoor.php, form_outdoor.php, reports.php)
        │     ├─ Daily Activity NOC (daily_activity.php, daily_reports.php)
+       │     ├─ Performance Analytics & KPI (statistics.php, print_statistics.php, kpi.php, print_kpi.php)
        │     ├─ Technical Document Repository (documents.php, download_document.php)
        │     ├─ Master Data (sites.php, operators.php, users.php)
-       │     └─ System Diagnostics & Maintenance (system_optimize.php, audit_log.php)
+       │     ├─ Disaster Recovery & Backup (backup.php, includes/backup_helper.php)
+       │     └─ System Diagnostics & Auto-Repair (system_optimize.php, audit_log.php, config/database.php)
        │
-       ├── PDF Engine:
+       ├── PDF & Verification Engine:
        │     ├─ Browser Media Print (@media print presisi A4)
+       │     ├─ Smart Verification Engine (Anti duplicate signature & dynamic jabatan)
+       │     ├─ E-Signature Engine (Touchscreen canvas & file upload via includes/signature_helper.php)
        │     ├─ Headless Chromium/Edge Direct Engine (download_pdf.php)
        │     ├─ Batch Exporter ZIP (batch_download_pdf.php)
        │     └─ Public Share Token Engine (share.php)
@@ -36,19 +40,26 @@ Dokumen ini menjelaskan struktur arsitektur teknis, alur data, dan komponen modu
        ├── Image Processing Engine (includes/image_compressor.php):
        │     └─ EXIF auto-rotation, Bicubic GD downscaling, JPEG 82%
        │
+       ├── Notification & Discord Multi-Channel Engine (includes/discord.php):
+       │     ├─ Channel 1: Operasional NOC (Shift completion & logbook PDF)
+       │     ├─ Channel 2: Keamanan & Audit (Brute-force lockout & system events)
+       │     └─ Channel 3: Backup Vault (Disaster recovery chunks & hash SHA-256)
+       │
        ├── Cache Layer (Redis via AppRedis config/redis.php):
        │     ├─ Caching report list, daily activity, dashboard stats (TTL 60s)
        │     └─ Non-blocking fallback jika Redis offline
        │
-       ├── Database Layer (SQLite PDO database/apsd.sqlite):
-       │     ├─ 13 Relational Tables (WAL Mode, Busy Timeout 5000ms)
+       ├── Database Layer (MySQL/MariaDB & SQLite Dual Driver via config/database.php):
+       │     ├─ 16 Relational Tables with Self-Healing Auto-Repair
        │     └─ B-Tree Performance Indexes
        │
        └── File Storage Engine:
              ├─ uploads/reports/{report_id}/ (Foto dokumentasi slot PM)
              ├─ uploads/daily/{activity_id}/ (Foto dokumentasi shift)
-             ├─ uploads/documents/ (File SOP, IK, dan SLA)
-             └─ uploads/branding/ (Logo resmi kop dan icon PWA)
+             ├─ uploads/documents/ (File SOP, IK, dan sertifikat)
+             ├─ uploads/signatures/ (Tanda tangan digital transparan PNG/JPG)
+             ├─ uploads/branding/ (Logo resmi kop dan icon PWA)
+             └─ backups/ (Arsip pencadangan lokal berkala)
 ```
 
 ---

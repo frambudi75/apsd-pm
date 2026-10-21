@@ -2,6 +2,30 @@
 
 Seluruh riwayat pembaruan dan implementasi fitur sistem Preventive Maintenance (PM) PT Angkasa Pura Sarana Digital.
 
+### [Versi 3.1.0] - 2026-10-21
+
+#### Ditambahkan
+* **Struktur Kolom Jabatan Personil & Manajemen Profil (`users.php`, `profile.php`, `config/database.php`)**:
+  - Penambahan kolom `jabatan VARCHAR(100) NULL DEFAULT 'Teknisi Jaga NOC'` pada skema basis data MariaDB/MySQL dan SQLite dengan mekanisme auto-repair dan auto-migration teruji.
+  - Tampilan jabatan resmi pada daftar pengguna desktop dan kartu sentuh seluler dengan aksen teks biru informatif di bawah nama lengkap.
+  - Integrasi input jabatan pada modal Tambah Pengguna (`#modal_add_user`) dan modal Edit Pengguna (`#modal_edit_user`) terhubung penuh via JavaScript.
+  - Kartu profil mandiri (`profile.php`) kini menampilkan informasi jabatan dinamis dan mengizinkan pembaruan jabatan mandiri bagi Administrator dan Superadmin.
+* **Logika Pengesahan Cerdas Laporan / Anti Tanda Tangan Ganda (`print_shift.php`, `print_statistics.php`, `print_kpi.php`)**:
+  - Deteksi otomatis `$isSelfDuty` / `$isSelfReport` saat Supervisor / Team Leader NOC (misal: Wahyu Wandira) bertugas sebagai teknisi pelaksana shift atau menyusun laporan rekapitulasi.
+  - **Skenario Mandiri (Tanpa Manager)**: Jika tidak ada atasan manager yang dikonfigurasi, tanda tangan otomatis dirangkum ke dalam satu blok tunggal di tengah (*Single Centered Block* bertajuk "Supervisor / Pelaksana Shift NOC"). Menghilangkan duplikasi tanda tangan yang janggal (nama ganda di sisi kiri dan kanan).
+  - **Skenario Eskalasi (Dengan Manager)**: Jika Manager Unit dikonfigurasi di Pengaturan, tanda tangan kiri otomatis memuat nama Leader dan tanda tangan kanan beralih ke Manager Unit ("Mengetahui & Menyetujui").
+  - **Skenario Standar (Teknisi Biasa)**: Jika dikerjakan teknisi, tanda tangan kiri menampilkan nama teknisi dengan keterangan jabatannya secara dinamis (menggantikan teks statis "NOC Support KNO"), dan tanda tangan kanan tetap diverifikasi oleh Supervisor / Team Leader.
+* **Konfigurasi Pengesahan Lanjutan Manager Unit (`settings.php`, `includes/signature_helper.php`)**:
+  - Penambahan form pengaturan Manager Unit: Nama Manager (`default_manager_name`), Jabatan / Role Manager (`default_manager_role`), dan Tanda Tangan Digital Manager (`default_manager_signature`).
+  - Dukungan tanda tangan digital Manager ganda: gores canvas layar sentuh / mouse dan upload berkas gambar.
+* **Penyempurnaan Modul Evaluasi Kinerja & Rapor KPI (`kpi.php`, `print_kpi.php`)**:
+  - Mengintegrasikan kolom jabatan dinamis pegawai pada lembar rapor cetak KPI individu (menggantikan hardcoded "Teknisi Jaga NOC KNO").
+  - Menerapkan logika pengesahan cerdas anti tanda tangan ganda untuk rapor KPI individu pegawai dan rekapitulasi KPI tahunan seluruh tim.
+* **Proteksi Null-Safe REQUEST_METHOD (`users.php`, `profile.php`, `settings.php`)**:
+  - Penerapan pengecekan `($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'` untuk mencegah peringatan PHP 8 saat dijalankan via CLI runner, cron, atau lingkungan uji otomatis.
+
+---
+
 ### [Versi 3.0.0] - 2026-10-21
 
 #### Ditambahkan

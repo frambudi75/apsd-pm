@@ -331,10 +331,10 @@ include __DIR__ . '/includes/header.php';
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" class="no-print">
-        <button type="button" class="btn btn-secondary" onclick="window.print()" style="display: inline-flex; align-items: center; gap: 6px; min-height: 42px; font-weight: 700; padding: 0.5rem 1rem;">
+        <a href="print_statistics?month=<?= urlencode($filterMonth) ?><?= $filterUserId > 0 ? '&user_id=' . $filterUserId : '' ?>" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; min-height: 42px; font-weight: 700; padding: 0.5rem 1rem;" title="Buka lembar cetak resmi dokumen A4">
           <?= app_icon('document', 15) ?>
-          <span>Cetak Ringkasan</span>
-        </button>
+          <span>Format Cetak Resmi</span>
+        </a>
         <a href="daily_reports" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; min-height: 42px; font-weight: 700; padding: 0.5rem 1.25rem;">
           <?= app_icon('clipboard-list', 15) ?>
           <span>Buka Rekap NOC</span>
@@ -514,6 +514,28 @@ include __DIR__ . '/includes/header.php';
   }
   .stats-pm-ratio {
     grid-template-columns: 1fr !important;
+  }
+}
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .app-sidebar, .app-topbar, .no-print, .btn {
+    display: none !important;
+  }
+  .app-main-viewport, .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 </style>

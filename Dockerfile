@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cron \
+    curl \
     libsqlite3-dev \
     sqlite3 \
     libpng-dev \
@@ -21,9 +22,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite exif zip
 
-# Install Redis extension via PECL
-RUN pecl install redis \
-    && docker-php-ext-enable redis
+# Install Redis extension (resilient download from GitHub source with PECL fallback to avoid pecl.php.net 504 Gateway Timeout)
+RUN curl -fsSL -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/refs/tags/6.1.0.tar.gz \
+    && mkdir -p /tmp/redis \
+    && tar -xzf /tmp/redis.tar.gz -C /tmp/redis --strip-components=1 \
+    && (cd /tmp/redis && phpize && ./configure && make -j$(nproc) && make install) \
+    && docker-php-ext-enable redis \
+    && rm -rf /tmp/redis /tmp/redis.tar.gz \
+    || (pecl install redis && docker-php-ext-enable redis)
 
 # Enable Apache mod_rewrite & headers, and configure AllowOverride All for .htaccess
 RUN a2enmod rewrite headers \

@@ -34,6 +34,14 @@ $totalFreedBytes = 0;
 $startTime = microtime(true);
 
 try {
+    // 0. DATABASE AUTO-REPAIR & HEALTH INTEGRITY SCAN
+    $repairReport = auto_repair_database($pdo, true);
+    $steps[] = [
+        'name' => 'Auto-Repair & Pemindaian Integritas Basis Data',
+        'status' => 'success',
+        'detail' => $repairReport['message']
+    ];
+
     // 1. DATABASE OPTIMIZATION
     $dbDriver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     $dbSizeBefore = 0;

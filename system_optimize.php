@@ -26,8 +26,9 @@ function format_bytes_sys(int $bytes): string {
     return round($bytes / pow(1024, $i), 2) . ' ' . $units[$i];
 }
 
-// 1. Gather Database Metrics
+// 1. Gather Database Metrics & Auto-Repair Status
 $dbDriver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+$repairHealth = auto_repair_database($pdo, false);
 $dbSizeFormatted = '-';
 $dbPath = __DIR__ . '/database/apsd.sqlite';
 $isWal = false;
@@ -166,7 +167,7 @@ include __DIR__ . '/includes/header.php';
         <div>
           <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.03em;">Kapasitas Basis Data</span>
           <p style="font-size: 1.65rem; font-weight: 800; color: var(--primary); margin: 0.2rem 0 0.15rem 0;"><?= $dbSizeFormatted ?></p>
-          <span style="font-size: 0.72rem; color: var(--text-subtle);"><?= strtoupper($dbDriver) ?><?= $isWal ? ' (WAL Mode)' : '' ?> &bull; Defragmented</span>
+          <span style="font-size: 0.72rem; color: var(--text-subtle);"><?= strtoupper($dbDriver) ?><?= $isWal ? ' (WAL)' : '' ?> &bull; <?= $repairHealth['existing_count'] ?>/<?= $repairHealth['total_required'] ?> Tabel Utuh</span>
         </div>
         <div class="stat-icon-wrapper" style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary-subtle); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           <?= app_icon('archive', 22) ?>
@@ -240,6 +241,14 @@ include __DIR__ . '/includes/header.php';
     <div style="padding: 1.25rem 1.5rem;">
       <!-- Operations Checklist -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.25rem;">
+        <div style="padding: 10px 14px; border-radius: var(--radius-md); background: var(--bg-alt); border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px;">
+          <span style="color: #059669; margin-top: 2px; flex-shrink: 0;"><?= app_icon('shield', 16) ?></span>
+          <div style="font-size: 0.82rem;">
+            <strong style="color: var(--text-main); display: block;">Auto-Repair &amp; Pemulihan Skema</strong>
+            <span style="color: var(--text-subtle);">Mendeteksi &amp; membuat ulang otomatis jika tabel terhapus, memperbaiki kerusakan tabel (CHECK/REPAIR TABLE), serta memastikan seluruh kolom mutakhir.</span>
+          </div>
+        </div>
+
         <div style="padding: 10px 14px; border-radius: var(--radius-md); background: var(--bg-alt); border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px;">
           <span style="color: #059669; margin-top: 2px; flex-shrink: 0;"><?= app_icon('check-circle', 16) ?></span>
           <div style="font-size: 0.82rem;">

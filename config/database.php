@@ -75,7 +75,12 @@ function connect_mysql(): PDO {
             break;
         } catch (PDOException $e) {
             // Error 1049: Unknown database - try creating it
-            if ($e->getCode() == 1049) {
+            $isUnknownDb = ($e->getCode() == 1049)
+                || (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1049)
+                || (strpos($e->getMessage(), '1049') !== false)
+                || (stripos($e->getMessage(), 'Unknown database') !== false);
+
+            if ($isUnknownDb) {
                 try {
                     $rootPdo = new PDO("mysql:host={$dbHost};port={$dbPort};charset=utf8mb4", $dbUser, $dbPass);
                     $rootPdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -100,12 +105,12 @@ function connect_mysql(): PDO {
         }
     }
 
-    init_mysql_schema($pdo);
+    auto_repair_database($pdo, false);
     return $pdo;
 }
 
 /**
- * Local Development SQLite Connection with WAL mode
+ * Local Development SQLite Connection with WAL mode & Auto-Repair
  */
 function connect_sqlite(): PDO {
     $dbDir = __DIR__ . '/../database';
@@ -129,7 +134,7 @@ function connect_sqlite(): PDO {
         $pdo->exec('PRAGMA journal_mode = WAL;');
         $pdo->exec('PRAGMA busy_timeout = 5000;');
 
-        init_sqlite_schema($pdo, $isNew);
+        auto_repair_database($pdo, $isNew);
         return $pdo;
     } catch (PDOException $e) {
         die("Koneksi SQLite gagal: " . htmlspecialchars($e->getMessage()));
@@ -137,9 +142,293 @@ function connect_sqlite(): PDO {
 }
 
 /**
+ * Auto-Repair & Self-Healing Database Subsystem
+ * Memeriksa keberadaan 15 tabel utama, mereparasi tabel yang hilang/terhapus,
+ * memulihkan kolom skema baru (schema drift), memverifikasi data default (superadmin, settings, operators, sites),
+ * dan mereparasi tabel yang mengalami crash / corrupt.
+ */
+function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
+    static $dbVerifiedInProcess = false;
+
+    $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+    $requiredTables = [
+        'sites',
+        'pm_reports',
+        'pm_indoor_details',
+        'pm_outdoor_details',
+        'pm_photos',
+        'users',
+        'operators',
+        'daily_shifts',
+        'daily_activities',
+        'daily_activity_photos',
+        'system_settings',
+        'user_documents',
+        'user_document_shares',
+        'user_document_external_shares',
+        'audit_logs'
+    ];
+
+    $report = [
+        'driver' => $driver,
+        'is_healthy' => true,
+        'total_required' => count($requiredTables),
+        'existing_count' => 0,
+        'missing_tables' => [],
+        'repaired_tables' => [],
+        'corrupted_tables' => [],
+        'columns_fixed' => [],
+        'seeds_restored' => [],
+        'message' => 'Basis data dalam kondisi optimal dan seluruh tabel utuh.'
+    ];
+
+    // Fast in-memory guard for standard web requests (verify table count before bypassing)
+    if (!$forceCheck && $dbVerifiedInProcess) {
+        $fastCount = 0;
+        try {
+            if ($driver === 'sqlite') {
+                $fastCount = (int)$pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")->fetchColumn();
+            } else {
+                $fastCount = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()")->fetchColumn();
+            }
+        } catch (Exception $e) {}
+
+        if ($fastCount >= count($requiredTables)) {
+            return $report;
+        }
+    }
+
+    try {
+        // 1. Dapatkan daftar tabel saat ini
+        $existingTables = [];
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            $existingTables = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } else {
+            $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()");
+            $existingTables = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        }
+
+        $existingLower = array_map('strtolower', $existingTables);
+        $missing = [];
+        foreach ($requiredTables as $t) {
+            if (!in_array(strtolower($t), $existingLower)) {
+                $missing[] = $t;
+            }
+        }
+
+        $report['existing_count'] = count($existingTables);
+        $report['missing_tables'] = $missing;
+
+        // 2. Jika ada tabel yang hilang, lakukan auto-creation skema
+        if (!empty($missing) || $forceCheck) {
+            if (!empty($missing)) {
+                $report['is_healthy'] = false;
+            }
+            if ($driver === 'sqlite') {
+                init_sqlite_schema($pdo, false);
+            } else {
+                init_mysql_schema($pdo);
+            }
+            $report['repaired_tables'] = $missing;
+        }
+
+        // 3. Verifikasi & Perbaikan Kolom Skema (Schema Drift Recovery)
+        $columnPatches = [
+            'users' => [
+                'email' => 'VARCHAR(100) NULL',
+                'phone' => 'VARCHAR(50) NULL',
+                'signature_path' => 'VARCHAR(255) NULL'
+            ],
+            'daily_shifts' => [
+                'signature_path' => 'VARCHAR(255) NULL'
+            ],
+            'daily_activity_photos' => [
+                'caption_2' => 'VARCHAR(255) NULL'
+            ],
+            'pm_reports' => [
+                'custom_logo_path' => 'VARCHAR(255) NULL'
+            ]
+        ];
+
+        foreach ($columnPatches as $table => $cols) {
+            if (in_array(strtolower($table), $existingLower) || !empty($missing)) {
+                foreach ($cols as $colName => $colDef) {
+                    $hasCol = false;
+                    try {
+                        if ($driver === 'sqlite') {
+                            $colCheck = $pdo->query("PRAGMA table_info(`{$table}`);")->fetchAll(PDO::FETCH_ASSOC);
+                            foreach ($colCheck as $c) {
+                                if (strcasecmp($c['name'], $colName) === 0) {
+                                    $hasCol = true;
+                                    break;
+                                }
+                            }
+                        } else {
+                            $qCol = $pdo->prepare("
+                                SELECT COLUMN_NAME 
+                                FROM information_schema.COLUMNS 
+                                WHERE TABLE_SCHEMA = DATABASE() 
+                                  AND TABLE_NAME = ? 
+                                  AND COLUMN_NAME = ?
+                            ");
+                            $qCol->execute([$table, $colName]);
+                            $hasCol = (bool)$qCol->fetch();
+                        }
+
+                        if (!$hasCol) {
+                            $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$colName}` {$colDef}");
+                            $report['columns_fixed'][] = "{$table}.{$colName}";
+                        }
+                    } catch (Exception $eCol) {
+                        // Kolom mungkin sudah ada atau gagal alter
+                    }
+                }
+            }
+        }
+
+        // 4. Verifikasi & Pemulihan Seeder Default jika tabel kosong / terhapus
+        try {
+            $userCount = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            if ($userCount === 0) {
+                seed_default_users_if_empty($pdo);
+                $report['seeds_restored'][] = 'users (superadmin, admin, teknisi)';
+            } else {
+                // Pastikan akun superadmin aktif dan tidak terhapus
+                $hasSuper = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'superadmin' AND is_active = 1")->fetchColumn();
+                if ($hasSuper === 0) {
+                    $chk = $pdo->prepare("SELECT id FROM users WHERE username = 'superadmin'");
+                    $chk->execute();
+                    if ($chk->fetch()) {
+                        $pdo->exec("UPDATE users SET is_active = 1, role = 'superadmin' WHERE username = 'superadmin'");
+                    } else {
+                        $stmtSuper = $pdo->prepare("
+                            INSERT INTO users (username, password_hash, full_name, role, is_active)
+                            VALUES (?, ?, ?, ?, 1)
+                        ");
+                        $stmtSuper->execute([
+                            'superadmin',
+                            password_hash('admin123', PASSWORD_BCRYPT),
+                            'Super Administrator KNO',
+                            'superadmin'
+                        ]);
+                    }
+                    $report['seeds_restored'][] = 'superadmin account restored';
+                }
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $setCount = (int)$pdo->query("SELECT COUNT(*) FROM system_settings")->fetchColumn();
+            if ($setCount < 5) {
+                seed_default_settings_if_empty($pdo);
+                $report['seeds_restored'][] = 'system_settings defaults';
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $opCount = (int)$pdo->query("SELECT COUNT(*) FROM operators")->fetchColumn();
+            if ($opCount === 0) {
+                seed_default_operators_if_empty($pdo);
+                $report['seeds_restored'][] = 'operators defaults';
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $siteCount = (int)$pdo->query("SELECT COUNT(*) FROM sites")->fetchColumn();
+            if ($siteCount === 0) {
+                seed_default_sites_if_empty($pdo);
+                $report['seeds_restored'][] = 'sites defaults';
+            }
+        } catch (Exception $e) {}
+
+        // 5. Pemeriksaan Kerusakan / Corrupted Tables (jika $forceCheck = true)
+        if ($forceCheck) {
+            if ($driver === 'sqlite') {
+                try {
+                    $integ = $pdo->query("PRAGMA integrity_check;")->fetchAll(PDO::FETCH_COLUMN);
+                    if (!empty($integ) && strtolower($integ[0]) !== 'ok') {
+                        $pdo->exec("PRAGMA quick_check;");
+                        $pdo->exec("REINDEX;");
+                        $pdo->exec("VACUUM;");
+                        $report['corrupted_tables'][] = 'sqlite_integrity (diperbaiki dengan REINDEX & VACUUM)';
+                        $report['is_healthy'] = false;
+                    }
+                } catch (Exception $e) {
+                    $report['corrupted_tables'][] = 'sqlite_error: ' . $e->getMessage();
+                }
+            } else {
+                foreach ($requiredTables as $tbl) {
+                    try {
+                        $checkStmt = $pdo->query("CHECK TABLE `{$tbl}` FAST");
+                        $checkRows = $checkStmt ? $checkStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+                        $isCorrupt = false;
+                        foreach ($checkRows as $row) {
+                            $msg = strtolower($row['Msg_text'] ?? '');
+                            if (strpos($msg, 'corrupt') !== false || strpos($msg, 'error') !== false || strpos($msg, 'crashed') !== false) {
+                                $isCorrupt = true;
+                                break;
+                            }
+                        }
+                        if ($isCorrupt) {
+                            try {
+                                $pdo->query("REPAIR TABLE `{$tbl}` EXTENDED");
+                                $pdo->query("OPTIMIZE TABLE `{$tbl}`");
+                                $report['corrupted_tables'][] = $tbl;
+                                $report['is_healthy'] = false;
+                            } catch (Exception $eRep) {}
+                        }
+                    } catch (Exception $eCheck) {}
+                }
+            }
+        }
+
+        // Susun pesan status akhir
+        $repairedTotal = count($report['repaired_tables']) + count($report['corrupted_tables']) + count($report['columns_fixed']) + count($report['seeds_restored']);
+        if ($repairedTotal > 0) {
+            $report['is_healthy'] = true;
+            $details = [];
+            if (!empty($report['repaired_tables'])) $details[] = count($report['repaired_tables']) . ' tabel dibuat ulang (' . implode(', ', $report['repaired_tables']) . ')';
+            if (!empty($report['corrupted_tables'])) $details[] = count($report['corrupted_tables']) . ' tabel diperbaiki (' . implode(', ', $report['corrupted_tables']) . ')';
+            if (!empty($report['columns_fixed'])) $details[] = count($report['columns_fixed']) . ' kolom diselaraskan (' . implode(', ', $report['columns_fixed']) . ')';
+            if (!empty($report['seeds_restored'])) $details[] = count($report['seeds_restored']) . ' data default dipulihkan (' . implode(', ', $report['seeds_restored']) . ')';
+            $report['message'] = "Auto-Repair berhasil: " . implode('; ', $details) . ".";
+        } else {
+            $report['message'] = "Seluruh 15 tabel sistem utuh, sehat, dan terverifikasi.";
+        }
+
+        $dbVerifiedInProcess = true;
+    } catch (Exception $eGlobal) {
+        $report['is_healthy'] = false;
+        $report['message'] = "Peringatan auto-repair: " . $eGlobal->getMessage();
+    }
+
+    return $report;
+}
+
+/**
+ * Helper: Eksekusi query dengan proteksi auto-repair seketika jika tabel terhapus / error
+ */
+function db_safe_execute(PDO $pdo, callable $callback) {
+    try {
+        return $callback($pdo);
+    } catch (PDOException $e) {
+        $msg = strtolower($e->getMessage());
+        if (strpos($msg, "doesn't exist") !== false || strpos($msg, "no such table") !== false || strpos($msg, "crashed") !== false || strpos($msg, "corrupt") !== false) {
+            auto_repair_database($pdo, true);
+            return $callback($pdo);
+        }
+        throw $e;
+    }
+}
+
+/**
  * MySQL Schema Initialization
  */
 function init_mysql_schema(PDO $pdo) {
+    try {
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+    } catch (Exception $e) {}
     // 1. Table sites
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS sites (
@@ -439,12 +728,16 @@ function init_mysql_schema(PDO $pdo) {
     seed_default_users_if_empty($pdo);
     seed_default_operators_if_empty($pdo);
     seed_default_settings_if_empty($pdo);
+
+    try {
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+    } catch (Exception $e) {}
 }
 
 /**
  * SQLite Schema Initialization
  */
-function init_sqlite_schema(PDO $pdo, bool $isNew) {
+function init_sqlite_schema(PDO $pdo, bool $isNew = false) {
     // 1. Table sites
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS sites (

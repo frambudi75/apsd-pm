@@ -27,6 +27,10 @@ $cleanedFiles = 0;
 $expiredLinks = 0;
 
 try {
+    // 0. Auto-Repair & Integrity Scan
+    $repairReport = auto_repair_database($pdo, true);
+    echo "- Auto-Repair basis data: {$repairReport['message']}\n";
+
     // 1. Optimize Database
     $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     if ($driver === 'sqlite') {

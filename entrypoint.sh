@@ -25,5 +25,8 @@ if command -v cron >/dev/null 2>&1; then
     service cron start 2>/dev/null || /etc/init.d/cron start 2>/dev/null || true
 fi
 
+# Run database auto-repair & self-healing check on startup
+php -r "require_once '/var/www/html/config/database.php'; \$pdo = get_db_connection(); \$res = auto_repair_database(\$pdo, true); echo '[DB Auto-Repair] ' . (\$res['message'] ?? 'OK') . PHP_EOL;" 2>/dev/null || true
+
 # Execute CMD (default: apache2-foreground)
 exec "$@"

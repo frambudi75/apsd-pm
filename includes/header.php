@@ -148,6 +148,13 @@ $sysAppLogo = get_system_setting('app_logo_path', 'assets/img/logo_ias.png?v=3')
             </a>
           </li>
           <li>
+            <a href="statistics" class="sidebar-nav-item <?= ($curPage === 'statistics.php') ? 'active' : '' ?>" title="Statistik &amp; Analisis Laporan Terpadu (PM &amp; Daily)">
+              <span class="sidebar-nav-icon"><?= app_icon('trending-up', 18) ?></span>
+              <span>Statistik Laporan</span>
+              <span class="sidebar-nav-badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Analitik</span>
+            </a>
+          </li>
+          <li>
             <a href="daily_activity" class="sidebar-nav-item <?= ($curPage === 'daily_activity.php') ? 'active' : '' ?>" title="Daily Activity Logbook NOC">
               <span class="sidebar-nav-icon"><?= app_icon('clock', 18) ?></span>
               <span>Daily Activity</span>

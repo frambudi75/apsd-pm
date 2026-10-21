@@ -439,105 +439,198 @@ include __DIR__ . '/includes/header.php';
           </a>
         </div>
       <?php else: ?>
-        <div class="table-responsive">
-          <table class="table mb-0" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: var(--bg-alt); font-size: 0.78rem; font-weight: 800; color: var(--text-subtle); text-transform: uppercase;">
-                <th style="padding: 0.75rem 1rem; width: 40px; text-align: center;">No</th>
-                <th style="padding: 0.75rem 1rem;">Tanggal &amp; Waktu</th>
-                <th style="padding: 0.75rem 1rem;">Jenis Shift</th>
-                <th style="padding: 0.75rem 1rem;">Teknisi Jaga</th>
-                <th style="padding: 0.75rem 1rem; text-align: center;">Kegiatan</th>
-                <th style="padding: 0.75rem 1rem; text-align: center;">Foto</th>
-                <th style="padding: 0.75rem 1rem; text-align: center;">Status</th>
-                <th style="padding: 0.75rem 1rem; text-align: right; width: 220px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php $no = 1; foreach ($shifts as $s): 
-                $sInfo = get_shift_info($s['shift_type']);
-                $tech = $s['technician_name'] ?: ($s['user_full_name'] ?: $s['username']);
-                $initials = strtoupper(substr($tech, 0, 2));
-              ?>
-                <tr style="border-top: 1px solid var(--border); font-size: 0.84rem;">
-                  <td style="padding: 0.85rem 1rem; text-align: center; color: var(--text-subtle); font-weight: 700;">
-                    <?= $no++ ?>
-                  </td>
-                  <td style="padding: 0.85rem 1rem;">
-                    <div style="font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 5px;">
-                      <?= app_icon('calendar', 13, 'text-primary') ?>
-                      <span><?= date('d M Y', strtotime($s['shift_date'])) ?></span>
-                    </div>
-                    <div style="font-size: 0.74rem; color: var(--text-subtle); margin-top: 2px;">
-                      Dibuat: <?= date('H:i', strtotime($s['created_at'])) ?> WIB
-                      <?php if (!empty($s['completed_at'])): ?>
-                        &bull; Selesai: <?= date('H:i', strtotime($s['completed_at'])) ?> WIB
-                      <?php endif; ?>
-                    </div>
-                  </td>
-                  <td style="padding: 0.85rem 1rem;">
-                    <?= render_shift_badge($s['shift_type'], true, $sInfo['time']) ?>
-                  </td>
-                  <td style="padding: 0.85rem 1rem;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <?= $initials ?>
-                      </div>
-                      <div>
-                        <div style="font-weight: 700; color: var(--text-main);"><?= htmlspecialchars($tech) ?></div>
-                        <div style="font-size: 0.72rem; color: var(--text-subtle);"><?= htmlspecialchars($s['user_role'] ?? 'Teknisi') ?></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style="padding: 0.85rem 1rem; text-align: center;">
-                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--primary-subtle); color: var(--primary); font-weight: 700; font-size: 0.78rem;">
-                      <?= app_icon('activity', 12) ?>
-                      <span><?= (int)$s['total_activities'] ?></span>
-                    </span>
-                  </td>
-                  <td style="padding: 0.85rem 1rem; text-align: center;">
-                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.78rem;">
-                      <?= app_icon('camera', 12) ?>
-                      <span><?= (int)$s['total_photos'] ?></span>
-                    </span>
-                  </td>
-                  <td style="padding: 0.85rem 1rem; text-align: center;">
-                    <?php if ($s['status'] === 'completed'): ?>
-                      <span class="sla-status-pill sla-normal" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
-                        <?= app_icon('check', 11) ?> Selesai
-                      </span>
-                    <?php else: ?>
-                      <span class="sla-status-pill sla-warning" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
-                        <?= app_icon('clock', 11) ?> Aktif
-                      </span>
-                    <?php endif; ?>
-                  </td>
-                  <td style="padding: 0.85rem 1rem; text-align: right;">
-                    <div style="display: inline-flex; align-items: center; gap: 4px;">
-                      <a href="daily_activity?shift_id=<?= (int)$s['id'] ?>" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Buka Detail Logbook Shift">
-                        <?= app_icon('eye', 12) ?>
-                        <span>Buka</span>
-                      </a>
-                      <a href="print_shift?shift_id=<?= (int)$s['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Lihat Pratinjau Format Cetak PDF">
-                        <?= app_icon('file-text', 12) ?>
-                        <span>PDF</span>
-                      </a>
-                      <a href="download_pdf?shift_id=<?= (int)$s['id'] ?>" class="btn btn-sm" style="background: #0284c7; color: #ffffff; padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Unduh File PDF Resmi Vector HD">
-                        <?= app_icon('download', 12) ?>
-                        <span>Unduh</span>
-                      </a>
-                      <?php if (has_role('superadmin')): ?>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteReportShift(<?= (int)$s['id'] ?>, '<?= htmlspecialchars(addslashes($tech)) ?>', '<?= date('d/m/Y', strtotime($s['shift_date'])) ?>', this)" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
-                          <?= app_icon('trash', 12) ?>
-                          <span>Hapus</span>
-                        </button>
-                      <?php endif; ?>
-                    </div>
-                  </td>
+        <!-- Desktop View Table (Screens > 768px) -->
+        <div class="desktop-table-container">
+          <div class="table-responsive">
+            <table class="table mb-0" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: var(--bg-alt); font-size: 0.78rem; font-weight: 800; color: var(--text-subtle); text-transform: uppercase;">
+                  <th style="padding: 0.75rem 1rem; width: 40px; text-align: center;">No</th>
+                  <th style="padding: 0.75rem 1rem;">Tanggal &amp; Waktu</th>
+                  <th style="padding: 0.75rem 1rem;">Jenis Shift</th>
+                  <th style="padding: 0.75rem 1rem;">Teknisi Jaga</th>
+                  <th style="padding: 0.75rem 1rem; text-align: center;">Kegiatan</th>
+                  <th style="padding: 0.75rem 1rem; text-align: center;">Foto</th>
+                  <th style="padding: 0.75rem 1rem; text-align: center;">Status</th>
+                  <th style="padding: 0.75rem 1rem; text-align: right; width: 220px;">Aksi</th>
                 </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <?php $no = 1; foreach ($shifts as $s): 
+                  $sInfo = get_shift_info($s['shift_type']);
+                  $tech = $s['technician_name'] ?: ($s['user_full_name'] ?: $s['username']);
+                  $initials = strtoupper(substr($tech, 0, 2));
+                ?>
+                  <tr style="border-top: 1px solid var(--border); font-size: 0.84rem;">
+                    <td style="padding: 0.85rem 1rem; text-align: center; color: var(--text-subtle); font-weight: 700;">
+                      <?= $no++ ?>
+                    </td>
+                    <td style="padding: 0.85rem 1rem;">
+                      <div style="font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 5px;">
+                        <?= app_icon('calendar', 13, 'text-primary') ?>
+                        <span><?= date('d M Y', strtotime($s['shift_date'])) ?></span>
+                      </div>
+                      <div style="font-size: 0.74rem; color: var(--text-subtle); margin-top: 2px;">
+                        Dibuat: <?= date('H:i', strtotime($s['created_at'])) ?> WIB
+                        <?php if (!empty($s['completed_at'])): ?>
+                          &bull; Selesai: <?= date('H:i', strtotime($s['completed_at'])) ?> WIB
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                    <td style="padding: 0.85rem 1rem;">
+                      <?= render_shift_badge($s['shift_type'], true, $sInfo['time']) ?>
+                    </td>
+                    <td style="padding: 0.85rem 1rem;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                          <?= $initials ?>
+                        </div>
+                        <div>
+                          <div style="font-weight: 700; color: var(--text-main);"><?= htmlspecialchars($tech) ?></div>
+                          <div style="font-size: 0.72rem; color: var(--text-subtle);"><?= htmlspecialchars($s['user_role'] ?? 'Teknisi') ?></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="padding: 0.85rem 1rem; text-align: center;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--primary-subtle); color: var(--primary); font-weight: 700; font-size: 0.78rem;">
+                        <?= app_icon('activity', 12) ?>
+                        <span><?= (int)$s['total_activities'] ?></span>
+                      </span>
+                    </td>
+                    <td style="padding: 0.85rem 1rem; text-align: center;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.78rem;">
+                        <?= app_icon('camera', 12) ?>
+                        <span><?= (int)$s['total_photos'] ?></span>
+                      </span>
+                    </td>
+                    <td style="padding: 0.85rem 1rem; text-align: center;">
+                      <?php if ($s['status'] === 'completed'): ?>
+                        <span class="sla-status-pill sla-normal" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
+                          <?= app_icon('check', 11) ?> Selesai
+                        </span>
+                      <?php else: ?>
+                        <span class="sla-status-pill sla-warning" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
+                          <?= app_icon('clock', 11) ?> Aktif
+                        </span>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 0.85rem 1rem; text-align: right;">
+                      <div style="display: inline-flex; align-items: center; gap: 4px;">
+                        <a href="daily_activity?shift_id=<?= (int)$s['id'] ?>" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Buka Detail Logbook Shift">
+                          <?= app_icon('eye', 12) ?>
+                          <span>Buka</span>
+                        </a>
+                        <a href="print_shift?shift_id=<?= (int)$s['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Lihat Pratinjau Format Cetak PDF">
+                          <?= app_icon('file-text', 12) ?>
+                          <span>PDF</span>
+                        </a>
+                        <a href="download_pdf?shift_id=<?= (int)$s['id'] ?>" class="btn btn-sm" style="background: #0284c7; color: #ffffff; padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Unduh File PDF Resmi Vector HD">
+                          <?= app_icon('download', 12) ?>
+                          <span>Unduh</span>
+                        </a>
+                        <?php if (has_role('superadmin')): ?>
+                          <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteReportShift(<?= (int)$s['id'] ?>, '<?= htmlspecialchars(addslashes($tech)) ?>', '<?= date('d/m/Y', strtotime($s['shift_date'])) ?>', this)" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Hapus seluruh laporan sesi shift ini (Khusus Superadmin)">
+                            <?= app_icon('trash', 12) ?>
+                            <span>Hapus</span>
+                          </button>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Mobile View Cards (Screens <= 768px, zero clipping & touch-friendly) -->
+        <div class="mobile-cards-container" id="daily_shifts_mobile_cards" style="padding: 0.75rem; gap: 0.85rem;">
+          <?php foreach ($shifts as $s): 
+            $sInfo = get_shift_info($s['shift_type']);
+            $tech = $s['technician_name'] ?: ($s['user_full_name'] ?: $s['username']);
+            $initials = strtoupper(substr($tech, 0, 2));
+          ?>
+            <div class="mobile-shift-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 0.75rem;">
+              
+              <!-- Card Top: Date & Status -->
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <div>
+                  <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                    <?= app_icon('calendar', 14, 'text-primary') ?>
+                    <span><?= date('d M Y', strtotime($s['shift_date'])) ?></span>
+                  </div>
+                  <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 3px;">
+                    Dibuat: <?= date('H:i', strtotime($s['created_at'])) ?> WIB
+                    <?php if (!empty($s['completed_at'])): ?>
+                      &bull; Selesai: <?= date('H:i', strtotime($s['completed_at'])) ?> WIB
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <div>
+                  <?php if ($s['status'] === 'completed'): ?>
+                    <span class="sla-status-pill sla-normal" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;">
+                      <?= app_icon('check', 11) ?> Selesai
+                    </span>
+                  <?php else: ?>
+                    <span class="sla-status-pill sla-warning" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;">
+                      <?= app_icon('clock', 11) ?> Aktif
+                    </span>
+                  <?php endif; ?>
+                </div>
+              </div>
+
+              <!-- Card Middle: Shift Type & Technician Info -->
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--bg-alt); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <?= $initials ?>
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?= htmlspecialchars($tech) ?></div>
+                    <div style="font-size: 0.72rem; color: var(--text-subtle);"><?= htmlspecialchars($s['user_role'] ?? 'Teknisi') ?></div>
+                  </div>
+                </div>
+                <div style="flex-shrink: 0;">
+                  <?= render_shift_badge($s['shift_type'], false) ?>
+                </div>
+              </div>
+
+              <!-- Metric Badges: Activities & Photos -->
+              <div style="display: flex; gap: 8px;">
+                <div style="flex: 1; background: var(--primary-subtle); border-radius: var(--radius-sm); padding: 0.45rem 0.65rem; display: flex; align-items: center; gap: 6px;">
+                  <?= app_icon('activity', 13, '', 'var(--primary)') ?>
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary);"><?= (int)$s['total_activities'] ?> Kegiatan</span>
+                </div>
+                <div style="flex: 1; background: #e0f2fe; border-radius: var(--radius-sm); padding: 0.45rem 0.65rem; display: flex; align-items: center; gap: 6px;">
+                  <?= app_icon('camera', 13, '', '#0284c7') ?>
+                  <span style="font-size: 0.78rem; font-weight: 700; color: #0284c7;"><?= (int)$s['total_photos'] ?> Foto</span>
+                </div>
+              </div>
+
+              <!-- Card Action Buttons: Large touch targets (>= 42px) -->
+              <div style="display: grid; grid-template-columns: repeat(<?= has_role('superadmin') ? '4' : '3' ?>, 1fr); gap: 6px; margin-top: 0.25rem;">
+                <a href="daily_activity?shift_id=<?= (int)$s['id'] ?>" class="btn btn-secondary btn-sm" style="min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.78rem; font-weight: 700;" title="Buka Detail Logbook Shift">
+                  <?= app_icon('eye', 13) ?>
+                  <span>Buka</span>
+                </a>
+                <a href="print_shift?shift_id=<?= (int)$s['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" style="min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.78rem; font-weight: 700;" title="Lihat Pratinjau Format Cetak PDF">
+                  <?= app_icon('file-text', 13) ?>
+                  <span>PDF</span>
+                </a>
+                <a href="download_pdf?shift_id=<?= (int)$s['id'] ?>" class="btn btn-sm" style="min-height: 42px; background: #0284c7; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.78rem; font-weight: 700;" title="Unduh File PDF">
+                  <?= app_icon('download', 13) ?>
+                  <span>Unduh</span>
+                </a>
+                <?php if (has_role('superadmin')): ?>
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteReportShift(<?= (int)$s['id'] ?>, '<?= htmlspecialchars(addslashes($tech)) ?>', '<?= date('d/m/Y', strtotime($s['shift_date'])) ?>', this)" style="min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.78rem; font-weight: 700;" title="Hapus Laporan Shift">
+                    <?= app_icon('trash', 13) ?>
+                    <span>Hapus</span>
+                  </button>
+                <?php endif; ?>
+              </div>
+
+            </div>
+          <?php endforeach; ?>
         </div>
       <?php endif; ?>
 
@@ -594,86 +687,151 @@ include __DIR__ . '/includes/header.php';
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="table mb-0" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background: var(--bg-alt); font-size: 0.78rem; font-weight: 800; color: var(--text-subtle); text-transform: uppercase;">
-              <th style="padding: 0.75rem 1rem; width: 40px; text-align: center;">No</th>
-              <th style="padding: 0.75rem 1rem;">Nama Anggota Tim</th>
-              <th style="padding: 0.75rem 1rem;">Role / Hak Akses</th>
-              <th style="padding: 0.75rem 1rem; text-align: center;">Jumlah Shift</th>
-              <th style="padding: 0.75rem 1rem; text-align: center;">Total Kegiatan</th>
-              <th style="padding: 0.75rem 1rem; text-align: center;">Foto Terlampir</th>
-              <th style="padding: 0.75rem 1rem; text-align: center;">Kontribusi</th>
-              <th style="padding: 0.75rem 1rem; text-align: right; width: 140px;">Filter Shift</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php 
-            $noT = 1; 
-            $totalMonthAct = max(1, (int)$stats['total_month_activities']);
-            foreach ($techStats as $ts): 
-              $tName = $ts['full_name'] ?: $ts['username'];
-              $tInitials = strtoupper(substr($tName, 0, 2));
-              $actCount = (int)$ts['total_activities'];
-              $pct = round(($actCount / $totalMonthAct) * 100, 1);
-            ?>
-              <tr style="border-top: 1px solid var(--border); font-size: 0.84rem;">
-                <td style="padding: 0.85rem 1rem; text-align: center; color: var(--text-subtle); font-weight: 700;">
-                  <?= $noT++ ?>
-                </td>
-                <td style="padding: 0.85rem 1rem;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                      <?= $tInitials ?>
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; color: var(--text-main);"><?= htmlspecialchars($tName) ?></div>
-                      <div style="font-size: 0.72rem; color: var(--text-subtle);">@<?= htmlspecialchars($ts['username']) ?></div>
-                    </div>
-                  </div>
-                </td>
-                <td style="padding: 0.85rem 1rem;">
-                  <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; background: var(--bg-alt); color: var(--text-subtle); text-transform: uppercase;">
-                    <?= htmlspecialchars($ts['role']) ?>
-                  </span>
-                </td>
-                <td style="padding: 0.85rem 1rem; text-align: center; font-weight: 700;">
-                  <span style="display: inline-flex; align-items: center; gap: 4px;">
-                    <?= app_icon('clock', 12, 'text-primary') ?>
-                    <span><?= (int)$ts['total_shifts'] ?> sesi</span>
-                  </span>
-                </td>
-                <td style="padding: 0.85rem 1rem; text-align: center;">
-                  <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--primary-subtle); color: var(--primary); font-weight: 700; font-size: 0.78rem;">
-                    <?= app_icon('document', 12) ?>
-                    <span><?= $actCount ?></span>
-                  </span>
-                </td>
-                <td style="padding: 0.85rem 1rem; text-align: center;">
-                  <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.78rem;">
-                    <?= app_icon('camera', 12) ?>
-                    <span><?= (int)$ts['total_photos'] ?></span>
-                  </span>
-                </td>
-                <td style="padding: 0.85rem 1rem; text-align: center;">
-                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <div style="width: 60px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-                      <div style="width: <?= min(100, $pct) ?>%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
-                    </div>
-                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-main); width: 40px; text-align: right;"><?= $pct ?>%</span>
-                  </div>
-                </td>
-                <td style="padding: 0.85rem 1rem; text-align: right;">
-                  <a href="daily_reports?tab=shifts&month=<?= urlencode($filterMonth) ?>&user_id=<?= (int)$ts['user_id'] ?>" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;" title="Lihat semua shift oleh anggota ini">
-                    <?= app_icon('filter', 11) ?>
-                    <span>Filter</span>
-                  </a>
-                </td>
+      <!-- Desktop View (Screens > 768px) -->
+      <div class="desktop-table-container">
+        <div class="table-responsive">
+          <table class="table mb-0" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: var(--bg-alt); font-size: 0.78rem; font-weight: 800; color: var(--text-subtle); text-transform: uppercase;">
+                <th style="padding: 0.75rem 1rem; width: 40px; text-align: center;">No</th>
+                <th style="padding: 0.75rem 1rem;">Nama Anggota Tim</th>
+                <th style="padding: 0.75rem 1rem;">Role / Hak Akses</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Jumlah Shift</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Total Kegiatan</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Foto Terlampir</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Kontribusi</th>
+                <th style="padding: 0.75rem 1rem; text-align: right; width: 140px;">Filter Shift</th>
               </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <?php 
+              $noT = 1; 
+              $totalMonthAct = max(1, (int)$stats['total_month_activities']);
+              foreach ($techStats as $ts): 
+                $tName = $ts['full_name'] ?: $ts['username'];
+                $tInitials = strtoupper(substr($tName, 0, 2));
+                $actCount = (int)$ts['total_activities'];
+                $pct = round(($actCount / $totalMonthAct) * 100, 1);
+              ?>
+                <tr style="border-top: 1px solid var(--border); font-size: 0.84rem;">
+                  <td style="padding: 0.85rem 1rem; text-align: center; color: var(--text-subtle); font-weight: 700;">
+                    <?= $noT++ ?>
+                  </td>
+                  <td style="padding: 0.85rem 1rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <?= $tInitials ?>
+                      </div>
+                      <div>
+                        <div style="font-weight: 700; color: var(--text-main);"><?= htmlspecialchars($tName) ?></div>
+                        <div style="font-size: 0.72rem; color: var(--text-subtle);">@<?= htmlspecialchars($ts['username']) ?></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="padding: 0.85rem 1rem;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; background: var(--bg-alt); color: var(--text-subtle); text-transform: uppercase;">
+                      <?= htmlspecialchars($ts['role']) ?>
+                    </span>
+                  </td>
+                  <td style="padding: 0.85rem 1rem; text-align: center; font-weight: 700;">
+                    <span style="display: inline-flex; align-items: center; gap: 4px;">
+                      <?= app_icon('clock', 12, 'text-primary') ?>
+                      <span><?= (int)$ts['total_shifts'] ?> sesi</span>
+                    </span>
+                  </td>
+                  <td style="padding: 0.85rem 1rem; text-align: center;">
+                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--primary-subtle); color: var(--primary); font-weight: 700; font-size: 0.78rem;">
+                      <?= app_icon('document', 12) ?>
+                      <span><?= $actCount ?></span>
+                    </span>
+                  </td>
+                  <td style="padding: 0.85rem 1rem; text-align: center;">
+                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.78rem;">
+                      <?= app_icon('camera', 12) ?>
+                      <span><?= (int)$ts['total_photos'] ?></span>
+                    </span>
+                  </td>
+                  <td style="padding: 0.85rem 1rem; text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                      <div style="width: 60px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                        <div style="width: <?= min(100, $pct) ?>%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
+                      </div>
+                      <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-main); width: 40px; text-align: right;"><?= $pct ?>%</span>
+                    </div>
+                  </td>
+                  <td style="padding: 0.85rem 1rem; text-align: right;">
+                    <a href="daily_reports?tab=shifts&month=<?= urlencode($filterMonth) ?>&user_id=<?= (int)$ts['user_id'] ?>" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.65rem; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;" title="Lihat semua shift oleh anggota ini">
+                      <?= app_icon('filter', 11) ?>
+                      <span>Filter</span>
+                    </a>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile View Member Cards (Screens <= 768px) -->
+      <div class="mobile-cards-container" style="padding: 0.75rem; gap: 0.75rem;">
+        <?php 
+        $totalMonthAct = max(1, (int)$stats['total_month_activities']);
+        foreach ($techStats as $ts): 
+          $tName = $ts['full_name'] ?: $ts['username'];
+          $tInitials = strtoupper(substr($tName, 0, 2));
+          $actCount = (int)$ts['total_activities'];
+          $pct = round(($actCount / $totalMonthAct) * 100, 1);
+        ?>
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.95rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 0.65rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--primary-subtle); color: var(--primary); font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <?= $tInitials ?>
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.2;"><?= htmlspecialchars($tName) ?></div>
+                  <div style="font-size: 0.72rem; color: var(--text-subtle);">@<?= htmlspecialchars($ts['username']) ?></div>
+                </div>
+              </div>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: var(--bg-alt); color: var(--text-subtle); text-transform: uppercase;">
+                <?= htmlspecialchars($ts['role']) ?>
+              </span>
+            </div>
+
+            <!-- Stats Bar -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--bg-alt); padding: 0.5rem 0.6rem; border-radius: var(--radius-sm); text-align: center;">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-subtle); font-weight: 700;">SHIFT</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: var(--primary);"><?= (int)$ts['total_shifts'] ?></div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-subtle); font-weight: 700;">KEGIATAN</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: var(--text-main);"><?= $actCount ?></div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-subtle); font-weight: 700;">FOTO</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: #0284c7;"><?= (int)$ts['total_photos'] ?></div>
+              </div>
+            </div>
+
+            <!-- Contribution Bar -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 3px;">
+                <span style="color: var(--text-subtle); font-weight: 600;">Kontribusi Tim</span>
+                <span style="font-weight: 800; color: var(--primary);"><?= $pct ?>%</span>
+              </div>
+              <div style="width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                <div style="width: <?= min(100, $pct) ?>%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <a href="daily_reports?tab=shifts&month=<?= urlencode($filterMonth) ?>&user_id=<?= (int)$ts['user_id'] ?>" class="btn btn-secondary btn-sm" style="min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 0.78rem;">
+              <?= app_icon('filter', 13) ?>
+              <span>Lihat Shift Anggota Ini</span>
+            </a>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
 

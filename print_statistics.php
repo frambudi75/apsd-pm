@@ -270,6 +270,11 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    @page {
+      size: A4 portrait;
+      margin: 6mm 8mm;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -280,8 +285,8 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #e2e8f0;
       color: #0f172a;
-      line-height: 1.4;
-      padding: 20px 10px 40px 10px;
+      line-height: 1.35;
+      padding: 16px 10px 40px 10px;
     }
 
     /* Screen Action Bar (hidden when printing) */
@@ -289,12 +294,12 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
       background: #ffffff;
       border: 1px solid #cbd5e1;
       padding: 10px 18px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      max-width: 960px;
+      max-width: 920px;
       margin-left: auto;
       margin-right: auto;
       border-radius: 8px;
@@ -303,8 +308,8 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     }
 
     .btn-action {
-      padding: 7px 14px;
-      font-size: 13px;
+      padding: 6px 12px;
+      font-size: 12.5px;
       font-weight: 700;
       border-radius: 6px;
       cursor: pointer;
@@ -320,58 +325,65 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     .btn-print:hover { background: #006666; }
     .btn-back { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
     .btn-back:hover { background: #e2e8f0; color: #0f172a; }
+    .btn-density { background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-weight: 600; font-size: 11.5px; padding: 4px 8px; }
+    .btn-density:hover { background: #e2e8f0; color: #0f172a; }
+    .btn-density.active { background: #008080; color: #ffffff; border-color: #008080; }
 
     /* A4 Document Container */
     .a4-sheet {
       width: 210mm;
+      max-width: 100%;
       min-height: 297mm;
-      padding: 14mm 16mm;
+      padding: 8mm 10mm;
       margin: 0 auto;
       background: #ffffff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       border-radius: 2px;
+      box-sizing: border-box;
     }
 
     /* Letterhead Table */
     .doc-header-table {
       width: 100%;
       border-bottom: 2px solid #008080;
-      padding-bottom: 8px;
-      margin-bottom: 14px;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
       border-collapse: collapse;
     }
     .doc-header-table td { vertical-align: middle; }
 
     .doc-title-main {
-      font-size: 13pt;
+      font-size: 11.5pt;
       font-weight: 800;
       color: #008080;
       text-transform: uppercase;
       letter-spacing: 0.02em;
+      line-height: 1.2;
     }
     .doc-title-sub {
-      font-size: 10pt;
+      font-size: 8.5pt;
       font-weight: 700;
       color: #0f172a;
-      margin-top: 2px;
+      margin-top: 1px;
+      line-height: 1.25;
     }
     .doc-title-location {
-      font-size: 8pt;
+      font-size: 7.2pt;
       color: #64748b;
       margin-top: 1px;
     }
 
     /* Section Headers */
     .section-title {
-      font-size: 9.5pt;
+      font-size: 8.2pt;
       font-weight: 800;
       color: #008080;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
       border-bottom: 1.5px solid #cbd5e1;
-      padding-bottom: 4px;
-      margin-top: 14px;
-      margin-bottom: 8px;
+      padding-bottom: 2px;
+      margin-top: 8px;
+      margin-bottom: 5px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -381,25 +393,27 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     .formal-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 8.5pt;
-      margin-bottom: 12px;
+      font-size: 7.5pt;
+      margin-bottom: 6px;
     }
 
     .formal-table th {
       background: #f1f5f9;
       color: #1e293b;
       font-weight: 700;
-      padding: 6px 8px;
+      padding: 3.5px 6px;
       border: 1px solid #94a3b8;
       text-align: left;
-      font-size: 8pt;
+      font-size: 7.2pt;
       text-transform: uppercase;
+      line-height: 1.2;
     }
 
     .formal-table td {
-      padding: 6px 8px;
+      padding: 3.5px 6px;
       border: 1px solid #94a3b8;
       vertical-align: middle;
+      line-height: 1.25;
     }
 
     .formal-table tr:nth-child(even) td {
@@ -410,76 +424,113 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 6px;
+      margin-bottom: 8px;
     }
 
     .kpi-box {
       border: 1px solid #cbd5e1;
       border-radius: 4px;
-      padding: 8px 10px;
+      padding: 4px 6px;
       background: #f8fafc;
       text-align: center;
     }
 
     .kpi-box-label {
-      font-size: 7pt;
+      font-size: 6.8pt;
       font-weight: 700;
       color: #64748b;
       text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .kpi-box-value {
-      font-size: 14pt;
+      font-size: 11pt;
       font-weight: 800;
       color: #008080;
-      margin-top: 2px;
-      line-height: 1.2;
+      margin-top: 1px;
+      line-height: 1.15;
     }
 
     .kpi-box-sub {
-      font-size: 6.8pt;
+      font-size: 6.5pt;
       color: #64748b;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     /* Sign-off signatures */
     .sign-table {
       width: 100%;
-      margin-top: 22px;
+      margin-top: 8px;
       border-collapse: collapse;
       page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .sign-table td {
       width: 50%;
       text-align: center;
       vertical-align: top;
-      font-size: 8.5pt;
+      font-size: 8pt;
+      line-height: 1.3;
     }
 
     .sign-space {
-      height: 55px;
+      height: 38px;
+      min-height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin: 2px 0;
     }
+
+    .doc-signature-img {
+      max-height: 36px !important;
+      max-width: 140px !important;
+      height: auto !important;
+      width: auto !important;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
     .sign-name {
       font-weight: 800;
       text-decoration: underline;
       color: #0f172a;
+      font-size: 8.5pt;
     }
+
     .sign-role {
-      font-size: 8pt;
+      font-size: 7.5pt;
       color: #64748b;
-      margin-top: 2px;
+      margin-top: 1px;
+    }
+
+    /* Ultra Compact Mode (Optional fallback if user has very many rows) */
+    .a4-sheet.ultra-compact {
+      zoom: 0.92;
+    }
+    .a4-sheet.ultra-compact .formal-table {
+      font-size: 7pt;
+    }
+    .a4-sheet.ultra-compact .formal-table th,
+    .a4-sheet.ultra-compact .formal-table td {
+      padding: 2.5px 5px;
     }
 
     /* Print Setup */
     @media print {
-      body {
+      @page {
+        size: A4 portrait;
+        margin: 6mm 8mm;
+      }
+      html, body {
         background: #ffffff !important;
         padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .print-actions-bar {
         display: none !important;
@@ -487,10 +538,20 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
       .a4-sheet {
         box-shadow: none !important;
         padding: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
       }
-      tr, .kpi-box, .section-title {
+      thead {
+        display: table-header-group;
+      }
+      tr, .kpi-box, .section-title, .sign-table {
         page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .a4-sheet.ultra-compact {
+        zoom: 0.90;
       }
     }
   </style>
@@ -508,7 +569,12 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
       </span>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="display: inline-flex; align-items: center; background: #f1f5f9; padding: 2px 4px; border-radius: 6px; gap: 2px; border: 1px solid #cbd5e1;">
+        <span style="font-size: 11px; font-weight: 700; color: #475569; padding: 0 4px;">Kepadatan:</span>
+        <button type="button" class="btn-action btn-density active" id="btnDenseNormal" onclick="setDensity('normal')" title="Tata letak proporsional pas 1 halaman">Pas 1 Hal</button>
+        <button type="button" class="btn-action btn-density" id="btnDenseCompact" onclick="setDensity('compact')" title="Gunakan ini jika data kategori atau teknisi sangat banyak agar tetap pas 1 halaman">Super Padat</button>
+      </div>
       <button type="button" class="btn-action btn-print" onclick="window.print()">
         🖨️ Cetak / Simpan PDF Sekarang
       </button>
@@ -521,8 +587,8 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
     <!-- Header Kop Surat Resmi -->
     <table class="doc-header-table">
       <tr>
-        <td style="width: 75px;">
-          <img src="<?= htmlspecialchars(get_report_kop_logo()) ?>" alt="Logo Kop" style="height: 44px; object-fit: contain;">
+        <td style="width: 70px;">
+          <img src="<?= htmlspecialchars(get_report_kop_logo()) ?>" alt="Logo Kop" style="height: 38px; object-fit: contain;">
         </td>
         <td style="padding-left: 10px;">
           <div class="doc-title-main">Rekapitulasi &amp; Laporan Statistik Operasional</div>
@@ -606,7 +672,7 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
               <td style="font-weight: 700; color: #0f172a;"><?= $catName ?></td>
               <td style="text-align: center; font-weight: 800; color: #008080;"><?= $cnt ?></td>
               <td style="text-align: center; font-weight: 700;"><?= $pct ?>%</td>
-              <td style="color: #475569; font-size: 8pt;">
+              <td style="color: #475569; font-size: 7.2pt; line-height: 1.25;">
                 <?php 
                 $lowerCat = strtolower($catName);
                 if (strpos($lowerCat, 'maintenance') !== false) {
@@ -760,5 +826,29 @@ $page_title = 'Rekapitulasi Statistik Operasional PM & Daily - ' . $periodLabel;
 
   </div>
 
+  <script>
+    function setDensity(mode) {
+      var sheet = document.querySelector('.a4-sheet');
+      var btnNorm = document.getElementById('btnDenseNormal');
+      var btnComp = document.getElementById('btnDenseCompact');
+      if (!sheet || !btnNorm || !btnComp) return;
+      if (mode === 'compact') {
+        sheet.classList.add('ultra-compact');
+        btnComp.classList.add('active');
+        btnNorm.classList.remove('active');
+        try { localStorage.setItem('stat_print_density', 'compact'); } catch (e) {}
+      } else {
+        sheet.classList.remove('ultra-compact');
+        btnNorm.classList.add('active');
+        btnComp.classList.remove('active');
+        try { localStorage.setItem('stat_print_density', 'normal'); } catch (e) {}
+      }
+    }
+    try {
+      if (localStorage.getItem('stat_print_density') === 'compact') {
+        setDensity('compact');
+      }
+    } catch (e) {}
+  </script>
 </body>
 </html>

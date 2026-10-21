@@ -495,8 +495,31 @@ include __DIR__ . '/includes/header.php';
 
   </div>
 
+<style>
+/* Responsive layout rules for Statistics Dashboard */
+.stats-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.stats-pm-ratio {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+@media (max-width: 768px) {
+  .stats-two-col {
+    grid-template-columns: 1fr !important;
+  }
+  .stats-pm-ratio {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+
   <!-- Section 2: Grid 2 Kolom (Rincian Kategori Kegiatan & Analitik PM) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+  <div class="stats-two-col">
     
     <!-- Kolom A: Rincian Kategori Kegiatan Daily Activity (Maintenance, Kunjungan, dll) -->
     <div class="card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
@@ -573,7 +596,7 @@ include __DIR__ . '/includes/header.php';
           <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 8px;">
             Rasio Tipe Inspeksi
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="stats-pm-ratio">
             <div style="background: var(--primary-subtle); border: 1px solid rgba(20, 184, 166, 0.2); border-radius: var(--radius-md); padding: 0.85rem; display: flex; align-items: center; gap: 10px;">
               <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">
                 IN

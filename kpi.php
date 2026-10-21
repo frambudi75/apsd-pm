@@ -1,13 +1,14 @@
 <?php
 /**
- * Penilaian Kinerja & KPI Tim NOC
+ * Penilaian Kinerja & KPI Tahunan Tim NOC
  * PT Angkasa Pura Sarana Digital & IASS SBU ICT KNO
  * 
  * Fitur:
- * - Kalkulasi metrik objektif sistem (60%): Kehadiran Shift, Logbook, Dokumentasi Foto, PM
- * - Review kualitatif atasan (40%): SOP Bandara, Problem Solving, Respon & Komunikasi, Inisiatif
- * - Kontrol rilis: Rapor teknisi hanya muncul jika admin klik 'Kirim ke Teknisi'
- * - Transparansi penuh: Penjelasan sumber data, rumus pembobotan, dan predikat resmi
+ * - Periode Tahunan (Annual Evaluation): Akumulasi shift, logbook, foto, dan PM setahun penuh
+ * - Kalkulasi Otomatis Sistem + Opsi Pengisian / Override Manual Penuh oleh Superadmin
+ * - Fleksibilitas PM: Nilai PM bisa disesuaikan manual agar adil terhadap rotasi jadwal
+ * - Kontrol Rilis (Kirim ke Teknisi): Rapor hanya muncul jika admin klik 'Kirim ke Teknisi'
+ * - Lembar Cetak Dokumen Resmi A4 Terintegrasi (print_kpi.php)
  */
 
 require_once __DIR__ . '/config/database.php';
@@ -20,25 +21,105 @@ $pdo = get_db_connection();
 $currentUser = current_user();
 $isAdmin = has_role(['superadmin', 'admin']);
 
-// Filter Periode Bulan
-$currentMonth = date('Y-m');
-$filterMonth = trim($_GET['month'] ?? $currentMonth);
-if (!preg_match('/^\d{4}-\d{2}$/', $filterMonth)) {
-    $filterMonth = $currentMonth;
+// Filter Periode Tahun
+$currentYear = (int)date('Y');
+$filterYear = (int)($_GET['year'] ?? $currentYear);
+if ($filterYear < 2020 || $filterYear > 2035) {
+    $filterYear = $currentYear;
 }
-
-$indoMonths = [
-    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-];
-$monthTime = strtotime($filterMonth . '-01');
-$mNum = (int)date('n', $monthTime);
-$mYear = date('Y', $monthTime);
-$periodLabel = ($indoMonths[$mNum] ?? date('F', $monthTime)) . ' ' . $mYear;
+$periodYearStr = (string)$filterYear;
+$periodLabel = 'Tahun Anggaran ' . $filterYear;
 
 $feedbackMsg = '';
 $feedbackType = '';
+
+// ==========================================
+// FUNGSI KALKULASI METRIK SISTEM TAHUNAN
+// ==========================================
+if (!function_exists('calculate_user_annual_kpi')) {
+    function calculate_user_annual_kpi(PDO $pdo, int $userId, int $year): array {
+        $yearStr = (string)$year;
+
+        // 1. Shift tahunan
+        $stmtShift = $pdo->prepare("
+            SELECT COUNT(id) AS total_shifts,
+                   SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_shifts
+            FROM daily_shifts
+            WHERE user_id = ? AND shift_date LIKE ?
+        ");
+        $stmtShift->execute([$userId, $yearStr . '%']);
+        $shiftData = $stmtShift->fetch() ?: ['total_shifts' => 0, 'completed_shifts' => 0];
+        $totShifts = (int)$shiftData['total_shifts'];
+        $compShifts = (int)$shiftData['completed_shifts'];
+        $shiftScore = ($totShifts > 0) ? min(15.0, round(($compShifts / $totShifts) * 15.0, 2)) : 0.0;
+
+        // 2. Logbook tahunan (Benchmark 120 logbook setahun = 20 poin penuh)
+        $stmtAct = $pdo->prepare("
+            SELECT COUNT(a.id) 
+            FROM daily_activities a
+            INNER JOIN daily_shifts s ON a.shift_id = s.id
+            WHERE s.user_id = ? AND s.shift_date LIKE ?
+        ");
+        $stmtAct->execute([$userId, $yearStr . '%']);
+        $actsCount = (int)$stmtAct->fetchColumn();
+        $activityScore = min(20.0, round(($actsCount / 120.0) * 20.0, 2));
+
+        // 3. Foto bukti fisik
+        $stmtPhotos = $pdo->prepare("
+            SELECT COUNT(p.id)
+            FROM daily_activity_photos p
+            INNER JOIN daily_activities a ON p.activity_id = a.id
+            INNER JOIN daily_shifts s ON a.shift_id = s.id
+            WHERE s.user_id = ? AND s.shift_date LIKE ?
+        ");
+        $stmtPhotos->execute([$userId, $yearStr . '%']);
+        $photosCount = (int)$stmtPhotos->fetchColumn();
+        $photoRatio = ($actsCount > 0) ? min(1.0, ($photosCount / $actsCount)) : 0.0;
+        $photoScore = round($photoRatio * 15.0, 2);
+
+        // 4. Partisipasi PM tahunan (Target 4 dokumen PM dalam setahun = 10 poin penuh)
+        $stmtUser = $pdo->prepare("SELECT username, full_name FROM users WHERE id = ?");
+        $stmtUser->execute([$userId]);
+        $uData = $stmtUser->fetch();
+        $pmCount = 0;
+        if ($uData) {
+            $uName = $uData['username'];
+            $fName = $uData['full_name'];
+            $stmtPm = $pdo->prepare("
+                SELECT COUNT(id) FROM pm_reports
+                WHERE report_date LIKE ? AND (inspector_name LIKE ? OR inspector_name LIKE ?)
+            ");
+            $stmtPm->execute([$yearStr . '%', '%' . $uName . '%', '%' . $fName . '%']);
+            $pmCount = (int)$stmtPm->fetchColumn();
+        }
+        $pmScore = min(10.0, round($pmCount * 2.5, 2));
+
+        $sysScore = round($shiftScore + $activityScore + $photoScore + $pmScore, 2);
+
+        return [
+            'shifts_count' => $totShifts,
+            'completed_shifts' => $compShifts,
+            'shift_score' => $shiftScore,
+            'activities_count' => $actsCount,
+            'activity_score' => $activityScore,
+            'photos_count' => $photosCount,
+            'photo_score' => $photoScore,
+            'pm_count' => $pmCount,
+            'pm_score' => $pmScore,
+            'system_score' => $sysScore
+        ];
+    }
+}
+
+if (!function_exists('calculate_user_system_kpi')) {
+    /**
+     * Backward-compatible alias for calculate_user_annual_kpi
+     */
+    function calculate_user_system_kpi(PDO $pdo, int $userId, $period = null): array {
+        $year = is_numeric($period) ? (int)$period : (int)substr((string)($period ?: date('Y')), 0, 4);
+        return calculate_user_annual_kpi($pdo, $userId, $year);
+    }
+}
 
 // ==========================================
 // HANDLE ACTIONS (ADMIN & SUPERADMIN ONLY)
@@ -46,24 +127,28 @@ $feedbackType = '';
 if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    // 1. SIMPAN REVIEW PENILAIAN
+    // 1. SIMPAN REVIEW PENILAIAN (DENGAN MANUAL OVERRIDE FLEKSIBEL)
     if ($action === 'save_review') {
         $targetUserId = (int)($_POST['user_id'] ?? 0);
-        $sopScore = max(0, min(10, (float)($_POST['sop_score'] ?? 0)));
-        $troubleScore = max(0, min(10, (float)($_POST['troubleshooting_score'] ?? 0)));
-        $responseScore = max(0, min(10, (float)($_POST['response_score'] ?? 0)));
-        $initiativeScore = max(0, min(10, (float)($_POST['initiative_score'] ?? 0)));
+        
+        // Skor Sistem (Bisa manual override oleh Superadmin)
+        $shiftScore = max(0, min(15, (float)($_POST['shift_score'] ?? 0)));
+        $actScore = max(0, min(20, (float)($_POST['activity_score'] ?? 0)));
+        $photoScore = max(0, min(15, (float)($_POST['photo_score'] ?? 0)));
+        $pmScore = max(0, min(10, (float)($_POST['pm_score'] ?? 0)));
+        $sysScore = round($shiftScore + $actScore + $photoScore + $pmScore, 2);
+
+        // Skor Kualitatif Leader (Maks 10 Poin per aspek)
+        $sopScore = max(0, min(10, (float)($_POST['sop_score'] ?? 10)));
+        $troubleScore = max(0, min(10, (float)($_POST['troubleshooting_score'] ?? 10)));
+        $responseScore = max(0, min(10, (float)($_POST['response_score'] ?? 10)));
+        $initiativeScore = max(0, min(10, (float)($_POST['initiative_score'] ?? 10)));
         $notes = trim($_POST['feedback_notes'] ?? '');
         $sendToUser = !empty($_POST['send_to_user']);
 
         $reviewScore = round($sopScore + $troubleScore + $responseScore + $initiativeScore, 2);
+        $totalScore = round($sysScore + $reviewScore, 2);
 
-        // Ambil kalkulasi metrik sistem teknisi ini
-        $systemMetrics = calculate_user_system_kpi($pdo, $targetUserId, $filterMonth);
-        $systemScore = $systemMetrics['system_score'];
-        $totalScore = round($systemScore + $reviewScore, 2);
-
-        // Tentukan Predikat (Grade)
         if ($totalScore >= 90) $grade = 'A';
         elseif ($totalScore >= 80) $grade = 'B';
         elseif ($totalScore >= 70) $grade = 'C';
@@ -73,51 +158,13 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $publishedAt = $sendToUser ? date('Y-m-d H:i:s') : null;
         $publishedBy = $sendToUser ? (int)$currentUser['id'] : null;
 
-        $stmtUpsert = $pdo->prepare("
-            INSERT INTO kpi_evaluations (
-                user_id, period_month, shifts_count, completed_shifts, shift_score,
-                activities_count, activity_score, photos_count, photo_score,
-                pm_count, pm_score, system_score, sop_score, troubleshooting_score,
-                response_score, initiative_score, review_score, total_score,
-                grade, feedback_notes, status, published_at, published_by, updated_at
-            ) VALUES (
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, NOW()
-            )
-            ON DUPLICATE KEY UPDATE
-                shifts_count = VALUES(shifts_count),
-                completed_shifts = VALUES(completed_shifts),
-                shift_score = VALUES(shift_score),
-                activities_count = VALUES(activities_count),
-                activity_score = VALUES(activity_score),
-                photos_count = VALUES(photos_count),
-                photo_score = VALUES(photo_score),
-                pm_count = VALUES(pm_count),
-                pm_score = VALUES(pm_score),
-                system_score = VALUES(system_score),
-                sop_score = VALUES(sop_score),
-                troubleshooting_score = VALUES(troubleshooting_score),
-                response_score = VALUES(response_score),
-                initiative_score = VALUES(initiative_score),
-                review_score = VALUES(review_score),
-                total_score = VALUES(total_score),
-                grade = VALUES(grade),
-                feedback_notes = VALUES(feedback_notes),
-                status = VALUES(status),
-                published_at = IF(VALUES(status)='published', NOW(), published_at),
-                published_by = IF(VALUES(status)='published', VALUES(published_by), published_by),
-                updated_at = NOW()
-        ");
+        $autoSys = calculate_user_annual_kpi($pdo, $targetUserId, $filterYear);
 
-        // Fallback untuk SQLite jika driver bukan MySQL
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         if ($driver === 'sqlite') {
             $stmtUpsert = $pdo->prepare("
                 INSERT INTO kpi_evaluations (
-                    user_id, period_month, shifts_count, completed_shifts, shift_score,
+                    user_id, period_year, shifts_count, completed_shifts, shift_score,
                     activities_count, activity_score, photos_count, photo_score,
                     pm_count, pm_score, system_score, sop_score, troubleshooting_score,
                     response_score, initiative_score, review_score, total_score,
@@ -129,7 +176,7 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, datetime('now', 'localtime')
                 )
-                ON CONFLICT(user_id, period_month) DO UPDATE SET
+                ON CONFLICT(user_id, period_year) DO UPDATE SET
                     shifts_count = excluded.shifts_count,
                     completed_shifts = excluded.completed_shifts,
                     shift_score = excluded.shift_score,
@@ -153,24 +200,63 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     published_by = CASE WHEN excluded.status='published' THEN excluded.published_by ELSE kpi_evaluations.published_by END,
                     updated_at = datetime('now', 'localtime')
             ");
+        } else {
+            $stmtUpsert = $pdo->prepare("
+                INSERT INTO kpi_evaluations (
+                    user_id, period_year, shifts_count, completed_shifts, shift_score,
+                    activities_count, activity_score, photos_count, photo_score,
+                    pm_count, pm_score, system_score, sop_score, troubleshooting_score,
+                    response_score, initiative_score, review_score, total_score,
+                    grade, feedback_notes, status, published_at, published_by, updated_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, NOW()
+                )
+                ON DUPLICATE KEY UPDATE
+                    shifts_count = VALUES(shifts_count),
+                    completed_shifts = VALUES(completed_shifts),
+                    shift_score = VALUES(shift_score),
+                    activities_count = VALUES(activities_count),
+                    activity_score = VALUES(activity_score),
+                    photos_count = VALUES(photos_count),
+                    photo_score = VALUES(photo_score),
+                    pm_count = VALUES(pm_count),
+                    pm_score = VALUES(pm_score),
+                    system_score = VALUES(system_score),
+                    sop_score = VALUES(sop_score),
+                    troubleshooting_score = VALUES(troubleshooting_score),
+                    response_score = VALUES(response_score),
+                    initiative_score = VALUES(initiative_score),
+                    review_score = VALUES(review_score),
+                    total_score = VALUES(total_score),
+                    grade = VALUES(grade),
+                    feedback_notes = VALUES(feedback_notes),
+                    status = VALUES(status),
+                    published_at = IF(VALUES(status)='published', NOW(), published_at),
+                    published_by = IF(VALUES(status)='published', VALUES(published_by), published_by),
+                    updated_at = NOW()
+            ");
         }
 
         try {
             $stmtUpsert->execute([
-                $targetUserId, $filterMonth,
-                $systemMetrics['shifts_count'], $systemMetrics['completed_shifts'], $systemMetrics['shift_score'],
-                $systemMetrics['activities_count'], $systemMetrics['activity_score'],
-                $systemMetrics['photos_count'], $systemMetrics['photo_score'],
-                $systemMetrics['pm_count'], $systemMetrics['pm_score'],
-                $systemScore, $sopScore, $troubleScore, $responseScore, $initiativeScore,
+                $targetUserId, $periodYearStr,
+                $autoSys['shifts_count'], $autoSys['completed_shifts'], $shiftScore,
+                $autoSys['activities_count'], $actScore,
+                $autoSys['photos_count'], $photoScore,
+                $autoSys['pm_count'], $pmScore,
+                $sysScore, $sopScore, $troubleScore, $responseScore, $initiativeScore,
                 $reviewScore, $totalScore, $grade, $notes, $status, $publishedAt, $publishedBy
             ]);
 
-            log_audit_event('KPI', 'SAVE_REVIEW', "Simpan review KPI user ID {$targetUserId} periode {$filterMonth} (Skor: {$totalScore}, Status: {$status})", 'user', $targetUserId);
-            $feedbackMsg = $sendToUser ? 'Review KPI berhasil disimpan dan LANGSUNG DIKIRIM ke teknisi!' : 'Review KPI berhasil disimpan sebagai DRAFT (Belum dikirim ke teknisi).';
+            log_audit_event('KPI', 'SAVE_REVIEW_ANNUAL', "Simpan penilaian KPI tahunan user ID {$targetUserId} tahun {$filterYear} (Skor: {$totalScore}, Status: {$status})", 'user', $targetUserId);
+            $feedbackMsg = $sendToUser ? 'Evaluasi KPI tahunan berhasil disimpan dan LANGSUNG DIKIRIM ke teknisi!' : 'Evaluasi KPI tahunan berhasil disimpan sebagai DRAFT internal.';
             $feedbackType = 'success';
         } catch (Exception $e) {
-            $feedbackMsg = 'Gagal menyimpan review KPI: ' . $e->getMessage();
+            $feedbackMsg = 'Gagal menyimpan evaluasi KPI: ' . $e->getMessage();
             $feedbackType = 'danger';
         }
     }
@@ -184,23 +270,25 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $pubAt = $isPublished ? date('Y-m-d H:i:s') : null;
         $pubBy = $isPublished ? (int)$currentUser['id'] : null;
 
-        // Pastikan kalkulasi tersimpan sebelum dipublish jika belum pernah dinilai
-        $systemMetrics = calculate_user_system_kpi($pdo, $targetUserId, $filterMonth);
-        $systemScore = $systemMetrics['system_score'];
+        $autoSys = calculate_user_annual_kpi($pdo, $targetUserId, $filterYear);
+        $defSys = $autoSys['system_score'];
+        $defRev = 40.0;
+        $defTot = round($defSys + $defRev, 2);
+        $defGrd = ($defTot >= 90 ? 'A' : ($defTot >= 80 ? 'B' : ($defTot >= 70 ? 'C' : 'D')));
 
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         if ($driver === 'sqlite') {
             $stmtToggle = $pdo->prepare("
                 INSERT INTO kpi_evaluations (
-                    user_id, period_month, shifts_count, completed_shifts, shift_score,
+                    user_id, period_year, shifts_count, completed_shifts, shift_score,
                     activities_count, activity_score, photos_count, photo_score,
-                    pm_count, pm_score, system_score, total_score, grade, status, published_at, published_by, updated_at
+                    pm_count, pm_score, system_score, review_score, total_score, grade, status, published_at, published_by, updated_at
                 ) VALUES (
                     ?, ?, ?, ?, ?,
                     ?, ?, ?, ?,
-                    ?, ?, ?, ?, 'C', ?, ?, ?, datetime('now', 'localtime')
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime')
                 )
-                ON CONFLICT(user_id, period_month) DO UPDATE SET
+                ON CONFLICT(user_id, period_year) DO UPDATE SET
                     status = excluded.status,
                     published_at = excluded.published_at,
                     published_by = excluded.published_by,
@@ -209,13 +297,13 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         } else {
             $stmtToggle = $pdo->prepare("
                 INSERT INTO kpi_evaluations (
-                    user_id, period_month, shifts_count, completed_shifts, shift_score,
+                    user_id, period_year, shifts_count, completed_shifts, shift_score,
                     activities_count, activity_score, photos_count, photo_score,
-                    pm_count, pm_score, system_score, total_score, grade, status, published_at, published_by, updated_at
+                    pm_count, pm_score, system_score, review_score, total_score, grade, status, published_at, published_by, updated_at
                 ) VALUES (
                     ?, ?, ?, ?, ?,
                     ?, ?, ?, ?,
-                    ?, ?, ?, ?, 'C', ?, ?, ?, NOW()
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()
                 )
                 ON DUPLICATE KEY UPDATE
                     status = VALUES(status),
@@ -227,16 +315,16 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
         try {
             $stmtToggle->execute([
-                $targetUserId, $filterMonth,
-                $systemMetrics['shifts_count'], $systemMetrics['completed_shifts'], $systemMetrics['shift_score'],
-                $systemMetrics['activities_count'], $systemMetrics['activity_score'],
-                $systemMetrics['photos_count'], $systemMetrics['photo_score'],
-                $systemMetrics['pm_count'], $systemMetrics['pm_score'],
-                $systemScore, $systemScore, $newStatus, $pubAt, $pubBy
+                $targetUserId, $periodYearStr,
+                $autoSys['shifts_count'], $autoSys['completed_shifts'], $autoSys['shift_score'],
+                $autoSys['activities_count'], $autoSys['activity_score'],
+                $autoSys['photos_count'], $autoSys['photo_score'],
+                $autoSys['pm_count'], $autoSys['pm_score'],
+                $defSys, $defRev, $defTot, $defGrd, $newStatus, $pubAt, $pubBy
             ]);
 
-            log_audit_event('KPI', 'TOGGLE_STATUS', "Ubah status rapor KPI user ID {$targetUserId} periode {$filterMonth} menjadi {$newStatus}", 'user', $targetUserId);
-            $feedbackMsg = $isPublished ? 'Rapor KPI berhasil DIKIRIM ke akun teknisi!' : 'Rapor KPI berhasil DITARIK kembali (kini berstatus Draft).';
+            log_audit_event('KPI', 'TOGGLE_STATUS_ANNUAL', "Ubah status rapor KPI tahunan user ID {$targetUserId} tahun {$filterYear} menjadi {$newStatus}", 'user', $targetUserId);
+            $feedbackMsg = $isPublished ? 'Rapor KPI tahunan berhasil DIKIRIM ke akun teknisi!' : 'Rapor KPI tahunan berhasil DITARIK kembali (kini berstatus Draft).';
             $feedbackType = 'success';
         } catch (Exception $e) {
             $feedbackMsg = 'Gagal mengubah status rapor: ' . $e->getMessage();
@@ -244,111 +332,25 @@ if ($isAdmin && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
     }
 
-    // 3. PUBLISH SEMUA RAPOR BULAN INI
+    // 3. PUBLISH SEMUA RAPOR TAHUNAN
     elseif ($action === 'publish_all') {
         try {
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $nowSql = ($driver === 'sqlite') ? "datetime('now', 'localtime')" : "NOW()";
+
             $stmtPubAll = $pdo->prepare("
                 UPDATE kpi_evaluations 
-                SET status = 'published', published_at = NOW(), published_by = ?, updated_at = NOW()
-                WHERE period_month = ?
+                SET status = 'published', published_at = {$nowSql}, published_by = ?, updated_at = {$nowSql}
+                WHERE period_year = ?
             ");
-            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
-                $stmtPubAll = $pdo->prepare("
-                    UPDATE kpi_evaluations 
-                    SET status = 'published', published_at = datetime('now', 'localtime'), published_by = ?, updated_at = datetime('now', 'localtime')
-                    WHERE period_month = ?
-                ");
-            }
-            $stmtPubAll->execute([(int)$currentUser['id'], $filterMonth]);
-            log_audit_event('KPI', 'PUBLISH_ALL', "Rilis seluruh rapor KPI periode {$filterMonth} ke seluruh anggota tim", 'system', null);
-            $feedbackMsg = 'Seluruh rapor yang telah dievaluasi pada periode ' . $periodLabel . ' berhasil dikirim ke teknisi!';
+            $stmtPubAll->execute([(int)$currentUser['id'], $periodYearStr]);
+            log_audit_event('KPI', 'PUBLISH_ALL_ANNUAL', "Rilis seluruh rapor KPI tahun {$filterYear} ke seluruh anggota tim", 'system', null);
+            $feedbackMsg = 'Seluruh rapor evaluasi KPI tahun ' . $filterYear . ' berhasil dikirim ke teknisi!';
             $feedbackType = 'success';
         } catch (Exception $e) {
-            $feedbackMsg = 'Gagal merilis semua rapor: ' . $e->getMessage();
+            $feedbackMsg = 'Gagal merilis rapor: ' . $e->getMessage();
             $feedbackType = 'danger';
         }
-    }
-}
-
-// ==========================================
-// FUNGSI KALKULASI METRIK SISTEM OTOMATIS
-// ==========================================
-if (!function_exists('calculate_user_system_kpi')) {
-    function calculate_user_system_kpi(PDO $pdo, int $userId, string $month): array {
-        // 1. Shift: kehadiran & ketuntasan
-        $stmtShift = $pdo->prepare("
-            SELECT 
-                COUNT(id) AS total_shifts,
-                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_shifts
-            FROM daily_shifts
-            WHERE user_id = ? AND shift_date LIKE ?
-        ");
-        $stmtShift->execute([$userId, $month . '%']);
-        $shiftData = $stmtShift->fetch() ?: ['total_shifts' => 0, 'completed_shifts' => 0];
-
-        $totShifts = (int)$shiftData['total_shifts'];
-        $compShifts = (int)$shiftData['completed_shifts'];
-        // Bobot Shift: 15 Poin. Rasio completed / total, jika total >= 1
-        $shiftScore = ($totShifts > 0) ? round(($compShifts / $totShifts) * 15.0, 2) : 0.0;
-
-        // 2. Logbook Harian: volume pekerjaan
-        $stmtAct = $pdo->prepare("
-            SELECT COUNT(a.id) 
-            FROM daily_activities a
-            INNER JOIN daily_shifts s ON a.shift_id = s.id
-            WHERE s.user_id = ? AND s.shift_date LIKE ?
-        ");
-        $stmtAct->execute([$userId, $month . '%']);
-        $actsCount = (int)$stmtAct->fetchColumn();
-        // Bobot Logbook: 20 Poin. Benchmark: 25 kegiatan = 20 poin penuh (0.8 poin per kegiatan)
-        $activityScore = min(20.0, round($actsCount * 0.8, 2));
-
-        // 3. Dokumentasi Foto: rasio bukti fisik
-        $stmtPhotos = $pdo->prepare("
-            SELECT COUNT(p.id)
-            FROM daily_activity_photos p
-            INNER JOIN daily_activities a ON p.activity_id = a.id
-            INNER JOIN daily_shifts s ON a.shift_id = s.id
-            WHERE s.user_id = ? AND s.shift_date LIKE ?
-        ");
-        $stmtPhotos->execute([$userId, $month . '%']);
-        $photosCount = (int)$stmtPhotos->fetchColumn();
-        // Bobot Foto: 15 Poin. Rasio foto terhadap kegiatan
-        $photoRatio = ($actsCount > 0) ? min(1.0, ($photosCount / $actsCount)) : 0.0;
-        $photoScore = round($photoRatio * 15.0, 2);
-
-        // 4. Partisipasi Inspeksi PM Bulanan
-        $stmtUser = $pdo->prepare("SELECT username, full_name FROM users WHERE id = ?");
-        $stmtUser->execute([$userId]);
-        $uData = $stmtUser->fetch();
-        $pmCount = 0;
-        if ($uData) {
-            $uName = $uData['username'];
-            $fName = $uData['full_name'];
-            $stmtPm = $pdo->prepare("
-                SELECT COUNT(id) FROM pm_reports
-                WHERE report_date LIKE ? AND (inspector_name LIKE ? OR inspector_name LIKE ?)
-            ");
-            $stmtPm->execute([$month . '%', '%' . $uName . '%', '%' . $fName . '%']);
-            $pmCount = (int)$stmtPm->fetchColumn();
-        }
-        // Bobot PM: 10 Poin. 1 PM = 5 poin, 2 PM = 10 poin penuh
-        $pmScore = min(10.0, round($pmCount * 5.0, 2));
-
-        $systemScore = round($shiftScore + $activityScore + $photoScore + $pmScore, 2);
-
-        return [
-            'shifts_count' => $totShifts,
-            'completed_shifts' => $compShifts,
-            'shift_score' => $shiftScore,
-            'activities_count' => $actsCount,
-            'activity_score' => $activityScore,
-            'photos_count' => $photosCount,
-            'photo_score' => $photoScore,
-            'pm_count' => $pmCount,
-            'pm_score' => $pmScore,
-            'system_score' => $systemScore
-        ];
     }
 }
 
@@ -365,15 +367,13 @@ if ($isAdmin) {
     ");
     $allUsers = $stmtUsers->fetchAll();
 
-    // Ambil evaluasi tersimpan untuk periode ini
-    $stmtSaved = $pdo->prepare("SELECT * FROM kpi_evaluations WHERE period_month = ?");
-    $stmtSaved->execute([$filterMonth]);
+    $stmtSaved = $pdo->prepare("SELECT * FROM kpi_evaluations WHERE period_year = ?");
+    $stmtSaved->execute([$periodYearStr]);
     $savedEvals = [];
     while ($row = $stmtSaved->fetch()) {
         $savedEvals[(int)$row['user_id']] = $row;
     }
 
-    // Bangun daftar lengkap skor KPI
     $kpiList = [];
     $totalScoresSum = 0;
     $gradeACount = 0;
@@ -382,15 +382,22 @@ if ($isAdmin) {
     foreach ($allUsers as $u) {
         $uId = (int)$u['id'];
         $saved = $savedEvals[$uId] ?? null;
-        $sysMetrics = calculate_user_system_kpi($pdo, $uId, $filterMonth);
+        $auto = calculate_user_annual_kpi($pdo, $uId, $filterYear);
 
-        $sop = $saved ? (float)$saved['sop_score'] : 0.0;
-        $trouble = $saved ? (float)$saved['troubleshooting_score'] : 0.0;
-        $response = $saved ? (float)$saved['response_score'] : 0.0;
-        $initiative = $saved ? (float)$saved['initiative_score'] : 0.0;
+        // Jika ada nilai override tersimpan, gunakan nilai tersimpan; jika tidak, gunakan auto sistem
+        $shiftScore = $saved ? (float)$saved['shift_score'] : $auto['shift_score'];
+        $actScore = $saved ? (float)$saved['activity_score'] : $auto['activity_score'];
+        $photoScore = $saved ? (float)$saved['photo_score'] : $auto['photo_score'];
+        $pmScore = $saved ? (float)$saved['pm_score'] : $auto['pm_score'];
+        $sysScore = round($shiftScore + $actScore + $photoScore + $pmScore, 2);
+
+        // Aspek kualitatif: Default otomatis 10 per aspek (total 40) jika belum diedit
+        $sop = $saved ? (float)$saved['sop_score'] : 10.0;
+        $trouble = $saved ? (float)$saved['troubleshooting_score'] : 10.0;
+        $response = $saved ? (float)$saved['response_score'] : 10.0;
+        $initiative = $saved ? (float)$saved['initiative_score'] : 10.0;
         $reviewScore = round($sop + $trouble + $response + $initiative, 2);
 
-        $sysScore = $sysMetrics['system_score'];
         $totalScore = round($sysScore + $reviewScore, 2);
 
         if ($totalScore >= 90) $grade = 'A';
@@ -408,7 +415,19 @@ if ($isAdmin) {
 
         $kpiList[] = [
             'user' => $u,
-            'system' => $sysMetrics,
+            'auto_system' => $auto,
+            'system' => [
+                'shift_score' => $shiftScore,
+                'activity_score' => $actScore,
+                'photo_score' => $photoScore,
+                'pm_score' => $pmScore,
+                'system_score' => $sysScore,
+                'shifts_count' => $auto['shifts_count'],
+                'completed_shifts' => $auto['completed_shifts'],
+                'activities_count' => $auto['activities_count'],
+                'photos_count' => $auto['photos_count'],
+                'pm_count' => $auto['pm_count']
+            ],
             'review' => [
                 'sop' => $sop,
                 'troubleshooting' => $trouble,
@@ -424,7 +443,6 @@ if ($isAdmin) {
         ];
     }
 
-    // Urutkan leaderboard berdasarkan total skor tertinggi
     usort($kpiList, function($a, $b) {
         return $b['total_score'] <=> $a['total_score'];
     });
@@ -432,18 +450,18 @@ if ($isAdmin) {
     $avgScore = count($kpiList) > 0 ? round($totalScoresSum / count($kpiList), 1) : 0;
 
 } else {
-    // Teknisi biasa: Hanya melihat rapor miliknya sendiri
+    // Teknisi biasa: Hanya melihat rapor tahunannya sendiri
     $myId = (int)$currentUser['id'];
-    $stmtMyEval = $pdo->prepare("SELECT * FROM kpi_evaluations WHERE user_id = ? AND period_month = ?");
-    $stmtMyEval->execute([$myId, $filterMonth]);
+    $stmtMyEval = $pdo->prepare("SELECT * FROM kpi_evaluations WHERE user_id = ? AND period_year = ?");
+    $stmtMyEval->execute([$myId, $periodYearStr]);
     $mySaved = $stmtMyEval->fetch();
 
-    $mySystemMetrics = calculate_user_system_kpi($pdo, $myId, $filterMonth);
+    $myAuto = calculate_user_annual_kpi($pdo, $myId, $filterYear);
     $myStatus = $mySaved ? ($mySaved['status'] ?: 'draft') : 'draft';
     $isPublishedToMe = ($myStatus === 'published');
 }
 
-$page_title = 'Penilaian Kinerja & KPI Tim - ' . $periodLabel;
+$page_title = 'Penilaian Kinerja & KPI Tahunan - ' . $filterYear;
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -469,7 +487,7 @@ include __DIR__ . '/includes/header.php';
         </span>
         <div>
           <h1 style="font-size: 1.4rem; font-weight: 800; margin: 0; color: var(--text-main);">
-            <?= $isAdmin ? 'Penilaian Kinerja &amp; KPI Tim NOC' : 'Rapor Kinerja KPI Saya' ?>
+            <?= $isAdmin ? 'Penilaian Kinerja &amp; KPI Tahunan NOC' : 'Rapor Kinerja KPI Tahunan Saya' ?>
           </h1>
           <p style="font-size: 0.82rem; color: var(--text-subtle); margin: 2px 0 0 0;">
             Periode Evaluasi: <strong style="color: var(--primary);"><?= htmlspecialchars($periodLabel) ?></strong>
@@ -478,19 +496,29 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
 
-    <!-- Month Filter Form -->
+    <!-- Year Filter & Print Actions -->
     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <form method="GET" action="kpi" style="display: flex; align-items: center; gap: 6px;">
-        <label for="month" style="font-size: 0.8rem; font-weight: 700; color: var(--text-subtle); margin: 0;">Periode:</label>
-        <input type="month" id="month" name="month" class="form-control" value="<?= htmlspecialchars($filterMonth) ?>" onchange="this.form.submit()" style="min-height: 38px; width: 170px;">
+        <label for="year" style="font-size: 0.8rem; font-weight: 700; color: var(--text-subtle); margin: 0;">Tahun:</label>
+        <select id="year" name="year" class="form-control" onchange="this.form.submit()" style="min-height: 38px; width: 110px; font-weight: 700;">
+          <?php for ($y = date('Y') + 1; $y >= 2023; $y--): ?>
+            <option value="<?= $y ?>" <?= ($filterYear === $y) ? 'selected' : '' ?>><?= $y ?></option>
+          <?php endfor; ?>
+        </select>
       </form>
 
       <?php if ($isAdmin): ?>
-        <form method="POST" action="" onsubmit="return confirm('Kirim seluruh rapor yang telah dievaluasi pada bulan ini ke akun masing-masing teknisi?');">
+        <!-- Tombol Cetak Rekap A4 Tim -->
+        <a href="print_kpi?year=<?= $filterYear ?>" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 38px; font-size: 0.82rem;" title="Buka lembar cetak A4 rekapitulasi KPI tahunan seluruh tim">
+          🖨️ Cetak Rekap Tim (A4)
+        </a>
+
+        <!-- Tombol Kirim Semua -->
+        <form method="POST" action="" onsubmit="return confirm('Kirim seluruh rapor evaluasi KPI tahun <?= $filterYear ?> ke akun masing-masing teknisi?');">
           <input type="hidden" name="action" value="publish_all">
           <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; min-height: 38px; font-size: 0.82rem;">
             <?= app_icon('send', 14) ?>
-            <span>Kirim Semua Rapor Bulan Ini</span>
+            <span>Kirim Semua Rapor Tahun Ini</span>
           </button>
         </form>
       <?php endif; ?>
@@ -501,9 +529,9 @@ include __DIR__ . '/includes/header.php';
   <?php if ($isAdmin): ?>
     <div class="row g-3" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
       <div style="flex: 1; min-width: 200px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Rata-Rata Skor Tim</div>
+        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Rata-Rata Skor Tahunan</div>
         <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-top: 4px;"><?= $avgScore ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-subtle);">/ 100</span></div>
-        <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Dari <?= count($kpiList) ?> personel aktif</div>
+        <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Akumulasi tahun <?= $filterYear ?></div>
       </div>
       <div style="flex: 1; min-width: 200px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
         <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Predikat Unggul (A)</div>
@@ -516,20 +544,20 @@ include __DIR__ . '/includes/header.php';
         <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Rapor terkirim &amp; terbuka</div>
       </div>
       <div style="flex: 1; min-width: 200px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Komposisi Pembobotan</div>
-        <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-top: 6px;">60% Sistem : 40% Review</div>
-        <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Hybrid objektif &amp; appraisal</div>
+        <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Fleksibilitas Penilaian</div>
+        <div style="font-size: 1.15rem; font-weight: 800; color: #059669; margin-top: 6px;">Kalkulasi + Override Manual</div>
+        <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 2px;">Superadmin dapat mengisi manual</div>
       </div>
     </div>
   <?php endif; ?>
 
-  <!-- Panel Transparansi: Sumber Data & Metodologi Penilaian (Bisa di-toggle / selalu transparan) -->
+  <!-- Panel Transparansi: Sumber Data & Metodologi Penilaian Tahunan -->
   <div class="card" style="margin-bottom: 1.5rem; border: 1px solid #cbd5e1; background: #ffffff;">
     <div class="card-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="color: var(--primary); display: inline-flex;"><?= app_icon('info', 18) ?></span>
         <h2 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase; letter-spacing: 0.02em;">
-          Transparansi &amp; Metodologi Penilaian KPI
+          Panduan &amp; Sumber Data Penilaian KPI Tahunan
         </h2>
       </div>
       <button type="button" class="btn btn-sm btn-secondary" onclick="toggleGuidePanel()" id="btnToggleGuide" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; font-weight: 700;">
@@ -538,7 +566,7 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div id="guidePanelContent" style="padding: 1.25rem;">
       <p style="font-size: 0.84rem; color: var(--text-subtle); margin-bottom: 1rem; line-height: 1.5;">
-        Penilaian kinerja di lingkungan IASS SBU ICT Bandara Internasional Kualanamu menggunakan model <strong>Hybrid KPI Terpadu</strong>. Skor dihitung secara transparan dari data operasional riil di lapangan (bobot 60%) serta evaluasi kompetensi kualitatif oleh Supervisor / Team Leader NOC (bobot 40%).
+        Penilaian KPI dihitung secara <strong>Tahunan (Tahun Anggaran <?= $filterYear ?>)</strong>. Sistem secara otomatis menghitung akumulasi seluruh data riil dari 12 bulan operasional. Namun, untuk menjaga keadilan penugasan (seperti rotasi jadwal PM dan kondisi darurat), <strong>Superadmin memiliki wewenang penuh untuk menyesuaikan / mengisi nilai secara manual</strong>.
       </p>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
@@ -550,22 +578,22 @@ include __DIR__ . '/includes/header.php';
             <span style="background: rgba(14, 165, 233, 0.15); color: #0284c7; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 15%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            <strong>Sumber:</strong> Tabel <code>daily_shifts</code><br>
+            <strong>Sumber:</strong> Akumulasi tabel <code>daily_shifts</code> setahun.<br>
             <strong>Rumus:</strong> <code>(Shift Selesai / Total Shift) &times; 15 Poin</code>.<br>
-            Menilai kedisiplinan menyelesaikan shift tepat waktu dan ketertiban serah terima.
+            Menilai kedisiplinan dan ketuntasan jadwal shift sepanjang tahun.
           </div>
         </div>
 
         <!-- Pilar 2: Logbook Harian -->
         <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; background: #f8fafc;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 0.82rem; color: var(--text-main);">2. Volume Logbook Harian</strong>
+            <strong style="font-size: 0.82rem; color: var(--text-main);">2. Volume Logbook Tahunan</strong>
             <span style="background: rgba(16, 185, 129, 0.15); color: #059669; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 20%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            <strong>Sumber:</strong> Tabel <code>daily_activities</code><br>
-            <strong>Rumus:</strong> <code>Min(20 Poin, Total Logbook &times; 0.8 Poin)</code>.<br>
-            Benchmark 25 kegiatan logbook per bulan mencapai skor maksimal 20 poin.
+            <strong>Sumber:</strong> Akumulasi tabel <code>daily_activities</code> setahun.<br>
+            <strong>Rumus:</strong> <code>Min(20 Poin, (Total Logbook / 120) &times; 20)</code>.<br>
+            Benchmark 120 logbook dalam setahun mencapai skor maksimal.
           </div>
         </div>
 
@@ -576,35 +604,33 @@ include __DIR__ . '/includes/header.php';
             <span style="background: rgba(139, 92, 246, 0.15); color: #7c3aed; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 15%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            <strong>Sumber:</strong> Tabel <code>daily_activity_photos</code><br>
+            <strong>Sumber:</strong> Akumulasi tabel <code>daily_activity_photos</code>.<br>
             <strong>Rumus:</strong> <code>(Total Foto / Total Kegiatan) &times; 15 Poin</code>.<br>
-            Kepatuhan SOP fasilitas bandara yang mewajibkan dokumentasi visual pekerjaan.
+            Kepatuhan SOP dokumentasi visual setiap pekerjaan teknis.
           </div>
         </div>
 
-        <!-- Pilar 4: Partisipasi PM -->
+        <!-- Pilar 4: Partisipasi PM (Fleksibel Rotasi) -->
         <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; background: #f8fafc;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <strong style="font-size: 0.82rem; color: var(--text-main);">4. Partisipasi Inspeksi PM</strong>
             <span style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 10%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            <strong>Sumber:</strong> Tabel <code>pm_reports</code> (Indoor &amp; Outdoor)<br>
-            <strong>Rumus:</strong> <code>Min(10 Poin, Dokumen PM &times; 5 Poin)</code>.<br>
-            Inspeksi berkala pemeliharaan perangkat transmisi, radio, UPS, dan tower.
+            <strong>Sumber:</strong> Akumulasi <code>pm_reports</code> setahun.<br>
+            <strong>Catatan Rotasi:</strong> Karena penugasan PM dibagi berkala, Superadmin dapat mengoreksi skor PM ini secara manual agar adil.
           </div>
         </div>
 
-        <!-- Pilar 5: Review Leader -->
+        <!-- Pilar 5: Review Leader (Otomatis & Bisa Diubah) -->
         <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; background: #f8fafc;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <strong style="font-size: 0.82rem; color: var(--text-main);">5. Review Leader / Supervisor</strong>
             <span style="background: rgba(239, 68, 68, 0.15); color: #dc2626; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Bobot 40%</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-subtle); line-height: 1.4;">
-            <strong>Sumber:</strong> Evaluasi Kualitatif Bulanan (4 Aspek &times; 10 Poin):<br>
-            &bull; SOP Bandara &amp; K3 (10) &bull; Troubleshooting Teknis (10)<br>
-            &bull; Respon Insiden &amp; Komunikasi (10) &bull; Kerjasama Tim (10)
+            <strong>Default Otomatis:</strong> Nilai dasar standar 10 per aspek (total 40).<br>
+            Superadmin dapat mengubah nilai secara manual sesuai hasil evaluasi (SOP, Troubleshooting, Respon, Kerjasama).
           </div>
         </div>
 
@@ -625,7 +651,7 @@ include __DIR__ . '/includes/header.php';
       </div>
 
       <div style="font-size: 0.75rem; color: var(--text-subtle); background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--primary);">
-        <strong>Catatan Kebijakan Rilis:</strong> Rapor evaluasi kinerja teknisi bersifat privat dan <em>hanya akan muncul di akun teknisi jika Admin/Supervisor menekan tombol <strong>Kirim ke Teknisi</strong></em>. Jika status masih berupa Draft, akun teknisi tidak akan menampilkan data nilai apa pun demi menjaga kerahasiaan proses evaluasi.
+        <strong>Kebijakan Kerahasiaan &amp; Rilis:</strong> Rapor evaluasi kinerja tahunan ini <em>hanya akan muncul di akun teknisi jika Admin menekan tombol <strong>Kirim ke Teknisi</strong></em>. Jika status masih berupa Draft, akun teknisi tidak akan menampilkan data nilai apa pun.
       </div>
     </div>
   </div>
@@ -638,11 +664,16 @@ include __DIR__ . '/includes/header.php';
       <div class="card-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem;">
         <div>
           <h2 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0;">
-            Papan Peringkat Kinerja Personel &bull; <?= htmlspecialchars($periodLabel) ?>
+            Papan Peringkat Kinerja Tahunan &bull; Tahun <?= $filterYear ?>
           </h2>
           <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 2px;">
-            Kelola penilaian kualitatif dan tentukan teknisi mana yang rapornya siap dirilis.
+            Klik tombol "Nilai / Edit" untuk mengisi atau mengoreksi nilai indikator secara manual.
           </div>
+        </div>
+        <div>
+          <a href="print_kpi?year=<?= $filterYear ?>" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.78rem; font-weight: 700;">
+            🖨️ Cetak Lembar Rekap A4
+          </a>
         </div>
       </div>
 
@@ -652,12 +683,12 @@ include __DIR__ . '/includes/header.php';
             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 0.75rem; text-transform: uppercase;">
               <th style="padding: 10px 12px; text-align: center; width: 45px;">Rank</th>
               <th style="padding: 10px 12px;">Personel / Teknisi</th>
-              <th style="padding: 10px 12px; text-align: center; width: 100px;">Metrik Sistem (60%)</th>
-              <th style="padding: 10px 12px; text-align: center; width: 100px;">Review Leader (40%)</th>
+              <th style="padding: 10px 12px; text-align: center; width: 110px;">Metrik Sistem (60%)</th>
+              <th style="padding: 10px 12px; text-align: center; width: 110px;">Review Leader (40%)</th>
               <th style="padding: 10px 12px; text-align: center; width: 95px;">Total Skor</th>
               <th style="padding: 10px 12px; text-align: center; width: 85px;">Predikat</th>
-              <th style="padding: 10px 12px; text-align: center; width: 130px;">Status Rapor</th>
-              <th style="padding: 10px 12px; text-align: right; width: 220px;">Aksi Admin</th>
+              <th style="padding: 10px 12px; text-align: center; width: 110px;">Status Rapor</th>
+              <th style="padding: 10px 12px; text-align: right; width: 230px;">Aksi Admin</th>
             </tr>
           </thead>
           <tbody>
@@ -686,7 +717,7 @@ include __DIR__ . '/includes/header.php';
                 <td style="padding: 10px 12px;">
                   <strong style="color: var(--text-main);"><?= htmlspecialchars($u['full_name'] ?: $u['username']) ?></strong>
                   <div style="font-size: 0.72rem; color: var(--text-subtle);">
-                    @<?= htmlspecialchars($u['username']) ?> &bull; <span style="text-transform: uppercase;"><?= htmlspecialchars($u['role']) ?></span>
+                    @<?= htmlspecialchars($u['username']) ?> &bull; <span style="text-transform: uppercase;"><?= ($u['role'] === 'superadmin' ? 'Super Admin' : ($u['role'] === 'admin' ? 'Admin' : 'Teknisi')) ?></span>
                   </div>
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
@@ -719,9 +750,9 @@ include __DIR__ . '/includes/header.php';
                 </td>
                 <td style="padding: 10px 12px; text-align: right;">
                   <div style="display: inline-flex; align-items: center; gap: 4px;">
-                    <!-- Tombol Form Nilai -->
-                    <button type="button" class="btn btn-sm btn-secondary" onclick='openReviewModal(<?= json_encode($item) ?>)' style="padding: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700;" title="Input atau ubah review kualitatif">
-                      <?= app_icon('edit', 12) ?> Nilai
+                    <!-- Tombol Nilai / Manual Override -->
+                    <button type="button" class="btn btn-sm btn-secondary" onclick='openReviewModal(<?= json_encode($item) ?>)' style="padding: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700;" title="Input / ubah nilai indikator manual">
+                      <?= app_icon('edit', 12) ?> Nilai / Edit
                     </button>
 
                     <!-- Tombol Toggle Publish / Tarik -->
@@ -740,10 +771,10 @@ include __DIR__ . '/includes/header.php';
                       <?php endif; ?>
                     </form>
 
-                    <!-- Tombol Preview Rapor Detail -->
-                    <button type="button" class="btn btn-sm btn-secondary" onclick='openScorecardModal(<?= json_encode($item) ?>)' style="padding: 0.25rem 0.55rem; font-size: 0.74rem;" title="Lihat kartu rapor lengkap">
-                      <?= app_icon('eye', 12) ?>
-                    </button>
+                    <!-- Tombol Cetak Slip Rapor Individu -->
+                    <a href="print_kpi?year=<?= $filterYear ?>&user_id=<?= (int)$u['id'] ?>" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;" title="Cetak slip rapor A4 individu">
+                      🖨️
+                    </a>
                   </div>
                 </td>
               </tr>
@@ -765,10 +796,10 @@ include __DIR__ . '/includes/header.php';
           <?= app_icon('clock', 56) ?>
         </div>
         <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
-          Evaluasi Kinerja Sedang Disiapkan
+          Evaluasi Kinerja Tahunan Sedang Disiapkan
         </h3>
         <p style="color: var(--text-subtle); max-width: 520px; margin: 0 auto 1.5rem auto; font-size: 0.88rem; line-height: 1.5;">
-          Rapor evaluasi KPI Anda untuk periode <strong><?= htmlspecialchars($periodLabel) ?></strong> saat ini sedang ditinjau oleh Supervisor / Team Leader NOC. Hasil penilaian resmi akan otomatis muncul di halaman ini setelah dikirim oleh atasan.
+          Rapor evaluasi KPI Anda untuk <strong><?= htmlspecialchars($periodLabel) ?></strong> saat ini sedang ditinjau dan disusun oleh Supervisor / Team Leader NOC. Hasil penilaian resmi akan otomatis muncul di halaman ini setelah dikirim oleh atasan.
         </p>
         <div>
           <a href="./" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
@@ -795,7 +826,7 @@ include __DIR__ . '/includes/header.php';
         <div style="border-bottom: 2px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
           <div>
             <div style="font-size: 0.75rem; font-weight: 800; color: #008080; text-transform: uppercase; letter-spacing: 0.05em;">
-              LEMBAR EVALUASI &amp; RAPOR KINERJA BULANAN
+              LEMBAR EVALUASI &amp; RAPOR KINERJA TAHUNAN
             </div>
             <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 4px 0;">
               <?= htmlspecialchars($currentUser['full_name'] ?: $currentUser['username']) ?>
@@ -817,13 +848,13 @@ include __DIR__ . '/includes/header.php';
         <!-- Skor Utama Hero Banner -->
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Total Skor Capaian KPI</div>
+            <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-subtle);">Total Skor Capaian KPI Tahunan</div>
             <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 4px;">
               <span style="font-size: 2.8rem; font-weight: 800; color: #008080; line-height: 1;"><?= $myTot ?></span>
               <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-subtle);">/ 100 Poin</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px;">
-              Metrik Sistem: <strong><?= $mySysScore ?>/60</strong> &bull; Review Atasan: <strong><?= $myRevScore ?>/40</strong>
+              Metrik Sistem: <strong><?= $mySysScore ?>/60</strong> &bull; Review Leader: <strong><?= $myRevScore ?>/40</strong>
             </div>
           </div>
 
@@ -840,7 +871,7 @@ include __DIR__ . '/includes/header.php';
 
         <!-- Rincian 5 Metrik Indikator -->
         <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 0.85rem; border-bottom: 1.5px solid var(--border); padding-bottom: 4px;">
-          Rincian Capaian Indikator Kinerja
+          Rincian Capaian Indikator Kinerja Tahunan
         </h3>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
@@ -851,13 +882,13 @@ include __DIR__ . '/includes/header.php';
               <strong style="color: #008080;"><?= (float)$mySaved['shift_score'] ?> / 15.0</strong>
             </div>
             <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 4px;">
-              Total: <?= (int)$mySaved['completed_shifts'] ?> shift selesai dari <?= (int)$mySaved['shifts_count'] ?> jadwal shift.
+              Total: <?= (int)$mySaved['completed_shifts'] ?> shift selesai dari <?= (int)$mySaved['shifts_count'] ?> jadwal tahun ini.
             </div>
           </div>
 
           <div style="border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700;">
-              <span>2. Volume Logbook Harian</span>
+              <span>2. Volume Logbook Tahunan</span>
               <strong style="color: #008080;"><?= (float)$mySaved['activity_score'] ?> / 20.0</strong>
             </div>
             <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 4px;">
@@ -877,11 +908,11 @@ include __DIR__ . '/includes/header.php';
 
           <div style="border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700;">
-              <span>4. Partisipasi PM Bulanan</span>
+              <span>4. Partisipasi Inspeksi PM</span>
               <strong style="color: #008080;"><?= (float)$mySaved['pm_score'] ?> / 10.0</strong>
             </div>
             <div style="font-size: 0.72rem; color: var(--text-subtle); margin-top: 4px;">
-              Total: <?= (int)$mySaved['pm_count'] ?> dokumen inspeksi Preventive Maintenance (IBC/Tower).
+              Total: <?= (int)$mySaved['pm_count'] ?> dokumen inspeksi Preventive Maintenance perangkat &amp; tower.
             </div>
           </div>
 
@@ -910,11 +941,11 @@ include __DIR__ . '/includes/header.php';
           </p>
         </div>
 
-        <!-- Tombol Cetak Rapor -->
+        <!-- Tombol Cetak Rapor Resmi A4 -->
         <div style="text-align: right;">
-          <button type="button" class="btn btn-secondary" onclick="window.print()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-            🖨️ Cetak Lembar Rapor Ini
-          </button>
+          <a href="print_kpi?year=<?= $filterYear ?>&user_id=<?= (int)$currentUser['id'] ?>" target="_blank" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+            🖨️ Cetak Lembar Rapor Resmi (A4)
+          </a>
         </div>
 
       </div>
@@ -925,18 +956,18 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <!-- ======================================================== -->
-<!-- MODAL: FORM PENILAIAN / REVIEW ATASAN (KHUSUS ADMIN)    -->
+<!-- MODAL: FORM PENILAIAN / OVERRIDE MANUAL SUPERADMIN      -->
 <!-- ======================================================== -->
 <?php if ($isAdmin): ?>
 <div id="modalReview" class="qr-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-  <div class="card" style="max-width: 580px; width: 92%; margin: auto; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+  <div class="card" style="max-width: 620px; width: 92%; margin: auto; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);">
       <div>
         <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0; color: var(--text-main);" id="modalRevTitle">
-          Review Kinerja Personel
+          Penilaian &amp; Override Manual KPI
         </h3>
         <div style="font-size: 0.74rem; color: var(--text-subtle); margin-top: 2px;">
-          Periode: <?= htmlspecialchars($periodLabel) ?>
+          Tahun Anggaran: <?= $filterYear ?> &bull; <span style="color: #059669; font-weight: 700;">Nilai dapat disesuaikan manual</span>
         </div>
       </div>
       <button type="button" onclick="closeReviewModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-subtle); cursor: pointer;">&times;</button>
@@ -948,86 +979,132 @@ include __DIR__ . '/includes/header.php';
 
       <div style="padding: 1.25rem;">
         
-        <!-- Info Ringkas Metrik Sistem -->
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.78rem;">
-          <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Capaian Metrik Sistem (Otomatis 60%):</div>
-          <div style="display: flex; justify-content: space-between; color: var(--text-subtle);">
-            <span>Shift: <strong id="dispShiftScore" style="color: #008080;">0</strong>/15</span>
-            <span>Logbook: <strong id="dispActScore" style="color: #008080;">0</strong>/20</span>
-            <span>Foto: <strong id="dispPhotoScore" style="color: #008080;">0</strong>/15</span>
-            <span>PM: <strong id="dispPmScore" style="color: #008080;">0</strong>/10</span>
+        <!-- Section 1: Skor Metrik Sistem (Bisa Diedit Manual) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div style="font-size: 0.82rem; font-weight: 800; color: #008080; text-transform: uppercase;">
+            1. Metrik Operasional Sistem (Maks 60 Poin):
           </div>
-          <div style="margin-top: 4px; font-weight: 800; color: #008080; text-align: right;">
-            Subtotal Sistem: <span id="dispSysTotal">0</span> / 60.0
+          <button type="button" class="btn btn-sm" onclick="resetToAutoCalculated()" style="font-size: 0.7rem; padding: 2px 6px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+            ↺ Isi Nilai Hitungan Sistem
+          </button>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 0.5rem;">
+            <!-- Shift Score -->
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
+                Kehadiran Shift (Maks 15)
+              </label>
+              <input type="number" step="0.1" min="0" max="15" name="shift_score" id="inputShiftScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
+              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
+                Hitungan Sistem: <strong id="autoShiftScore">0</strong>/15 (<span id="autoShiftCount">0</span> shift)
+              </div>
+            </div>
+
+            <!-- Logbook Score -->
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
+                Volume Logbook (Maks 20)
+              </label>
+              <input type="number" step="0.1" min="0" max="20" name="activity_score" id="inputActScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
+              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
+                Hitungan Sistem: <strong id="autoActScore">0</strong>/20 (<span id="autoActCount">0</span> kegiatan)
+              </div>
+            </div>
+
+            <!-- Photo Score -->
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
+                Bukti Foto Fisik (Maks 15)
+              </label>
+              <input type="number" step="0.1" min="0" max="15" name="photo_score" id="inputPhotoScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
+              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
+                Hitungan Sistem: <strong id="autoPhotoScore">0</strong>/15 (<span id="autoPhotoCount">0</span> foto)
+              </div>
+            </div>
+
+            <!-- PM Score (Fleksibel Rotasi) -->
+            <div>
+              <label class="form-label" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 2px;">
+                Partisipasi PM (Maks 10)
+              </label>
+              <input type="number" step="0.1" min="0" max="10" name="pm_score" id="inputPmScore" class="form-control" oninput="updateLiveTotal()" style="font-size: 0.82rem; font-weight: 700;">
+              <div style="font-size: 0.68rem; color: var(--text-subtle); margin-top: 1px;">
+                Hitungan Sistem: <strong id="autoPmScore">0</strong>/10 (<span id="autoPmCount">0</span> PM)
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: right; font-size: 0.78rem; font-weight: 800; color: #008080; border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px;">
+            Subtotal Metrik Sistem: <span id="dispSysTotal">0</span> / 60.0
           </div>
         </div>
 
-        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 0.75rem;">
-          Penilaian Kualitatif Supervisor (Maks 10 Poin per Aspek):
+        <!-- Section 2: Review Kualitatif Leader (Maks 40 Poin) -->
+        <div style="font-size: 0.82rem; font-weight: 800; color: #6366f1; text-transform: uppercase; margin-bottom: 0.5rem;">
+          2. Penilaian Kualitatif Supervisor (Maks 40 Poin):
         </div>
 
         <!-- Aspek 1: SOP Bandara & K3 -->
-        <div class="form-group" style="margin-bottom: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" style="font-size: 0.78rem; font-weight: 700; margin: 0;">1. Kepatuhan SOP Bandara &amp; K3</label>
-            <span style="font-weight: 800; color: #6366f1; font-size: 0.82rem;" id="lblSop">0 / 10</span>
+        <div class="form-group" style="margin-bottom: 0.65rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0;">1. Kepatuhan SOP Bandara &amp; K3</label>
+            <span style="font-weight: 800; color: #6366f1; font-size: 0.78rem;" id="lblSop">10 / 10</span>
           </div>
-          <input type="range" name="sop_score" id="inputSop" class="form-range" min="0" max="10" step="0.5" value="0" oninput="updateLiveTotal()" style="width: 100%;">
-          <div style="font-size: 0.68rem; color: var(--text-subtle);">Izin kerja (security pass), penggunaan APD, dan disiplin area terbatas bandara.</div>
+          <input type="range" name="sop_score" id="inputSop" class="form-range" min="0" max="10" step="0.5" value="10" oninput="updateLiveTotal()" style="width: 100%;">
         </div>
 
         <!-- Aspek 2: Troubleshooting Teknis -->
-        <div class="form-group" style="margin-bottom: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" style="font-size: 0.78rem; font-weight: 700; margin: 0;">2. Kualitas Troubleshooting Teknis</label>
-            <span style="font-weight: 800; color: #6366f1; font-size: 0.82rem;" id="lblTrouble">0 / 10</span>
+        <div class="form-group" style="margin-bottom: 0.65rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0;">2. Troubleshooting &amp; Problem Solving Teknis</label>
+            <span style="font-weight: 800; color: #6366f1; font-size: 0.78rem;" id="lblTrouble">10 / 10</span>
           </div>
-          <input type="range" name="troubleshooting_score" id="inputTrouble" class="form-range" min="0" max="10" step="0.5" value="0" oninput="updateLiveTotal()" style="width: 100%;">
-          <div style="font-size: 0.68rem; color: var(--text-subtle);">Ketepatan diagnosa gangguan link, perbaikan FO, dan pemecahan anomali sistem.</div>
+          <input type="range" name="troubleshooting_score" id="inputTrouble" class="form-range" min="0" max="10" step="0.5" value="10" oninput="updateLiveTotal()" style="width: 100%;">
         </div>
 
         <!-- Aspek 3: Respon Insiden & Komunikasi -->
-        <div class="form-group" style="margin-bottom: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" style="font-size: 0.78rem; font-weight: 700; margin: 0;">3. Respon Insiden &amp; Komunikasi</label>
-            <span style="font-weight: 800; color: #6366f1; font-size: 0.82rem;" id="lblResponse">0 / 10</span>
+        <div class="form-group" style="margin-bottom: 0.65rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0;">3. Respon Insiden &amp; Komunikasi Tim</label>
+            <span style="font-weight: 800; color: #6366f1; font-size: 0.78rem;" id="lblResponse">10 / 10</span>
           </div>
-          <input type="range" name="response_score" id="inputResponse" class="form-range" min="0" max="10" step="0.5" value="0" oninput="updateLiveTotal()" style="width: 100%;">
-          <div style="font-size: 0.68rem; color: var(--text-subtle);">Kecepatan menindaklanjuti laporan stakeholder, komunikasi vendor telco, dan serah terima shift.</div>
+          <input type="range" name="response_score" id="inputResponse" class="form-range" min="0" max="10" step="0.5" value="10" oninput="updateLiveTotal()" style="width: 100%;">
         </div>
 
         <!-- Aspek 4: Kerjasama Tim & Inisiatif -->
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label class="form-label" style="font-size: 0.78rem; font-weight: 700; margin: 0;">4. Kerjasama Tim &amp; Inisiatif</label>
-            <span style="font-weight: 800; color: #6366f1; font-size: 0.82rem;" id="lblInitiative">0 / 10</span>
+        <div class="form-group" style="margin-bottom: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <label class="form-label" style="font-size: 0.76rem; font-weight: 700; margin: 0;">4. Kerjasama Tim &amp; Inisiatif Lapangan</label>
+            <span style="font-weight: 800; color: #6366f1; font-size: 0.78rem;" id="lblInitiative">10 / 10</span>
           </div>
-          <input type="range" name="initiative_score" id="inputInitiative" class="form-range" min="0" max="10" step="0.5" value="0" oninput="updateLiveTotal()" style="width: 100%;">
-          <div style="font-size: 0.68rem; color: var(--text-subtle);">Kesigapan membantu rekan shift lain dan kepedulian terhadap kebersihan ruang NOC.</div>
+          <input type="range" name="initiative_score" id="inputInitiative" class="form-range" min="0" max="10" step="0.5" value="10" oninput="updateLiveTotal()" style="width: 100%;">
         </div>
 
         <!-- Total Live Preview -->
         <div style="background: #f1f5f9; border-radius: 6px; padding: 0.65rem 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Proyeksi Total Skor &amp; Grade:</span>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Proyeksi Total Nilai Akhir:</span>
           <div>
-            <strong id="liveTotalScore" style="font-size: 1.1rem; color: #008080;">0</strong>
+            <strong id="liveTotalScore" style="font-size: 1.15rem; color: #008080;">0</strong>
             <span style="font-size: 0.75rem; color: var(--text-subtle);">/ 100</span>
             <span id="liveGrade" style="margin-left: 6px; background: #008080; color: #ffffff; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">C</span>
           </div>
         </div>
 
         <!-- Catatan Pembinaan -->
-        <div class="form-group" style="margin-bottom: 1.25rem;">
-          <label class="form-label" style="font-size: 0.78rem; font-weight: 700;">Catatan / Masukan Pengembangan untuk Teknisi</label>
-          <textarea name="feedback_notes" id="inputNotes" class="form-control" rows="3" placeholder="Berikan catatan apresiasi atau poin peningkatan kinerja untuk teknisi ini..." style="font-size: 0.82rem;"></textarea>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-size: 0.76rem; font-weight: 700;">Catatan / Rekomendasi Evaluasi</label>
+          <textarea name="feedback_notes" id="inputNotes" class="form-control" rows="2" placeholder="Catatan evaluasi atau apresiasi untuk teknisi ini..." style="font-size: 0.82rem;"></textarea>
         </div>
 
-        <!-- Opsi Publikasi Langsung ke User -->
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 10px;">
-          <input type="checkbox" name="send_to_user" id="checkSendUser" value="1" style="width: 18px; height: 18px; cursor: pointer;">
-          <label for="checkSendUser" style="margin: 0; font-size: 0.82rem; font-weight: 700; color: #065f46; cursor: pointer;">
+        <!-- Opsi Kirim ke Teknisi -->
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 0.65rem 0.85rem; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" name="send_to_user" id="checkSendUser" value="1" style="width: 17px; height: 17px; cursor: pointer;">
+          <label for="checkSendUser" style="margin: 0; font-size: 0.8rem; font-weight: 700; color: #065f46; cursor: pointer;">
             🚀 Langsung Kirim Rapor ke Akun Teknisi Ini
-            <div style="font-size: 0.72rem; font-weight: 400; color: #047857;">Jika tidak dicentang, hasil evaluasi akan disimpan sebagai Draft internal (teknisi belum bisa melihat).</div>
+            <div style="font-size: 0.7rem; font-weight: 400; color: #047857;">Jika tidak dicentang, hasil evaluasi hanya disimpan sebagai Draft internal.</div>
           </label>
         </div>
 
@@ -1035,93 +1112,9 @@ include __DIR__ . '/includes/header.php';
 
       <div class="card-header" style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding: 0.85rem 1.25rem;">
         <button type="button" class="btn btn-secondary" onclick="closeReviewModal()" style="font-weight: 700; font-size: 0.82rem;">Batal</button>
-        <button type="submit" class="btn btn-primary" style="font-weight: 800; font-size: 0.82rem;">💾 Simpan Hasil Evaluasi</button>
+        <button type="submit" class="btn btn-primary" style="font-weight: 800; font-size: 0.82rem;">💾 Simpan Penilaian KPI</button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- ======================================================== -->
-<!-- MODAL: KARTU RAPOR DETAIL (SCORECARD MODAL)             -->
-<!-- ======================================================== -->
-<div id="modalScorecard" class="qr-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-  <div class="card" style="max-width: 580px; width: 92%; margin: auto; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); padding: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border); padding-bottom: 0.85rem; margin-bottom: 1rem;">
-      <div>
-        <div style="font-size: 0.72rem; font-weight: 800; color: #008080; text-transform: uppercase;">KARTU RAPOR EVALUASI KPI</div>
-        <h3 style="font-size: 1.15rem; font-weight: 800; margin: 2px 0; color: var(--text-main);" id="scName">-</h3>
-        <div style="font-size: 0.72rem; color: var(--text-subtle);">Periode: <?= htmlspecialchars($periodLabel) ?></div>
-      </div>
-      <button type="button" onclick="closeScorecardModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-subtle); cursor: pointer;">&times;</button>
-    </div>
-
-    <!-- Hero Score -->
-    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <div>
-        <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-subtle);">TOTAL SKOR CAPAIAN</div>
-        <div style="font-size: 2.2rem; font-weight: 800; color: #008080; line-height: 1.1;" id="scTotalScore">0</div>
-        <div style="font-size: 0.72rem; color: var(--text-subtle);">Metrik Sistem + Review Atasan</div>
-      </div>
-      <div style="text-align: center; border: 2px solid #008080; border-radius: 8px; padding: 0.65rem 1rem; min-width: 100px;">
-        <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; color: #008080;">PREDIKAT</div>
-        <div style="font-size: 1.6rem; font-weight: 800; color: #008080;" id="scGrade">C</div>
-      </div>
-    </div>
-
-    <!-- Breakdown Details -->
-    <div style="font-size: 0.8rem; margin-bottom: 1rem;">
-      <div style="font-weight: 800; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; font-size: 0.75rem;">1. Rincian Metrik Sistem (Maks 60 Poin):</div>
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.65rem; display: flex; flex-direction: column; gap: 4px;">
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Kehadiran Shift (<span id="scShifts">-</span>):</span>
-          <strong id="scShiftScore" style="color: #008080;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Volume Logbook (<span id="scActs">-</span>):</span>
-          <strong id="scActScore" style="color: #008080;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Foto Dokumentasi (<span id="scPhotos">-</span>):</span>
-          <strong id="scPhotoScore" style="color: #008080;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Partisipasi PM (<span id="scPm">-</span>):</span>
-          <strong id="scPmScore" style="color: #008080;">0</strong>
-        </div>
-      </div>
-    </div>
-
-    <div style="font-size: 0.8rem; margin-bottom: 1rem;">
-      <div style="font-weight: 800; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; font-size: 0.75rem;">2. Rincian Review Atasan (Maks 40 Poin):</div>
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.65rem; display: flex; flex-direction: column; gap: 4px;">
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; SOP Bandara &amp; K3:</span>
-          <strong id="scSop" style="color: #6366f1;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Troubleshooting Teknis:</span>
-          <strong id="scTrouble" style="color: #6366f1;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Respon &amp; Komunikasi:</span>
-          <strong id="scResponse" style="color: #6366f1;">0</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>&bull; Inisiatif Tim:</span>
-          <strong id="scInitiative" style="color: #6366f1;">0</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- Catatan -->
-    <div style="background: #f1f5f9; border-left: 3px solid #008080; padding: 0.75rem; border-radius: 4px; font-size: 0.78rem; margin-bottom: 1.25rem;">
-      <strong>Catatan Supervisor:</strong>
-      <div id="scNotes" style="font-style: italic; margin-top: 3px; color: var(--text-main);">-</div>
-    </div>
-
-    <div style="text-align: right;">
-      <button type="button" class="btn btn-secondary" onclick="closeScorecardModal()" style="font-size: 0.8rem; font-weight: 700;">Tutup</button>
-    </div>
   </div>
 </div>
 <?php endif; ?>
@@ -1140,23 +1133,37 @@ function toggleGuidePanel() {
 }
 
 <?php if ($isAdmin): ?>
-let curSysScore = 0;
+let curAutoItem = null;
 
 function openReviewModal(item) {
+  curAutoItem = item;
   document.getElementById('revUserId').value = item.user.id;
-  document.getElementById('modalRevTitle').textContent = 'Review Kinerja: ' + (item.user.full_name || item.user.username);
+  document.getElementById('modalRevTitle').textContent = 'Penilaian KPI: ' + (item.user.full_name || item.user.username);
   
-  curSysScore = parseFloat(item.system.system_score) || 0;
-  document.getElementById('dispShiftScore').textContent = item.system.shift_score;
-  document.getElementById('dispActScore').textContent = item.system.activity_score;
-  document.getElementById('dispPhotoScore').textContent = item.system.photo_score;
-  document.getElementById('dispPmScore').textContent = item.system.pm_score;
-  document.getElementById('dispSysTotal').textContent = item.system.system_score;
+  // Hitungan Otomatis Sistem
+  document.getElementById('autoShiftScore').textContent = item.auto_system.shift_score;
+  document.getElementById('autoShiftCount').textContent = item.auto_system.completed_shifts;
 
-  document.getElementById('inputSop').value = item.review.sop || 0;
-  document.getElementById('inputTrouble').value = item.review.troubleshooting || 0;
-  document.getElementById('inputResponse').value = item.review.response || 0;
-  document.getElementById('inputInitiative').value = item.review.initiative || 0;
+  document.getElementById('autoActScore').textContent = item.auto_system.activity_score;
+  document.getElementById('autoActCount').textContent = item.auto_system.activities_count;
+
+  document.getElementById('autoPhotoScore').textContent = item.auto_system.photo_score;
+  document.getElementById('autoPhotoCount').textContent = item.auto_system.photos_count;
+
+  document.getElementById('autoPmScore').textContent = item.auto_system.pm_score;
+  document.getElementById('autoPmCount').textContent = item.auto_system.pm_count;
+
+  // Nilai aktif (bisa nilai tersimpan atau nilai auto sistem)
+  document.getElementById('inputShiftScore').value = item.system.shift_score;
+  document.getElementById('inputActScore').value = item.system.activity_score;
+  document.getElementById('inputPhotoScore').value = item.system.photo_score;
+  document.getElementById('inputPmScore').value = item.system.pm_score;
+
+  // Nilai kualitatif
+  document.getElementById('inputSop').value = item.review.sop || 10;
+  document.getElementById('inputTrouble').value = item.review.troubleshooting || 10;
+  document.getElementById('inputResponse').value = item.review.response || 10;
+  document.getElementById('inputInitiative').value = item.review.initiative || 10;
   document.getElementById('inputNotes').value = item.review.notes || '';
 
   document.getElementById('checkSendUser').checked = (item.status === 'published');
@@ -1169,7 +1176,23 @@ function closeReviewModal() {
   document.getElementById('modalReview').style.display = 'none';
 }
 
+function resetToAutoCalculated() {
+  if (!curAutoItem) return;
+  document.getElementById('inputShiftScore').value = curAutoItem.auto_system.shift_score;
+  document.getElementById('inputActScore').value = curAutoItem.auto_system.activity_score;
+  document.getElementById('inputPhotoScore').value = curAutoItem.auto_system.photo_score;
+  document.getElementById('inputPmScore').value = curAutoItem.auto_system.pm_score;
+  updateLiveTotal();
+}
+
 function updateLiveTotal() {
+  const sh = parseFloat(document.getElementById('inputShiftScore').value) || 0;
+  const ac = parseFloat(document.getElementById('inputActScore').value) || 0;
+  const ph = parseFloat(document.getElementById('inputPhotoScore').value) || 0;
+  const pm = parseFloat(document.getElementById('inputPmScore').value) || 0;
+  const sysTotal = Math.min(60, sh + ac + ph + pm);
+  document.getElementById('dispSysTotal').textContent = sysTotal.toFixed(1);
+
   const s1 = parseFloat(document.getElementById('inputSop').value) || 0;
   const s2 = parseFloat(document.getElementById('inputTrouble').value) || 0;
   const s3 = parseFloat(document.getElementById('inputResponse').value) || 0;
@@ -1181,7 +1204,7 @@ function updateLiveTotal() {
   document.getElementById('lblInitiative').textContent = s4.toFixed(1) + ' / 10';
 
   const revTotal = s1 + s2 + s3 + s4;
-  const grandTotal = Math.min(100, Math.round((curSysScore + revTotal) * 10) / 10);
+  const grandTotal = Math.min(100, Math.round((sysTotal + revTotal) * 10) / 10);
   document.getElementById('liveTotalScore').textContent = grandTotal.toFixed(1);
 
   let gr = 'D';
@@ -1189,37 +1212,6 @@ function updateLiveTotal() {
   else if (grandTotal >= 80) gr = 'B';
   else if (grandTotal >= 70) gr = 'C';
   document.getElementById('liveGrade').textContent = gr;
-}
-
-function openScorecardModal(item) {
-  document.getElementById('scName').textContent = (item.user.full_name || item.user.username);
-  document.getElementById('scTotalScore').textContent = item.total_score;
-  document.getElementById('scGrade').textContent = item.grade;
-
-  document.getElementById('scShifts').textContent = item.system.completed_shifts + '/' + item.system.shifts_count + ' shift';
-  document.getElementById('scShiftScore').textContent = item.system.shift_score + ' / 15';
-
-  document.getElementById('scActs').textContent = item.system.activities_count + ' logbook';
-  document.getElementById('scActScore').textContent = item.system.activity_score + ' / 20';
-
-  document.getElementById('scPhotos').textContent = item.system.photos_count + ' foto';
-  document.getElementById('scPhotoScore').textContent = item.system.photo_score + ' / 15';
-
-  document.getElementById('scPm').textContent = item.system.pm_count + ' site';
-  document.getElementById('scPmScore').textContent = item.system.pm_score + ' / 10';
-
-  document.getElementById('scSop').textContent = (item.review.sop || 0) + ' / 10';
-  document.getElementById('scTrouble').textContent = (item.review.troubleshooting || 0) + ' / 10';
-  document.getElementById('scResponse').textContent = (item.review.response || 0) + ' / 10';
-  document.getElementById('scInitiative').textContent = (item.review.initiative || 0) + ' / 10';
-
-  document.getElementById('scNotes').textContent = item.review.notes || 'Belum ada catatan khusus dari supervisor.';
-
-  document.getElementById('modalScorecard').style.display = 'flex';
-}
-
-function closeScorecardModal() {
-  document.getElementById('modalScorecard').style.display = 'none';
 }
 <?php endif; ?>
 </script>

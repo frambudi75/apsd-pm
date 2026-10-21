@@ -141,3 +141,23 @@ function render_signature_img(?string $relPath, string $alt = 'Tanda Tangan', st
 
     return '<img src="' . $escapedPath . '" alt="' . $escapedAlt . '" style="' . $style . '" class="doc-signature-img">';
 }
+
+/**
+ * Dapatkan path tanda tangan tersimpan untuk user ID tertentu
+ */
+if (!function_exists('get_user_signature_path')) {
+    function get_user_signature_path($userId): ?string {
+        if (empty($userId) || !is_numeric($userId)) {
+            return null;
+        }
+        try {
+            $pdo = get_db_connection();
+            $stmt = $pdo->prepare("SELECT signature_path FROM users WHERE id = ?");
+            $stmt->execute([(int)$userId]);
+            $path = $stmt->fetchColumn();
+            return (!empty($path) && is_string($path)) ? $path : null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}

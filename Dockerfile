@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.5-apache
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -44,7 +44,7 @@ RUN { \
     echo 'max_execution_time = 300'; \
     echo 'max_input_time = 300'; \
     echo 'max_input_vars = 5000'; \
-} > /usr/local/etc/php/conf.d/apsd-limits.ini
+    } > /usr/local/etc/php/conf.d/apsd-limits.ini
 
 # Set working directory
 WORKDIR /var/www/html

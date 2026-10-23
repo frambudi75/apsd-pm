@@ -63,9 +63,11 @@ foreach ($browserCandidates as $p) {
     }
 }
 
-$localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
-$isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
-$scheme = $isSsl ? 'https' : 'http';
+$internalPort = '80';
+if (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] !== '443' && $_SERVER['SERVER_PORT'] !== '80') {
+    $internalPort = $_SERVER['SERVER_PORT'];
+}
+$portSuffix = ($internalPort === '80') ? '' : ":{$internalPort}";
 $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
 $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
 $profileDir = $tempDir . '/chrome_batch_profile';
@@ -84,7 +86,7 @@ foreach ($reports as $report) {
     if (!file_exists($pdfPath) || filesize($pdfPath) < 30000) {
         if ($browserBin) {
             $pdfToken = hash_hmac('sha256', (string)$rId, 'apsd_internal_secret_2026');
-            $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/{$printFile}?id={$rId}&pdf_token={$pdfToken}";
+            $internalUrl = "http://127.0.0.1{$portSuffix}{$basePath}/{$printFile}?id={$rId}&pdf_token={$pdfToken}";
 
             $cmd = sprintf(
                 '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --no-pdf-header-footer --print-to-pdf="%s" "%s"',

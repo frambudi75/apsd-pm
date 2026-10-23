@@ -3,20 +3,31 @@
  * API: Buka / Mulai Sesi Shift Harian NOC
  * IASS SBU ICT KNO
  */
-header('Content-Type: application/json');
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../config/database.php';
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
 
-if (!is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesi login telah berakhir.']);
+header('Content-Type: application/json; charset=utf-8');
+
+function send_json_response(array $data, int $statusCode = 200): void {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/audit.php';
+
+if (!is_logged_in()) {
+    send_json_response(['success' => false, 'message' => 'Sesi login telah berakhir.'], 401);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 $currentUser = current_user();
@@ -53,13 +64,12 @@ try {
     $existing = $stmtCheck->fetch();
 
     if ($existing) {
-        echo json_encode([
+        send_json_response([
             'success' => true,
             'shift_id' => (int)$existing['id'],
             'message' => 'Sesi shift sudah ditemukan dan telah aktif.',
             'status' => $existing['status']
         ]);
-        exit;
     }
 
     // Validasi Disiplin SOP: Cek apakah teknisi masih memiliki sesi shift sebelumnya yang belum ditutup
@@ -83,31 +93,27 @@ try {
             $actCount = (int)$pendingShift['total_activities'];
 
             if ($actCount === 0) {
-                http_response_code(403);
-                echo json_encode([
+                send_json_response([
                     'success' => false,
                     'pending_unclosed' => true,
                     'is_empty' => true,
                     'pending_shift_id' => (int)$pendingShift['id'],
                     'message' => "AKSES DITAHAN SISTEM (PELANGGARAN SOP): Anda masih memiliki sesi {$shiftInfoPending['name']} ({$pDate}) yang belum ditutup dan TIDAK MEMILIKI CATATAN KEGIATAN. Sesuai SOP, silakan hubungi Superadmin / Team Leader NOC untuk evaluasi dan penutupan sesi shift tersebut."
-                ]);
-                exit;
+                ], 403);
             } else {
-                http_response_code(403);
-                echo json_encode([
+                send_json_response([
                     'success' => false,
                     'pending_unclosed' => true,
                     'is_empty' => false,
                     'pending_shift_id' => (int)$pendingShift['id'],
                     'message' => "AKSES DITOLAK: Anda masih memiliki sesi {$shiftInfoPending['name']} ({$pDate}) yang belum diselesaikan ({$actCount} kegiatan tercatat). Selesaikan dan serahkan shift sebelumnya terlebih dahulu sebelum membuka shift baru."
-                ]);
-                exit;
+                ], 403);
             }
         }
     }
 
     // Create new active shift
-    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     if ($driver === 'sqlite') {
         $stmtInsert = $pdo->prepare("
             INSERT INTO daily_shifts (user_id, technician_name, shift_date, shift_type, status, notes, created_at)
@@ -125,19 +131,21 @@ try {
 
     $shiftInfo = get_shift_info($shiftType);
 
-    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_START', "Mulai sesi shift {$shiftInfo['name']} ({$shiftDate}) untuk {$techName}", 'daily_shift', $newShiftId);
+    try {
+        log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_START', "Mulai sesi shift {$shiftInfo['name']} ({$shiftDate}) untuk {$techName}", 'daily_shift', $newShiftId);
+    } catch (\Throwable $tLog) {}
 
-    echo json_encode([
+    send_json_response([
         'success' => true,
         'shift_id' => $newShiftId,
         'message' => 'Sesi ' . $shiftInfo['name'] . ' (' . $shiftDate . ') berhasil dibuka! Anda sekarang dapat mencatat kegiatan.',
         'status' => 'active'
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    error_log("start_shift error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    send_json_response([
         'success' => false,
         'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-    ]);
+    ], 500);
 }

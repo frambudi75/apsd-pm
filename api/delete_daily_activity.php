@@ -3,20 +3,31 @@
  * API: Hapus Kegiatan Harian (Daily Activity)
  * IASS SBU ICT KNO
  */
-header('Content-Type: application/json');
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../config/database.php';
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
 
-if (!is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesi login telah berakhir.']);
+header('Content-Type: application/json; charset=utf-8');
+
+function send_json_response(array $data, int $statusCode = 200): void {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/audit.php';
+
+if (!is_logged_in()) {
+    send_json_response(['success' => false, 'message' => 'Sesi login telah berakhir.'], 401);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 $currentUser = current_user();
@@ -26,8 +37,7 @@ $pdo = get_db_connection();
 try {
     $activityId = (int)($_POST['activity_id'] ?? 0);
     if ($activityId <= 0) {
-        echo json_encode(['success' => false, 'message' => 'ID Kegiatan tidak valid.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'ID Kegiatan tidak valid.']);
     }
 
     $stmt = $pdo->prepare("
@@ -40,18 +50,15 @@ try {
     $act = $stmt->fetch();
 
     if (!$act) {
-        echo json_encode(['success' => false, 'message' => 'Data kegiatan tidak ditemukan.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Data kegiatan tidak ditemukan.']);
     }
 
     if (!has_role(['superadmin', 'admin']) && (int)$act['user_id'] !== $userId) {
-        echo json_encode(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat menghapus kegiatan yang Anda buat sendiri.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat menghapus kegiatan yang Anda buat sendiri.']);
     }
 
     if ($act['shift_status'] === 'completed' && !has_role(['superadmin', 'admin'])) {
-        echo json_encode(['success' => false, 'message' => 'Shift telah dikunci. Silakan hubungi Superadmin jika ada koreksi atau permintaan hapus kegiatan.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Shift telah dikunci. Silakan hubungi Superadmin jika ada koreksi atau permintaan hapus kegiatan.']);
     }
 
     // Delete photos files from disk
@@ -60,7 +67,7 @@ try {
     $photos = $stmtPhotos->fetchAll();
     foreach ($photos as $p) {
         $filePath = __DIR__ . '/../' . $p['photo_path'];
-        if (file_exists($filePath)) {
+        if (file_exists($filePath) && is_file($filePath)) {
             @unlink($filePath);
         }
     }
@@ -73,17 +80,19 @@ try {
     $stmtDel->execute([$activityId]);
 
     $descSnippet = isset($act['description']) ? mb_substr(strip_tags($act['description']), 0, 60) : '';
-    log_audit_event('DAILY_ACTIVITY', 'DAILY_ACTIVITY_DELETE', "Hapus kegiatan logbook ID {$activityId}: {$descSnippet}", 'daily_activity', $activityId);
+    try {
+        log_audit_event('DAILY_ACTIVITY', 'DAILY_ACTIVITY_DELETE', "Hapus kegiatan logbook ID {$activityId}: {$descSnippet}", 'daily_activity', $activityId);
+    } catch (\Throwable $tLog) {}
 
-    echo json_encode([
+    send_json_response([
         'success' => true,
         'message' => 'Kegiatan berhasil dihapus.'
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    error_log("delete_daily_activity error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    send_json_response([
         'success' => false,
         'message' => 'Gagal menghapus kegiatan: ' . $e->getMessage()
-    ]);
+    ], 500);
 }

@@ -4,26 +4,35 @@
  * IASS SBU ICT KNO
  * Khusus Superadmin: menghapus sesi shift beserta seluruh kegiatan dan foto di dalamnya
  */
-header('Content-Type: application/json');
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
+
+header('Content-Type: application/json; charset=utf-8');
+
+function send_json_response(array $data, int $statusCode = 200): void {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/audit.php';
 
 if (!is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesi login telah berakhir.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Sesi login telah berakhir.'], 401);
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 if (!has_role('superadmin')) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Akses ditolak: Hanya Superadmin yang berwenang menghapus laporan shift.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Akses ditolak: Hanya Superadmin yang berwenang menghapus laporan shift.'], 403);
 }
 
 $pdo = get_db_connection();
@@ -31,8 +40,7 @@ $pdo = get_db_connection();
 try {
     $shiftId = (int)($_POST['shift_id'] ?? 0);
     if ($shiftId <= 0) {
-        echo json_encode(['success' => false, 'message' => 'ID Shift tidak valid.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'ID Shift tidak valid.']);
     }
 
     $stmt = $pdo->prepare("SELECT * FROM daily_shifts WHERE id = ?");
@@ -40,8 +48,7 @@ try {
     $shift = $stmt->fetch();
 
     if (!$shift) {
-        echo json_encode(['success' => false, 'message' => 'Laporan shift tidak ditemukan atau sudah dihapus.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Laporan shift tidak ditemukan atau sudah dihapus.']);
     }
 
     // Ambil seluruh ID kegiatan dalam shift ini
@@ -58,18 +65,24 @@ try {
         $photos = $stmtPhotos->fetchAll();
         foreach ($photos as $p) {
             $filePath = __DIR__ . '/../' . $p['photo_path'];
-            if (!empty($p['photo_path']) && file_exists($filePath)) {
+            if (file_exists($filePath) && is_file($filePath)) {
                 @unlink($filePath);
             }
         }
 
-        // Hapus relasi foto di database
+        // Hapus record foto dari basis data
         $stmtDelPhotos = $pdo->prepare("DELETE FROM daily_activity_photos WHERE activity_id IN ($placeholders)");
         $stmtDelPhotos->execute($actIds);
 
-        // Hapus relasi kegiatan di database
-        $stmtDelAct = $pdo->prepare("DELETE FROM daily_activities WHERE shift_id = ?");
-        $stmtDelAct->execute([$shiftId]);
+        // Hapus seluruh kegiatan dalam shift ini
+        $stmtDelActs = $pdo->prepare("DELETE FROM daily_activities WHERE shift_id = ?");
+        $stmtDelActs->execute([$shiftId]);
+    }
+
+    // Bersihkan folder direktori foto shift jika kosong
+    $shiftDir = __DIR__ . '/../uploads/daily/' . $shiftId;
+    if (is_dir($shiftDir)) {
+        @rmdir($shiftDir);
     }
 
     // Hapus sesi shift
@@ -79,17 +92,19 @@ try {
     $shiftDateFormatted = date('d/m/Y', strtotime($shift['shift_date']));
     $shiftTypeName = strtoupper($shift['shift_type']);
 
-    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_DELETE', "Hapus laporan shift {$shiftTypeName} tanggal {$shiftDateFormatted} (ID: {$shiftId})", 'daily_shift', $shiftId);
+    try {
+        log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_DELETE', "Hapus laporan shift {$shiftTypeName} tanggal {$shiftDateFormatted} (ID: {$shiftId})", 'daily_shift', $shiftId);
+    } catch (\Throwable $tLog) {}
 
-    echo json_encode([
+    send_json_response([
         'success' => true,
         'message' => "Laporan shift {$shiftTypeName} tanggal {$shiftDateFormatted} berhasil dihapus permanen beserta seluruh kegiatan dan dokumentasinya."
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    error_log("delete_daily_shift error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    send_json_response([
         'success' => false,
         'message' => 'Gagal menghapus laporan shift: ' . $e->getMessage()
-    ]);
+    ], 500);
 }

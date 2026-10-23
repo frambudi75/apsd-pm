@@ -3,20 +3,31 @@
  * API: Selesaikan dan Kunci Sesi Shift (Daily Activity)
  * IASS SBU ICT KNO
  */
-header('Content-Type: application/json');
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../config/database.php';
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
 
-if (!is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesi login telah berakhir.']);
+header('Content-Type: application/json; charset=utf-8');
+
+function send_json_response(array $data, int $statusCode = 200): void {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/audit.php';
+
+if (!is_logged_in()) {
+    send_json_response(['success' => false, 'message' => 'Sesi login telah berakhir.'], 401);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 $currentUser = current_user();
@@ -28,8 +39,7 @@ try {
     $notes = trim($_POST['notes'] ?? '');
 
     if ($shiftId <= 0) {
-        echo json_encode(['success' => false, 'message' => 'ID Shift tidak valid.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'ID Shift tidak valid.']);
     }
 
     $stmt = $pdo->prepare("SELECT * FROM daily_shifts WHERE id = ?");
@@ -37,13 +47,11 @@ try {
     $shift = $stmt->fetch();
 
     if (!$shift) {
-        echo json_encode(['success' => false, 'message' => 'Sesi shift tidak ditemukan.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Sesi shift tidak ditemukan.']);
     }
 
     if (!has_role(['superadmin', 'admin']) && (int)$shift['user_id'] !== $userId) {
-        echo json_encode(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat menyelesaikan shift Anda sendiri.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat menyelesaikan shift Anda sendiri.']);
     }
 
     // Check count of activities
@@ -53,11 +61,10 @@ try {
 
     if ($actCount === 0) {
         if (!has_role(['superadmin', 'admin'])) {
-            echo json_encode([
+            send_json_response([
                 'success' => false, 
                 'message' => 'Sesi shift ini kosong tanpa catatan kegiatan. Sesuai SOP, Anda tidak dapat menutup shift kosong secara mandiri. Silakan hubungi Superadmin / Team Leader NOC.'
             ]);
-            exit;
         } else {
             // Superadmin / Admin force-completing an empty shift
             if (empty($notes)) {
@@ -94,7 +101,7 @@ try {
         try {
             $stmtProf = $pdo->prepare("UPDATE users SET signature_path = ? WHERE id = ?");
             $stmtProf->execute([$sigPath, $shift['user_id']]);
-        } catch (Exception $e) {}
+        } catch (\Throwable $e) {}
     }
 
     // Mark shift completed with signature
@@ -114,9 +121,11 @@ try {
     }
     $stmtUp->execute([$notes, $sigPath, $shiftId]);
 
-    log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
+    try {
+        log_audit_event('DAILY_ACTIVITY', 'DAILY_SHIFT_COMPLETE', "Kunci dan selesaikan shift {$shift['shift_type']} ({$shift['shift_date']}) ID: {$shiftId}", 'daily_shift', $shiftId);
+    } catch (\Throwable $tLog) {}
 
-    // Kirim notifikasi ringkasan shift ke Discord Saluran Operasional NOC
+    // Kirim notifikasi ringkasan shift ke Discord Saluran Operasional NOC (Fail-safe, non-blocking)
     $discordSent = false;
     try {
         require_once __DIR__ . '/../includes/discord.php';
@@ -134,7 +143,7 @@ try {
 
         $shift['notes'] = $notes;
         $discordSent = discord_notify_shift_complete($shift, $activities, $photoCount);
-    } catch (Throwable $eDisc) {
+    } catch (\Throwable $eDisc) {
         error_log('Discord shift complete notification warning: ' . $eDisc->getMessage());
     }
 
@@ -143,17 +152,18 @@ try {
         $msg .= ' Notifikasi ringkasan resmi telah terkirim ke Discord NOC.';
     }
 
-    echo json_encode([
+    send_json_response([
         'success' => true,
         'shift_id' => $shiftId,
         'discord_sent' => $discordSent,
         'message' => $msg
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    error_log("complete_shift error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    send_json_response([
         'success' => false,
         'message' => 'Gagal menyelesaikan shift: ' . $e->getMessage()
-    ]);
+    ], 500);
 }
+

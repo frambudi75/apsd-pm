@@ -80,14 +80,16 @@ if ($browserBin) {
     }
     $pdfPath = $tempDir . '/' . $pdfFilename;
 
-    // Detect internal base URL with secure signed token
-    $localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
-    $isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
-    $scheme = $isSsl ? 'https' : 'http';
+    // Detect internal base URL with secure signed token (always HTTP loopback inside container)
+    $internalPort = '80';
+    if (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] !== '443' && $_SERVER['SERVER_PORT'] !== '80') {
+        $internalPort = $_SERVER['SERVER_PORT'];
+    }
+    $portSuffix = ($internalPort === '80') ? '' : ":{$internalPort}";
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
     $pdfToken = hash_hmac('sha256', $targetId, 'apsd_internal_secret_2026');
-    $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/{$printFile}?{$idParam}&pdf_token={$pdfToken}";
+    $internalUrl = "http://127.0.0.1{$portSuffix}{$basePath}/{$printFile}?{$idParam}&pdf_token={$pdfToken}";
 
     $profileDir = $tempDir . '/chrome_headless_profile';
     $cmd = sprintf(

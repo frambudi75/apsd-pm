@@ -31,8 +31,8 @@ function send_discord_payload(string $webhookUrl, array $payload, ?string $fileP
         curl_setopt($ch, CURLOPT_URL, $webhookUrl);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_TIMEOUT, max(15, $timeoutSeconds));
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, min(8, max(4, $timeoutSeconds)));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -166,19 +166,23 @@ function generate_shift_pdf_file(int $shiftId): ?string {
     $profileDir = $tempDir . '/chrome_pwa_pdf_profile';
     $pdfPath = $tempDir . '/Logbook_NOC_Shift_' . $shiftId . '_' . time() . '.pdf';
 
-    $localPort = (string)($_SERVER['SERVER_PORT'] ?? '80');
-    $isSsl = ($localPort === '443' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
-    $scheme = $isSsl ? 'https' : 'http';
+    // Internal loopback is ALWAYS HTTP on port 80 inside Docker / local web server
+    $internalPort = '80';
+    if (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] !== '443' && $_SERVER['SERVER_PORT'] !== '80') {
+        $internalPort = $_SERVER['SERVER_PORT'];
+    }
+    $portSuffix = ($internalPort === '80') ? '' : ":{$internalPort}";
+
     $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
     if (basename($scriptDir) === 'api' || basename($scriptDir) === 'includes') {
         $scriptDir = dirname($scriptDir);
     }
     $basePath = ($scriptDir === '/' || $scriptDir === '\\') ? '' : rtrim(str_replace('\\', '/', $scriptDir), '/');
     $pdfToken = hash_hmac('sha256', (string)$shiftId, 'apsd_internal_secret_2026');
-    $internalUrl = "{$scheme}://127.0.0.1:{$localPort}{$basePath}/print_shift.php?shift_id={$shiftId}&pdf_token={$pdfToken}";
+    $internalUrl = "http://127.0.0.1{$portSuffix}{$basePath}/print_shift.php?shift_id={$shiftId}&pdf_token={$pdfToken}";
 
     $cmd = sprintf(
-        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --no-pdf-header-footer --print-to-pdf="%s" "%s"',
+        '"%s" --headless=new --user-data-dir="%s" --no-sandbox --disable-dev-shm-usage --disable-gpu --ignore-certificate-errors --allow-insecure-localhost --virtual-time-budget=2000 --no-pdf-header-footer --print-to-pdf="%s" "%s"',
         $browserBin,
         $profileDir,
         $pdfPath,
@@ -187,15 +191,15 @@ function generate_shift_pdf_file(int $shiftId): ?string {
 
     @exec($cmd, $output, $returnCode);
 
-    $maxWait = 6.0;
+    $maxWait = 3.0;
     $waited = 0.0;
     while ($waited < $maxWait) {
         clearstatcache(true, $pdfPath);
         if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {
             return $pdfPath;
         }
-        usleep(300000); // 300ms
-        $waited += 0.3;
+        usleep(250000); // 250ms
+        $waited += 0.25;
     }
 
     if (file_exists($pdfPath) && filesize($pdfPath) > 5000) {

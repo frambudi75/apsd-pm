@@ -2227,10 +2227,21 @@ document.addEventListener('DOMContentLoaded', function() {
         method: 'POST',
         body: fd
       })
-      .then(function(res) { return res.json(); })
+      .then(function(res) {
+        return res.text().then(function(text) {
+          try {
+            return JSON.parse(text);
+          } catch (err) {
+            console.error('complete_shift returned non-JSON:', text);
+            var cleanMsg = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+            if (cleanMsg.length > 250) cleanMsg = cleanMsg.substring(0, 250) + '...';
+            throw new Error(cleanMsg || 'Respon server tidak valid (' + res.status + ')');
+          }
+        });
+      })
       .then(function(data) {
         if (data.success) {
-          alert(data.message);
+          alert(data.message || 'Shift berhasil diselesaikan.');
           window.location.reload();
         } else {
           alert('Gagal: ' + (data.message || 'Terjadi kesalahan.'));
@@ -2239,7 +2250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
       .catch(function(err) {
-        alert('Error: ' + err.message);
+        alert('Kendala sistem: ' + err.message);
         btnConfirmComplete.disabled = false;
         btnConfirmComplete.innerHTML = origText;
       });

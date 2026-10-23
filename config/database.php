@@ -68,8 +68,10 @@ function connect_mysql(): PDO {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_TIMEOUT => 5
             ];
-            if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
-                $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+            if (defined('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY')) {
+                $options[constant('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY')] = true;
+            } elseif (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+                $options[constant('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')] = true;
             }
             $pdo = new PDO($dsn, $dbUser, $dbPass, $options);
             break;
@@ -88,8 +90,10 @@ function connect_mysql(): PDO {
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                     ];
-                    if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
-                        $rootOptions[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+                    if (defined('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY')) {
+                        $rootOptions[constant('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY')] = true;
+                    } elseif (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+                        $rootOptions[constant('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')] = true;
                     }
                     $pdo = new PDO($dsn, $dbUser, $dbPass, $rootOptions);
                     break;

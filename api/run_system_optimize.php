@@ -7,25 +7,53 @@
  * membersihkan temporary storage, dan menonaktifkan link share expired.
  */
 
+// Buffer all output to prevent stray notices, warnings or deprecated messages from corrupting JSON
+ob_start();
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 header('Content-Type: application/json; charset=utf-8');
+
+// Increase execution time limit for intensive maintenance
+@set_time_limit(180);
+
+/**
+ * Cleanly send JSON response and terminate
+ */
+function send_opt_json(array $data, int $statusCode = 200): void {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    http_response_code($statusCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+/**
+ * Format bytes helper
+ */
+function format_bytes_opt(int $bytes): string {
+    if ($bytes <= 0) return '0 B';
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $i = (int)floor(log($bytes, 1024));
+    return round($bytes / pow(1024, $i), 2) . ' ' . $units[$i];
+}
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/audit.php';
 require_once __DIR__ . '/../config/database.php';
 
 // Strict RBAC: Hanya Superadmin yang boleh menjalankan optimasi sistem
 if (!is_logged_in() || !has_role('superadmin')) {
-    http_response_code(403);
-    echo json_encode([
+    send_opt_json([
         'success' => false,
         'message' => 'Akses ditolak: Hanya Superadmin yang berwenang melakukan optimasi sistem.'
-    ]);
-    exit;
+    ], 403);
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_opt_json(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 $pdo = get_db_connection();
@@ -50,7 +78,7 @@ try {
     if ($dbDriver === 'sqlite') {
         $dbPath = __DIR__ . '/../database/apsd.sqlite';
         if (file_exists($dbPath)) {
-            $dbSizeBefore = filesize($dbPath);
+            $dbSizeBefore = (int)filesize($dbPath);
         }
 
         // Run WAL checkpoint truncate and VACUUM
@@ -60,7 +88,7 @@ try {
 
         clearstatcache(true, $dbPath);
         if (file_exists($dbPath)) {
-            $dbSizeAfter = filesize($dbPath);
+            $dbSizeAfter = (int)filesize($dbPath);
         }
 
         $dbDiff = $dbSizeBefore - $dbSizeAfter;
@@ -100,7 +128,7 @@ try {
                 FROM information_schema.TABLES 
                 WHERE table_schema = DATABASE()
             ")->fetchColumn();
-        } catch (Exception $e) {}
+        } catch (\Throwable $e) {}
 
         $optimizedCount = 0;
         foreach ($tables as $tbl) {
@@ -111,7 +139,7 @@ try {
                     $stmt->closeCursor();
                 }
                 $optimizedCount++;
-            } catch (Exception $e) {}
+            } catch (\Throwable $e) {}
         }
 
         $dbSizeAfter = 0;
@@ -121,7 +149,7 @@ try {
                 FROM information_schema.TABLES 
                 WHERE table_schema = DATABASE()
             ")->fetchColumn();
-        } catch (Exception $e) {}
+        } catch (\Throwable $e) {}
 
         $dbDiff = $dbSizeBefore - $dbSizeAfter;
         if ($dbDiff > 0) {
@@ -141,20 +169,22 @@ try {
     $cleanedBytes = 0;
 
     if (is_dir($tempDir)) {
-        $files = scandir($tempDir);
-        $now = time();
-        foreach ($files as $f) {
-            if ($f === '.' || $f === '..' || $f === '.gitignore' || $f === 'web.config' || $f === '.htaccess') {
-                continue;
-            }
-            $filePath = $tempDir . '/' . $f;
-            if (is_file($filePath)) {
-                // Hapus berkas sementara yang berumur lebih dari 24 jam (86400 detik)
-                if (($now - filemtime($filePath)) > 86400) {
-                    $sz = filesize($filePath);
-                    if (@unlink($filePath)) {
-                        $cleanedFilesCount++;
-                        $cleanedBytes += $sz;
+        $files = @scandir($tempDir);
+        if ($files) {
+            $now = time();
+            foreach ($files as $f) {
+                if ($f === '.' || $f === '..' || $f === '.gitignore' || $f === 'web.config' || $f === '.htaccess') {
+                    continue;
+                }
+                $filePath = $tempDir . '/' . $f;
+                if (is_file($filePath)) {
+                    // Hapus berkas sementara yang berumur lebih dari 24 jam (86400 detik)
+                    if (($now - filemtime($filePath)) > 86400) {
+                        $sz = (int)@filesize($filePath);
+                        if (@unlink($filePath)) {
+                            $cleanedFilesCount++;
+                            $cleanedBytes += $sz;
+                        }
                     }
                 }
             }
@@ -172,11 +202,21 @@ try {
     require_once __DIR__ . '/../includes/image_compressor.php';
     $optimizedPhotosCount = 0;
     $photoFreedBytes = 0;
+    $maxPhotosToOptimize = 15; // Batasi maksimal 15 foto per run agar request selesai cepat & tidak timeout
+    $maxScanDurationSeconds = 10; // Batasi durasi kompresi foto maksimal 10 detik
 
-    $scanAndOptimizeImages = function(string $dir) use (&$scanAndOptimizeImages, &$optimizedPhotosCount, &$photoFreedBytes): void {
+    $scanAndOptimizeImages = function(string $dir) use (&$scanAndOptimizeImages, &$optimizedPhotosCount, &$photoFreedBytes, $maxPhotosToOptimize, $maxScanDurationSeconds, $startTime): void {
         if (!is_dir($dir)) return;
-        $items = scandir($dir);
+        if ($optimizedPhotosCount >= $maxPhotosToOptimize) return;
+        if ((microtime(true) - $startTime) >= $maxScanDurationSeconds) return;
+
+        $items = @scandir($dir);
+        if (!$items) return;
+
         foreach ($items as $item) {
+            if ($optimizedPhotosCount >= $maxPhotosToOptimize) break;
+            if ((microtime(true) - $startTime) >= $maxScanDurationSeconds) break;
+
             if ($item === '.' || $item === '..' || $item === 'temp' || $item === '.gitignore' || $item === '.htaccess') continue;
             $fullPath = $dir . '/' . $item;
             if (is_dir($fullPath)) {
@@ -184,17 +224,26 @@ try {
             } elseif (is_file($fullPath)) {
                 $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
                 if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                    $origSize = (int)filesize($fullPath);
+                    $origSize = (int)@filesize($fullPath);
                     // Jika ukuran file foto melebihi 700 KB, lakukan optimasi kompresi ulang
                     if ($origSize > 716800) {
                         $tempOptimized = $fullPath . '.opt.tmp';
-                        if (compress_and_save_image($fullPath, $tempOptimized, 1600, 82)) {
-                            $newSize = (int)filesize($tempOptimized);
-                            if ($newSize > 0 && $newSize < $origSize) {
-                                rename($tempOptimized, $fullPath);
-                                $photoFreedBytes += ($origSize - $newSize);
-                                $optimizedPhotosCount++;
-                            } else {
+                        try {
+                            if (compress_and_save_image($fullPath, $tempOptimized, 1600, 82)) {
+                                $newSize = (int)@filesize($tempOptimized);
+                                if ($newSize > 0 && $newSize < $origSize) {
+                                    if (@rename($tempOptimized, $fullPath)) {
+                                        $photoFreedBytes += ($origSize - $newSize);
+                                        $optimizedPhotosCount++;
+                                    } else {
+                                        @unlink($tempOptimized);
+                                    }
+                                } else {
+                                    @unlink($tempOptimized);
+                                }
+                            }
+                        } catch (\Throwable $ePhoto) {
+                            if (file_exists($tempOptimized)) {
                                 @unlink($tempOptimized);
                             }
                         }
@@ -239,7 +288,7 @@ try {
         }
         $stmtExp->execute();
         $expiredSharesCount = $stmtExp->rowCount();
-    } catch (Exception $e) {}
+    } catch (\Throwable $e) {}
 
     $steps[] = [
         'name' => 'Pengarsipan Tautan Berbagi Eksternal Kadaluwarsa',
@@ -247,7 +296,7 @@ try {
         'detail' => "{$expiredSharesCount} tautan eksternal yang melewati batas waktu berhasil dinonaktifkan otomatis."
     ];
 
-    // 4. STORAGE SAVINGS ANALYSIS
+    // 5. STORAGE SAVINGS ANALYSIS
     $rawTotal = 0;
     $compTotal = 0;
     $docCount = 0;
@@ -259,7 +308,7 @@ try {
             $rawTotal = (int)($docRow['raw_sz'] ?? 0);
             $compTotal = (int)($docRow['comp_sz'] ?? 0);
         }
-    } catch (Exception $e) {}
+    } catch (\Throwable $e) {}
 
     $savedVaultBytes = ($rawTotal > $compTotal) ? ($rawTotal - $compTotal) : 0;
     $savedVaultPct = ($rawTotal > 0) ? round(($savedVaultBytes / $rawTotal) * 100, 1) : 0;
@@ -272,7 +321,7 @@ try {
 
     $executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
-    // 5. LOG SYSTEM EVENT
+    // 6. LOG SYSTEM EVENT
     $summaryDesc = "Auto-optimise selesai dalam {$executionTime} ms. Pembersihan {$cleanedFilesCount} temp files, {$expiredSharesCount} tautan expired dinonaktifkan.";
     log_audit_event('SYSTEM', 'SYSTEM_OPTIMIZE', $summaryDesc, 'system', null);
 
@@ -285,11 +334,11 @@ try {
             'vault_savings' => format_bytes_opt($savedVaultBytes),
             'vault_savings_pct' => $savedVaultPct
         ], $executionTime);
-    } catch (Throwable $eDisc) {
+    } catch (\Throwable $eDisc) {
         error_log('Discord system optimize notification warning: ' . $eDisc->getMessage());
     }
 
-    echo json_encode([
+    send_opt_json([
         'success' => true,
         'message' => 'Auto-Optimise sistem selesai dieksekusi dengan sukses!',
         'execution_time_ms' => $executionTime,
@@ -304,20 +353,9 @@ try {
         ]
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    send_opt_json([
         'success' => false,
         'message' => 'Gagal menjalankan optimasi sistem: ' . $e->getMessage()
-    ]);
-}
-
-/**
- * Format bytes helper
- */
-function format_bytes_opt(int $bytes): string {
-    if ($bytes <= 0) return '0 B';
-    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    $i = (int)floor(log($bytes, 1024));
-    return round($bytes / pow(1024, $i), 2) . ' ' . $units[$i];
+    ], 500);
 }

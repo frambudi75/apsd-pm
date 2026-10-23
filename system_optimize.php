@@ -447,13 +447,23 @@ document.getElementById('btn_run_optimize').addEventListener('click', function()
   consoleWrap.style.display = 'block';
   consoleBox.innerHTML = '<div style="color: #94a3b8;">[' + new Date().toLocaleTimeString() + '] Memulai inisialisasi tugas pemeliharaan...</div>';
 
-  fetch('api/run_system_optimize', {
+  fetch('api/run_system_optimize.php', {
     method: 'POST',
     headers: {
       'Accept': 'application/json'
     }
   })
-  .then(res => res.json())
+  .then(async (res) => {
+    const rawText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      const cleanSnippet = rawText.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().substring(0, 300);
+      throw new Error(cleanSnippet || ('HTTP ' + res.status + ' ' + res.statusText));
+    }
+    return data;
+  })
   .then(data => {
     btn.disabled = false;
     icon.innerHTML = '<?= addslashes(app_icon('refresh', 16)) ?>';

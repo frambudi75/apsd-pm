@@ -199,6 +199,7 @@ function auto_repair_database(PDO $pdo, bool $forceCheck = false): array {
         } catch (Exception $e) {}
 
         if ($fastCount >= count($requiredTables)) {
+            $report['existing_count'] = $fastCount;
             return $report;
         }
     }

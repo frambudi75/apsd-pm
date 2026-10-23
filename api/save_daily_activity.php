@@ -3,20 +3,40 @@
  * API: Simpan Catatan Kegiatan Harian NOC (Daily Activity)
  * IASS SBU ICT KNO
  */
-header('Content-Type: application/json');
+// Prevent raw HTML error output from corrupting JSON responses
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ob_start();
+
+header('Content-Type: application/json; charset=utf-8');
+
+function send_json_response(array $data, int $statusCode = 200): void {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($statusCode);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Check if POST body exceeded PHP post_max_size
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    $postLimit = ini_get('post_max_size') ?: 'server limit';
+    send_json_response([
+        'success' => false,
+        'message' => "Ukuran total upload foto melebihi batas server ({$postLimit}). Foto akan otomatis dikompresi di browser, silakan coba kembali."
+    ], 413);
+}
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
 if (!is_logged_in()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesi login telah berakhir.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Sesi login telah berakhir.'], 401);
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
-    exit;
+    send_json_response(['success' => false, 'message' => 'Metode request tidak diizinkan.'], 405);
 }
 
 $currentUser = current_user();
@@ -36,13 +56,11 @@ try {
     $description = trim($_POST['description'] ?? '');
 
     if (empty($title)) {
-        echo json_encode(['success' => false, 'message' => 'Judul kegiatan wajib diisi.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Judul kegiatan wajib diisi.']);
     }
 
     if (empty($description)) {
-        echo json_encode(['success' => false, 'message' => 'Uraian detail kegiatan wajib diisi.']);
-        exit;
+        send_json_response(['success' => false, 'message' => 'Uraian detail kegiatan wajib diisi.']);
     }
 
     // 1. Resolve or Create Shift Session
@@ -51,17 +69,14 @@ try {
         $stmt->execute([$shiftId]);
         $shift = $stmt->fetch();
         if (!$shift) {
-            echo json_encode(['success' => false, 'message' => 'Sesi shift tidak ditemukan.']);
-            exit;
+            send_json_response(['success' => false, 'message' => 'Sesi shift tidak ditemukan.']);
         }
         // Non-admin can only write to their own active shift
         if (!has_role(['superadmin', 'admin']) && (int)$shift['user_id'] !== $userId) {
-            echo json_encode(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat mencatat kegiatan di shift milik Anda sendiri.']);
-            exit;
+            send_json_response(['success' => false, 'message' => 'Akses ditolak: Anda hanya dapat mencatat kegiatan di shift milik Anda sendiri.']);
         }
         if ($shift['status'] === 'completed' && !has_role(['superadmin', 'admin'])) {
-            echo json_encode(['success' => false, 'message' => 'Shift ini telah ditandai selesai dan terkunci.']);
-            exit;
+            send_json_response(['success' => false, 'message' => 'Shift ini telah ditandai selesai dan terkunci.']);
         }
     } else {
         // Find existing active shift for this user, date and shift_type
@@ -76,15 +91,13 @@ try {
         if ($existingShift) {
             $shiftId = (int)$existingShift['id'];
             if ($existingShift['status'] === 'completed' && !has_role(['superadmin', 'admin'])) {
-                echo json_encode(['success' => false, 'message' => 'Shift ini sudah selesai. Silakan buat shift baru atau hubungi admin.']);
-                exit;
+                send_json_response(['success' => false, 'message' => 'Shift ini sudah selesai. Silakan buat shift baru atau hubungi admin.']);
             }
         } else {
-            echo json_encode([
+            send_json_response([
                 'success' => false,
                 'message' => 'Sesi shift belum dibuka. Silakan pilih dan mulai sesi shift terlebih dahulu sebelum mencatat kegiatan.'
             ]);
-            exit;
         }
     }
 
@@ -137,9 +150,11 @@ try {
                     if ($ext === 'jpeg') $ext = 'jpg';
                     $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
-                    if (file_put_contents($destPath, $data)) {
+                    if (@file_put_contents($destPath, $data)) {
                         if (function_exists('compress_and_save_image')) {
-                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                            try {
+                                @compress_and_save_image($destPath, $destPath, 1600, 82);
+                            } catch (\Throwable $t) {}
                         }
                         $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                     }
@@ -154,9 +169,11 @@ try {
                 if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                     $newFilename = 'act_' . $activityId . '_slot_' . $idx . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
-                    if (move_uploaded_file($tmpName, $destPath)) {
+                    if (@move_uploaded_file($tmpName, $destPath)) {
                         if (function_exists('compress_and_save_image')) {
-                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                            try {
+                                @compress_and_save_image($destPath, $destPath, 1600, 82);
+                            } catch (\Throwable $t) {}
                         }
                         $savedPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                     }
@@ -186,9 +203,11 @@ try {
                 if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                     $newFilename = 'act_' . $activityId . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                     $destPath = $uploadDir . '/' . $newFilename;
-                    if (move_uploaded_file($tmpName, $destPath)) {
+                    if (@move_uploaded_file($tmpName, $destPath)) {
                         if (function_exists('compress_and_save_image')) {
-                            compress_and_save_image($destPath, $destPath, 1600, 82);
+                            try {
+                                @compress_and_save_image($destPath, $destPath, 1600, 82);
+                            } catch (\Throwable $t) {}
                         }
                         $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                         $stmtPhoto = $pdo->prepare("
@@ -216,9 +235,11 @@ try {
                         if ($ext === 'jpeg') $ext = 'jpg';
                         $newFilename = 'cam_' . $activityId . '_' . time() . '_' . rand(100, 999) . '.' . $ext;
                         $destPath = $uploadDir . '/' . $newFilename;
-                        if (file_put_contents($destPath, $data)) {
+                        if (@file_put_contents($destPath, $data)) {
                             if (function_exists('compress_and_save_image')) {
-                                compress_and_save_image($destPath, $destPath, 1600, 82);
+                                try {
+                                @compress_and_save_image($destPath, $destPath, 1600, 82);
+                            } catch (\Throwable $t) {}
                             }
                             $relPath = 'uploads/daily/' . $shiftId . '/' . $newFilename;
                             $stmtPhoto = $pdo->prepare("
@@ -234,7 +255,7 @@ try {
         }
     }
 
-    echo json_encode([
+    send_json_response([
         'success' => true,
         'activity_id' => $activityId,
         'shift_id' => $shiftId,
@@ -242,10 +263,11 @@ try {
         'message' => 'Kegiatan harian berhasil dicatat ke dalam logbook shift.'
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
+} catch (\Throwable $e) {
+    error_log("save_daily_activity error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    send_json_response([
         'success' => false,
-        'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-    ]);
+        'message' => 'Terjadi kesalahan sistem saat menyimpan kegiatan: ' . $e->getMessage()
+    ], 500);
 }
+

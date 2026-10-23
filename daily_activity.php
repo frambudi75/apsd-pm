@@ -1084,11 +1084,19 @@ include __DIR__ . '/includes/header.php';
             <!-- Dynamic Photo Slots Container -->
             <div id="daily_photo_slots_container" style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.75rem;"></div>
 
-            <!-- Tombol Tambah Slot Foto -->
-            <button type="button" class="btn btn-secondary btn-sm" id="btn_add_photo_slot" style="width: 100%; border: 1.5px dashed var(--border-strong); padding: 0.55rem 1rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-              <?= app_icon('plus', 14) ?>
-              <span>+ Tambah Slot Foto Dokumentasi</span>
-            </button>
+            <!-- Tombol Tambah Slot Foto & Batch Upload -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn_add_photo_slot" style="border: 1.5px dashed var(--border-strong); padding: 0.55rem 0.65rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem;">
+                <?= app_icon('plus', 14) ?>
+                <span>+ Tambah 1 Slot</span>
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-sm" id="btn_batch_upload_photos" style="border: 1.5px dashed var(--primary); padding: 0.55rem 0.65rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; background: rgba(0, 128, 128, 0.06); color: var(--primary);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>📁 Upload Banyak Foto</span>
+              </button>
+            </div>
+            <input type="file" id="batch_photo_file_input" accept="image/*" multiple style="display: none;">
+            <div id="batch_upload_status" style="display: none; font-size: 0.75rem; color: var(--primary); font-weight: 600; text-align: center; margin-top: 6px; padding: 4px 8px; background: rgba(0, 128, 128, 0.08); border-radius: 4px;"></div>
           </div>
 
         </div>
@@ -1794,11 +1802,78 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Dynamic Photo Slots Management for Daily Activity
+  // Dynamic Photo Slots Management & Batch Upload for Daily Activity
   var photoSlotsContainer = document.getElementById('daily_photo_slots_container');
   var btnAddPhotoSlot = document.getElementById('btn_add_photo_slot');
+  var btnBatchUpload = document.getElementById('btn_batch_upload_photos');
+  var batchPhotoInput = document.getElementById('batch_photo_file_input');
+  var batchStatus = document.getElementById('batch_upload_status');
   var slotCounter = 0;
   var slotStore = {};
+
+  // Client-side image compression to ensure fast uploads & prevent server limits
+  function compressImageClient(file, callback) {
+    if (!file || !file.type.match(/^image\//i)) {
+      callback(file, null);
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        try {
+          var maxDim = 1600;
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          var targetW = w;
+          var targetH = h;
+          if (targetW > maxDim || targetH > maxDim) {
+            if (targetW > targetH) {
+              targetH = Math.round((targetH / targetW) * maxDim);
+              targetW = maxDim;
+            } else {
+              targetW = Math.round((targetW / targetH) * maxDim);
+              targetH = maxDim;
+            }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, targetW, targetH);
+
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          if (canvas.toBlob) {
+            canvas.toBlob(function(blob) {
+              if (blob) {
+                var cleanName = (file.name || 'photo').replace(/\.[^/.]+$/, "") + '.jpg';
+                var compressedFile = new File([blob], cleanName, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                });
+                callback(compressedFile, dataUrl);
+              } else {
+                callback(file, dataUrl);
+              }
+            }, 'image/jpeg', 0.82);
+          } else {
+            callback(file, dataUrl);
+          }
+        } catch (err) {
+          console.warn('Canvas compression error:', err);
+          callback(file, e.target.result);
+        }
+      };
+      img.onerror = function() {
+        callback(file, e.target.result);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() {
+      callback(file, null);
+    };
+    reader.readAsDataURL(file);
+  }
 
   function createPhotoSlot(initialData) {
     initialData = initialData || {};
@@ -1851,8 +1926,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </button>
       </div>
 
-      <!-- Hidden inputs -->
-      <input type="file" accept="image/*" class="slot-hidden-file" style="display: none;">
+      <!-- Hidden inputs (with multiple support) -->
+      <input type="file" accept="image/*" multiple class="slot-hidden-file" style="display: none;">
       <input type="file" accept="image/*" capture="environment" class="slot-hidden-cam" style="display: none;">
 
       <!-- Keterangan 2 (di bawah foto) -->
@@ -1886,17 +1961,33 @@ document.addEventListener('DOMContentLoaded', function() {
       slotStore[slotId].base64 = base64Str || null;
     }
 
+    card._setPreview = setPreview;
+    card._slotId = slotId;
+
     fileInput.addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) {
-        var file = e.target.files[0];
-        setPreview(URL.createObjectURL(file), file, null);
+      if (e.target.files && e.target.files.length > 0) {
+        if (e.target.files.length === 1) {
+          var file = e.target.files[0];
+          compressImageClient(file, function(compFile, dataUrl) {
+            setPreview(dataUrl, compFile, null);
+            var cap1Input = card.querySelector('.slot-input-cap1');
+            if (cap1Input && !cap1Input.value.trim()) {
+              cap1Input.value = file.name.replace(/\.[^/.]+$/, "");
+            }
+          });
+        } else {
+          // If multiple files selected from single slot button
+          handleBatchFiles(Array.from(e.target.files), card);
+        }
       }
     });
 
     camInput.addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
         var file = e.target.files[0];
-        setPreview(URL.createObjectURL(file), file, null);
+        compressImageClient(file, function(compFile, dataUrl) {
+          setPreview(dataUrl, compFile, null);
+        });
       }
     });
 
@@ -1926,6 +2017,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     renumberSlots();
+    return card;
   }
 
   function renumberSlots() {
@@ -1941,9 +2033,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Handle batch selection of multiple photos
+  function handleBatchFiles(files, startCard) {
+    if (!files || files.length === 0) return;
+
+    if (batchStatus) {
+      batchStatus.style.display = 'block';
+      batchStatus.textContent = '⏳ Mengompres & memproses ' + files.length + ' foto...';
+    }
+
+    var cards = Array.from(photoSlotsContainer.querySelectorAll('.photo-slot-card'));
+    var currentIndex = 0;
+
+    // Determine target card for the first file
+    var firstTarget = startCard;
+    if (!firstTarget) {
+      // Find first empty card or use first card if empty
+      firstTarget = cards.find(function(c) {
+        var sid = c.getAttribute('data-slot-id');
+        return !slotStore[sid] || (!slotStore[sid].file && !slotStore[sid].base64);
+      });
+    }
+
+    function processNext() {
+      if (currentIndex >= files.length) {
+        if (batchStatus) {
+          batchStatus.textContent = '✅ Berhasil memuat ' + files.length + ' foto siap disimpan.';
+          setTimeout(function() { batchStatus.style.display = 'none'; }, 3000);
+        }
+        renumberSlots();
+        return;
+      }
+
+      var file = files[currentIndex];
+      compressImageClient(file, function(compFile, dataUrl) {
+        var targetCard;
+        if (currentIndex === 0 && firstTarget) {
+          targetCard = firstTarget;
+        } else {
+          targetCard = createPhotoSlot();
+        }
+
+        if (targetCard && typeof targetCard._setPreview === 'function') {
+          targetCard._setPreview(dataUrl, compFile, null);
+          var cap1 = targetCard.querySelector('.slot-input-cap1');
+          if (cap1 && !cap1.value.trim()) {
+            cap1.value = file.name.replace(/\.[^/.]+$/, "");
+          }
+        }
+
+        currentIndex++;
+        processNext();
+      });
+    }
+
+    processNext();
+  }
+
   if (btnAddPhotoSlot) {
     btnAddPhotoSlot.addEventListener('click', function() {
       createPhotoSlot();
+    });
+  }
+
+  if (btnBatchUpload && batchPhotoInput) {
+    btnBatchUpload.addEventListener('click', function() {
+      batchPhotoInput.click();
+    });
+
+    batchPhotoInput.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        handleBatchFiles(Array.from(e.target.files), null);
+        batchPhotoInput.value = '';
+      }
     });
   }
 
@@ -1952,7 +2114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     createPhotoSlot();
   }
 
-  // Form Submission via AJAX
+  // Form Submission via AJAX with resilient parsing
   var form = document.getElementById('form_save_activity');
   var btnSubmit = document.getElementById('btn_submit_activity');
 
@@ -1960,7 +2122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
       btnSubmit.disabled = true;
-      btnSubmit.textContent = 'Menyimpan...';
+      btnSubmit.innerHTML = '<span>⏳</span> Menyimpan...';
 
       var formData = new FormData(form);
 
@@ -1991,12 +2153,23 @@ document.addEventListener('DOMContentLoaded', function() {
         method: 'POST',
         body: formData
       })
-      .then(function(res) { return res.json(); })
+      .then(function(res) {
+        return res.text().then(function(text) {
+          try {
+            return JSON.parse(text);
+          } catch (err) {
+            console.error('Server returned non-JSON:', text);
+            var cleanMsg = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+            if (cleanMsg.length > 250) cleanMsg = cleanMsg.substring(0, 250) + '...';
+            throw new Error(cleanMsg || 'Respon server tidak valid (' + res.status + ')');
+          }
+        });
+      })
       .then(function(data) {
         btnSubmit.disabled = false;
-        btnSubmit.textContent = 'Simpan Kegiatan';
+        btnSubmit.innerHTML = '<span>✔</span> Simpan Kegiatan';
         if (data.success) {
-          alert(data.message);
+          alert(data.message || 'Kegiatan berhasil disimpan.');
           window.location.reload();
         } else {
           alert('Gagal: ' + (data.message || 'Terjadi kesalahan sistem.'));
@@ -2004,8 +2177,8 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(function(err) {
         btnSubmit.disabled = false;
-        btnSubmit.textContent = 'Simpan Kegiatan';
-        alert('Terjadi error jaringan: ' + err.message);
+        btnSubmit.innerHTML = '<span>✔</span> Simpan Kegiatan';
+        alert('Terjadi kendala saat menyimpan: ' + err.message);
       });
     });
   }

@@ -257,7 +257,7 @@ try {
     header("Location: ../print_outdoor?id={$report_id}&new=1{$compactParam}");
     exit;
 
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }

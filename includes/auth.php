@@ -50,6 +50,15 @@ function get_app_base_url(): string {
 }
 
 /**
+ * Universal safe HTML escaping helper (PHP 8.1 - 8.5+ null safe)
+ */
+if (!function_exists('h')) {
+    function h($str): string {
+        return htmlspecialchars((string)($str ?? ''), ENT_QUOTES, 'UTF-8');
+    }
+}
+
+/**
  * Get dynamic full application base URL with protocol and host
  * Works seamlessly across:
  * - Production domain root (e.g. https://pm.ictkno.my.id/print_shift?shift_id=10)

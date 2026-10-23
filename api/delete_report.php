@@ -95,7 +95,7 @@ if (!empty($ids)) {
             : "../?msg=deleted&count={$countDeleted}";
         header("Location: " . $returnDest);
         exit;
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }

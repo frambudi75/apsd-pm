@@ -52,7 +52,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         'Deskripsi',
         'IP Address',
         'User Agent'
-    ]);
+    ], ',', '"', "\\");
 
     foreach ($logsToExport as $row) {
         fputcsv($output, [
@@ -67,7 +67,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             $row['description'] ?? '',
             $row['ip_address'] ?? '',
             $row['user_agent'] ?? ''
-        ]);
+        ], ',', '"', "\\");
     }
 
     fclose($output);

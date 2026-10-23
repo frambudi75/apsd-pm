@@ -95,7 +95,7 @@ fputcsv($output, [
     'Leader / Approver',
     'Status Temuan',
     'Rincian Temuan'
-], ';');
+], ';', '"', "\\");
 
 $no = 1;
 foreach ($filtered as $row) {
@@ -103,6 +103,7 @@ foreach ($filtered as $row) {
     $op = !empty($row['operator']) ? $row['operator'] : (!empty($row['operator_name']) ? $row['operator_name'] : 'Telkomsel');
     $statusText = $row['findings']['has_nok'] ? 'Ada Temuan (NOK)' : 'Normal (OK)';
     $nokItems = !empty($row['findings']['nok_items']) ? implode(', ', $row['findings']['nok_items']) : 'Tidak ada anomali';
+    $approver = !empty($row['team_leader']) ? $row['team_leader'] : (!empty($row['approver_name']) ? $row['approver_name'] : '-');
 
     fputcsv($output, [
         $no++,
@@ -114,10 +115,10 @@ foreach ($filtered as $row) {
         $row['location_detail'] ?: '-',
         ($row['city'] ? $row['city'] . ', ' : '') . ($row['region'] ?: 'Deli Serdang'),
         $row['inspector_name'] ?: '-',
-        $row['approver_name'] ?: '-',
+        $approver,
         $statusText,
         $nokItems
-    ], ';');
+    ], ';', '"', "\\");
 }
 
 fclose($output);
